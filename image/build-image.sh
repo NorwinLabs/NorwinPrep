@@ -12,5 +12,8 @@ touch pi-gen/stage2/SKIP_IMAGES
 rm -rf pi-gen/stage-norwin/00-install/repo
 mkdir -p pi-gen/stage-norwin/00-install/repo
 (cd "$REPO_ROOT" && tar --exclude=.git --exclude=image/pi-gen -cf - .) | tar -xf - -C pi-gen/stage-norwin/00-install/repo
+# pi-gen's docker build gets no working DNS in BuildKit on GitHub runners; build on the host network
+sed -i 's|${DOCKER} build --build-arg|${DOCKER} build --network=host --build-arg|' pi-gen/build-docker.sh
+grep -q -- '--network=host' pi-gen/build-docker.sh || { echo "failed to patch build-docker.sh" >&2; exit 1; }
 (cd pi-gen && ./build-docker.sh)
 echo "Image in image/pi-gen/deploy/"
