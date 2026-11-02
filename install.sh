@@ -10,7 +10,7 @@ SRC="$(cd "$(dirname "$0")" && pwd)"
 export DEBIAN_FRONTEND=noninteractive
 apt-get update
 apt-get install -y --no-install-recommends \
-  nginx kiwix-tools network-manager dnsmasq-base curl ca-certificates aria2 avahi-daemon
+  nginx kiwix-tools network-manager dnsmasq-base curl ca-certificates aria2 avahi-daemon git
 
 install -d /opt/norwinprep/scripts /opt/norwinprep/web
 [ -f /etc/norwinprep.conf ] || install -m 644 "$SRC/norwinprep.conf" /etc/norwinprep.conf
@@ -20,9 +20,12 @@ install -d /opt/norwinprep/scripts /opt/norwinprep/web
 install -m 755 "$SRC"/scripts/*.sh /opt/norwinprep/scripts/
 cp -r "$SRC"/web/. /opt/norwinprep/web/
 
-install -d "$CONTENT_DIR"/{zim,library}
+install -d "$CONTENT_DIR"/{zim,library,maps,apps}
 id -u norwinprep >/dev/null 2>&1 || useradd -r -s /usr/sbin/nologin norwinprep
 chown -R norwinprep: "$CONTENT_DIR"
+
+# map viewer assets (needs internet; skipped quietly if offline)
+/opt/norwinprep/scripts/fetch-web-assets.sh || echo "WARN: map viewer assets not fetched; rerun fetch-web-assets.sh while online"
 
 # nginx
 install -m 644 "$SRC/system/nginx/norwinprep.conf" /etc/nginx/sites-available/norwinprep

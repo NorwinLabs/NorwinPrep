@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>NorwinPrep Maps</title>
+<link rel="stylesheet" href="vendor/maplibre-gl.css">
+<style>
+  html,body,#map{margin:0;height:100%;background:#10140f}
+  #bar{position:absolute;z-index:2;top:8px;left:8px;right:8px;display:flex;gap:8px;pointer-events:none}
+  #bar a,#bar span{pointer-events:auto;background:#1c231acc;color:#e8eddf;font:14px system-ui,sans-serif;
+    padding:8px 12px;border-radius:8px;text-decoration:none}
+  #msg{position:absolute;inset:0;display:none;align-items:center;justify-content:center;text-align:center;
+    color:#e8eddf;font:16px/1.5 system-ui,sans-serif;padding:2rem;z-index:1}
+  code{background:#0006;padding:2px 6px;border-radius:4px}
+</style>
+</head>
+<body>
+<div id="bar"><a href="/">&larr; Home</a><span id="info">Loading maps&hellip;</span></div>
+<div id="msg"></div>
+<div id="map"></div>
+<script src="vendor/maplibre-gl.js"></script>
+<script src="vendor/pmtiles.js"></script>
+<script src="vendor/basemaps.js"></script>
+<script>
+(async function () {
+  const msg = document.getElementById('msg'), info = document.getElementById('info');
+  const fail = (html) => { msg.innerHTML = html; msg.style.display = 'flex'; info.textContent = ''; };
+
+  if (!window.maplibregl || !window.pmtiles || !window.basemaps) {
+    return fail('Map viewer files are missing.<br>On the device, while online, run<br><code>sudo /opt/norwinprep/scripts/fetch-web-assets.sh</code>');
+  }
+
+  let files = [];
+  try {
+    const r = await fetch('/tiles/');
+    files = (await r.json()).filter(f => f.type === 'file' && f.name.endsWith('.pmtiles')).map(f => f.name);
+  } catch (e) {}
+  if (!files.length) {
+    return fail('No map files yet.<br>On the device, while online, run<br><code>sudo /opt/norwinprep/scripts/fetch-maps.sh world</code><br>then e.g. <code>fetch-maps.sh usa</code>');
+  }
+  // Broad/low-zoom "world" first so it renders underneath detailed regional files.
+  files.sort((a, b) => (b.startsWith('world') ? 1 : 0) - (a.startsWith('world') ? 1 : 0));
+
+  const protocol = new pmtiles.Protocol();
+  maplibregl.addProtocol('pmtiles', protocol.tile);
+
+  const flavor = basemaps.namedFlavor('light');
+  const sources = {}, layers = [];
+  files.forEach((name, i) => {
+    sources['pm' + i] = {
+      type: 'vector',
+      url: 'pmtiles://' + location.origin + '/tiles/' + encodeURIComponent(name),
+      attribution: '&copy; OpenStreetMap contributors'
+    };
+    basemaps.layers('pm' + i, flavor, { lang: 'en' }).forEach(l => {
+      if (i > 0 && l.type === 'background') return;
+      layers.push(Object.assign({}, l, { id: l.id + '-' + i }));
+    });
+  });
+
+  const map = new maplibregl.Map({
+    container: 'map',
+    style: {
+      version: 8,
+      glyphs: location.origin + '/maps/fonts/{fontstack}/{range}.pbf',
+      sprite: location.origin + '/maps/sprites/v4/light',
+      sources, layers
+    },
+    center: [-98, 39], zoom: 3, hash: true
+  });
+  map.addControl(new maplibregl.NavigationControl(), 'bottom-right');
+  map.addControl(new maplibregl.ScaleControl({ unit: 'imperial' }), 'bottom-left');
+  info.textContent = files.length + ' offline map file' + (files.length > 1 ? 's' : '');
+})();
+</script>
+</body>
+</html>
