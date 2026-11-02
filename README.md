@@ -25,6 +25,27 @@ Edit `/etc/norwinprep.conf` (SSID, password), then `sudo /opt/norwinprep/scripts
 Flash the resulting image with Raspberry Pi Imager; it auto-launches everything on first boot.
 Change the default login (`norwin` / `changeme-now`) and Wi-Fi password in `image/config` and `norwinprep.conf` first.
 
+## Updates & automatic builds
+
+**On the device (when online, e.g. Ethernet plugged in):** `norwinprep-update.timer` runs 10 min after boot and daily at ~03:30.
+It does nothing if there is no internet. When online it:
+1. installs OS/security updates (unattended-upgrades; no automatic reboot, so kernel updates apply at your next reboot),
+2. updates NorwinPrep itself from GitHub (`UPDATE_CHANNEL="stable"` = latest `vX.Y.Z` release, `"edge"` = main) with automatic rollback if nginx fails its config test,
+3. refreshes the Kiwix content tier in `CONTENT_TIER` to the newest monthly editions and removes the old ones.
+
+Run it by hand with `sudo /opt/norwinprep/scripts/update.sh`; turn parts off with `AUTO_UPDATE_*` in `/etc/norwinprep.conf`.
+Your settings are preserved across updates. The hotspot works over Wi-Fi, so give the Pi internet by Ethernet (or a USB Wi-Fi dongle).
+If this repo is private, set `UPDATE_TOKEN` to a read-only GitHub token.
+
+**In GitHub Actions:** every push to `main`, every Monday, and on demand, the workflow lints the scripts and builds the image
+(download from the run's Artifacts). When `VERSION` is bumped on `main` and that `vX.Y.Z` release doesn't exist yet, it
+publishes a GitHub Release with the image; devices on the `stable` channel then pick up the new software. To ship a release:
+bump `VERSION`, merge to `main`.
+
+**Built into the image:** the `survival` tier (zimgit medicine/water/post-disaster/food, WikEM, survival/outdoors/health Q&A,
+Appropedia, top Wikipedia articles; any single file over `SURVIVAL_MAX_MB`=600 is skipped to keep the image small). The image
+build fails if no content could be downloaded.
+
 ## Content
 
 All downloads need internet once (plug in Ethernet or a USB tether), then everything runs offline.

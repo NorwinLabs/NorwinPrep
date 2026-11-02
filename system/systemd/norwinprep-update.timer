@@ -1,0 +1,11 @@
+[Unit]
+Description=Daily NorwinPrep update check when online
+
+[Timer]
+OnBootSec=10min
+OnCalendar=*-*-* 03:30:00
+RandomizedDelaySec=30min
+Persistent=true
+
+[Install]
+WantedBy=timers.target

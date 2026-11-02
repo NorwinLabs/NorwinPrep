@@ -18,3 +18,4 @@ if [ -n "${PASSWORD:-}" ]; then
 fi
 nmcli "${args[@]}"
 nmcli connection up NorwinPrepAP || true
+mkdir -p /var/lib/norwinprep && touch /var/lib/norwinprep/hotspot-configured

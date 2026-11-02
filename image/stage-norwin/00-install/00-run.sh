@@ -7,6 +7,6 @@ cp -r "${REPO_ROOT}/." "${ROOTFS_DIR}/opt/norwinprep-src/"
 rm -rf "${ROOTFS_DIR}/opt/norwinprep-src/.git"
 
 on_chroot << EOF
-cd /opt/norwinprep-src && ./install.sh
+cd /opt/norwinprep-src && NORWINPREP_BAKE_TIER=survival ./install.sh
 rm -rf /opt/norwinprep-src
 EOF

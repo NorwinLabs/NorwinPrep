@@ -1,0 +1,11 @@
+[Unit]
+Description=NorwinPrep update check (OS, software, content)
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/opt/norwinprep/scripts/update.sh
+Nice=10
+IOSchedulingClass=idle
+TimeoutStartSec=6h
