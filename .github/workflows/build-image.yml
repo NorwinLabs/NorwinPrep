@@ -2,7 +2,6 @@ name: Build NorwinPrepOS image
 on:
   push:
     branches: [main]
-    paths-ignore: ['**.md']
   pull_request:
   schedule:
     - cron: '17 5 * * 1'   # weekly: picks up fresh Kiwix editions + OS package updates
