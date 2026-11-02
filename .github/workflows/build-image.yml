@@ -1,0 +1,16 @@
+name: Build NorwinPrepOS image
+on:
+  workflow_dispatch:
+  push:
+    tags: ['v*']
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@v4
+      - run: image/build-image.sh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: NorwinPrepOS
+          path: image/pi-gen/deploy/*.zip

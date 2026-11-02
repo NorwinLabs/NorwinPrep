@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>NorwinPrep</title>
+<style>
+  :root{--bg:#10140f;--fg:#e8eddf;--card:#1c231a;--accent:#9acd32;--mut:#8a9684}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.5 system-ui,sans-serif}
+  header{padding:2rem 1rem 1rem;text-align:center}
+  h1{margin:0;font-size:2rem;color:var(--accent)}
+  p.sub{margin:.25rem 0 0;color:var(--mut)}
+  main{max-width:900px;margin:0 auto;padding:1rem;display:grid;gap:1rem;grid-template-columns:repeat(auto-fit,minmax(240px,1fr))}
+  a.card{display:block;background:var(--card);border:1px solid #2b3628;border-radius:12px;padding:1.25rem;color:inherit;text-decoration:none}
+  a.card:hover{border-color:var(--accent)}
+  .card h2{margin:0 0 .25rem;font-size:1.15rem;color:var(--accent)}
+  .card p{margin:0;color:var(--mut);font-size:.9rem}
+  footer{text-align:center;color:var(--mut);font-size:.8rem;padding:2rem 1rem}
+</style>
+</head>
+<body>
+<header>
+  <h1>NorwinPrep</h1>
+  <p class="sub">Offline knowledge. No internet required.</p>
+</header>
+<main>
+  <a class="card" href="/wiki/"><h2>Library</h2><p>Wikipedia, medicine, water, repair, how-to and more (Kiwix).</p></a>
+  <a class="card" href="/library/"><h2>Files &amp; Manuals</h2><p>PDFs, field manuals, maps and downloads.</p></a>
+</main>
+<footer>Connected to the NorwinPrep access point &middot; content is served from this device.</footer>
+</body>
+</html>

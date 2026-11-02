@@ -1,0 +1,15 @@
+[Unit]
+Description=NorwinPrep first-boot hotspot setup
+After=NetworkManager.service
+Wants=NetworkManager.service
+ConditionPathExists=!/var/lib/norwinprep/hotspot-configured
+
+[Service]
+Type=oneshot
+ExecStartPre=/bin/sleep 5
+ExecStart=/opt/norwinprep/scripts/setup-hotspot.sh
+ExecStartPost=/bin/sh -c 'mkdir -p /var/lib/norwinprep && touch /var/lib/norwinprep/hotspot-configured'
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target
