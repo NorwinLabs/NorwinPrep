@@ -19,6 +19,8 @@ jobs:
       - uses: actions/checkout@v4
       - name: Syntax-check scripts
         run: for f in install.sh get.sh uninstall.sh scripts/*.sh; do bash -n "$f"; done
+      - name: Module manager tests (installs, resume, checksums, PIN rules, catalog validation)
+        run: python3 -W ignore scripts/test_modules_api.py
       - name: ShellCheck (errors only)
         run: |
           sudo apt-get install -y shellcheck

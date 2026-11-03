@@ -1,0 +1,17 @@
+[Unit]
+Description=NorwinPrep module manager (installs content, maps and apps)
+After=network.target
+
+[Service]
+User=norwinprep
+ExecStart=/usr/bin/python3 /opt/norwinprep/scripts/modules-api.py
+Restart=always
+RestartSec=3
+Environment=PYTHONUNBUFFERED=1
+# Deliberately no NoNewPrivileges: it needs one sudo rule to restart the library after installs.
+PrivateTmp=true
+ProtectHome=true
+ProtectSystem=full
+
+[Install]
+WantedBy=multi-user.target

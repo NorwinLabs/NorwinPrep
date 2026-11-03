@@ -34,6 +34,27 @@ disconnect you) and tells you how to start it later with `sudo /opt/norwinprep/s
 Change the Wi-Fi name/password in `/etc/norwinprep.conf` (defaults: `NorwinPrep` / `prepared123`), then rerun `setup-hotspot.sh`.
 Uninstall with `sudo /opt/norwinprep/scripts/uninstall.sh` (add `--purge` to delete downloaded content too).
 
+## Module Store (install content, maps and apps)
+
+Open **Module Store** from the portal (`http://10.42.0.1/modules/`), or tap **Modules** next to a NorwinPrep device in the desktop/Android app.
+It lists everything you can add to the device in the same layout as an app launcher: **Installed** and **Not installed** sections, a version tag on every
+card, OPEN / INSTALL buttons, a "..." menu (Details, Re-download, Remove), search, sort, type filters and a grid/list toggle. The refresh button checks
+for newer versions; a red version tag and an UPDATE button mean one is available.
+
+| Type | Examples | Installs to |
+|---|---|---|
+| Content | medicine, water, post-disaster and food guides, WikEM, Wikipedia (several sizes), WikiHow, iFixit, Gutenberg, Khan Academy, Stack Exchange archives | Kiwix library (`/wiki/`) |
+| Maps | world overview, USA, Canada, Europe, UK, Australia | map viewer (`/maps/`) |
+| Apps | NorwinPrep for Android, Windows, Raspberry Pi (32/64-bit), Linux PC | hosted at `/apps/` for people on the hotspot |
+
+Before anything downloads you see the exact file, version, download size and free space. Downloads resume if interrupted, are verified
+(SHA-256) before they replace anything, and queue one at a time. Needs the device to be online (e.g. Ethernet).
+
+**Admin PIN:** looking is open, but installing or removing needs the PIN shown at the end of the install (reset: `sudo /opt/norwinprep/scripts/set-admin-pin.sh`).
+Wrong guesses are rate-limited. The catalog is `modules/catalog.json`; each entry is one of three fixed install kinds (`zim`, `maps`, `app`), so adding a
+module is a JSON edit and the service never runs commands from the catalog. The service is `norwinprep-modules` (Python, runs as the unprivileged
+`norwinprep` user; its only sudo right is restarting the library service).
+
 ## Client apps (Android, Windows, Linux, Raspberry Pi)
 
 Each app runs its **own local NorwinPrep instance** on `127.0.0.1:8787`, so you can always get in, even with no Pi nearby.

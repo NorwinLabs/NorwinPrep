@@ -31,7 +31,7 @@ export DEBIAN_FRONTEND=noninteractive
 apt-get update
 apt-get install -y --no-install-recommends \
   nginx kiwix-tools dnsmasq-base curl ca-certificates aria2 avahi-daemon git \
-  unattended-upgrades jq util-linux
+  unattended-upgrades jq util-linux python3
 
 install -d /opt/norwinprep/scripts /opt/norwinprep/web
 if [ -f /etc/norwinprep.conf ]; then
@@ -46,7 +46,9 @@ fi
 # shellcheck disable=SC1091
 . /etc/norwinprep.conf
 
-install -m 755 "$SRC"/scripts/*.sh /opt/norwinprep/scripts/
+install -m 755 "$SRC"/scripts/*.sh "$SRC/scripts/modules-api.py" /opt/norwinprep/scripts/
+install -d /opt/norwinprep/modules
+install -m 644 "$SRC/modules/catalog.json" /opt/norwinprep/modules/catalog.json
 install -m 755 "$SRC/uninstall.sh" /opt/norwinprep/scripts/uninstall.sh
 cp -r "$SRC"/web/. /opt/norwinprep/web/
 # Version = the release tag this checkout is (get.sh / update.sh check out tags); otherwise "<MAJOR.MINOR>-dev"
@@ -60,11 +62,28 @@ if ! [[ "${DEVICE_NAME:-NorwinPrep}" =~ ^[A-Za-z0-9\ ._()-]{1,40}$ ]]; then
 fi
 install -d /opt/norwinprep/web/api
 jq -n --arg name "${DEVICE_NAME:-NorwinPrep}" --arg ver "$APP_VERSION" --arg host "${HOSTNAME_NEW:-norwinprep}" --arg ssid "${SSID:-NorwinPrep}" \
-  '{name:$name, mode:"pi", version:$ver, hostname:$host, ssid:$ssid, address:"http://10.42.0.1"}' > /opt/norwinprep/web/api/device.json
+  '{name:$name, mode:"pi", version:$ver, hostname:$host, ssid:$ssid, address:"http://10.42.0.1", modules:true}' > /opt/norwinprep/web/api/device.json
 
 install -d "$CONTENT_DIR"/{zim,library,maps,apps}
 id -u norwinprep >/dev/null 2>&1 || useradd -r -s /usr/sbin/nologin norwinprep
 chown -R norwinprep: "$CONTENT_DIR"
+
+# Admin PIN for the Module Store (created once; shown at the end of the install)
+NEW_PIN=""
+if [ ! -f /etc/norwinprep-admin ]; then
+  NEW_PIN="$(/opt/norwinprep/scripts/set-admin-pin.sh | sed -n 's/^Admin PIN: //p')"
+fi
+
+# The module manager may restart the library service after installs (and nothing else)
+if command -v visudo >/dev/null; then
+  tmp_sudoers="$(mktemp)"
+  cp "$SRC/system/sudoers-norwinprep" "$tmp_sudoers"
+  if visudo -cf "$tmp_sudoers" >/dev/null; then install -m 440 "$tmp_sudoers" /etc/sudoers.d/norwinprep; else echo "WARN: sudoers rule invalid; module installs will not restart the library"; fi
+  rm -f "$tmp_sudoers"
+fi
+
+# Tool for downloading map regions (best effort; the Module Store tells you if it is missing)
+command -v pmtiles >/dev/null || /opt/norwinprep/scripts/install-pmtiles.sh || echo "WARN: pmtiles not installed; run /opt/norwinprep/scripts/install-pmtiles.sh later"
 
 # map viewer assets (JS, fonts, sprites) so maps work with zero internet later
 [ -f /opt/norwinprep/web/maps/vendor/maplibre-gl.js ] || /opt/norwinprep/scripts/fetch-web-assets.sh \
@@ -88,7 +107,8 @@ install -m 644 "$SRC/system/apt/52norwinprep-unattended-upgrades" /etc/apt/apt.c
 rm -f /etc/systemd/system/norwinprep-firstboot.service
 install -m 644 "$SRC"/system/systemd/*.service "$SRC"/system/systemd/*.timer /etc/systemd/system/
 systemctl daemon-reload
-systemctl enable --now nginx.service norwinprep-kiwix.service avahi-daemon.service norwinprep-update.timer
+systemctl enable --now nginx.service norwinprep-kiwix.service norwinprep-modules.service avahi-daemon.service norwinprep-update.timer
+systemctl restart norwinprep-modules.service    # pick up new code/catalog on updates
 systemctl reload nginx.service || true
 
 # Content (needs internet; skipped with --content none)
@@ -119,4 +139,6 @@ if [ -f /var/lib/norwinprep/hotspot-configured ]; then
 elif [ -z "${HOTSPOT_SKIPPED:-}" ]; then
   echo "Hotspot not configured; run: sudo /opt/norwinprep/scripts/setup-hotspot.sh"
 fi
+[ -z "$NEW_PIN" ] || { echo; echo "Module Store admin PIN: $NEW_PIN   (write it down; reset with: sudo /opt/norwinprep/scripts/set-admin-pin.sh)"; }
+echo "Module Store: http://10.42.0.1/modules/"
 echo "More content: sudo /opt/norwinprep/scripts/fetch-content.sh [small|medium|large]; maps: fetch-maps.sh world"

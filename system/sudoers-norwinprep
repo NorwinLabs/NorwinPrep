@@ -1,0 +1,3 @@
+# The module manager (user norwinprep) may restart the library service after installing/removing content. Nothing else.
+norwinprep ALL=(root) NOPASSWD: /usr/bin/systemctl restart norwinprep-kiwix.service
+norwinprep ALL=(root) NOPASSWD: /bin/systemctl restart norwinprep-kiwix.service

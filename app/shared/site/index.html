@@ -20,7 +20,7 @@
   .dot{width:.7rem;height:.7rem;border-radius:50%;background:#555;flex:none}
   .dot.on{background:var(--accent)} .dot.off{background:var(--bad)} .dot.warn{background:#e0b341}
   button,a.btn{padding:.45rem .9rem;border-radius:8px;border:0;background:var(--accent);color:#10140f;font:inherit;font-weight:600;cursor:pointer;text-decoration:none;display:inline-block}
-  button.ghost{background:transparent;color:var(--fg);border:1px solid var(--line)}
+  button.ghost,a.btn.ghost{background:transparent;color:var(--fg);border:1px solid var(--line)}
   button:disabled{opacity:.45;cursor:default}
   input[type=text]{flex:1;min-width:0;padding:.5rem .7rem;border-radius:8px;border:1px solid #3a4a35;background:#0d110c;color:var(--fg);font:inherit}
   .badge{font-size:.72rem;border:1px solid var(--accent);color:var(--accent);border-radius:999px;padding:0 .5rem;margin-left:.4rem}
@@ -244,7 +244,7 @@
       .then(function (r) { if (!r.ok) throw 0; return r.json(); })
       .then(function (j) {
         if (!j || typeof j.name !== 'string' || typeof j.version !== 'string') throw 0;
-        return { up: true, verified: true, name: j.name.slice(0, 60), version: j.version.slice(0, 20) };
+        return { up: true, verified: true, name: j.name.slice(0, 60), version: j.version.slice(0, 20), modules: j.modules === true };
       })
       .catch(function () {
         return fetch(url + '/', { mode: 'no-cors', cache: 'no-store', signal: t(2500) })
@@ -272,6 +272,10 @@
         var open = document.createElement('a'); open.className = 'btn'; open.textContent = 'Open'; open.href = o.url + '/';
         open.onclick = function () { say(''); };
         card.appendChild(open);
+        if (r && r.verified && r.modules) {   // this device offers the Module Store
+          var mods = document.createElement('a'); mods.className = 'btn ghost'; mods.textContent = 'Modules'; mods.href = o.url + '/modules/';
+          mods.title = 'Install content, maps and apps on this device'; card.appendChild(mods);
+        }
       }
       var star = document.createElement('button'); star.className = 'ghost';
       star.textContent = def ? 'Clear default' : 'Make default';
