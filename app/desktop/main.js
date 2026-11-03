@@ -4,7 +4,10 @@ const path = require('path');
 const fs = require('fs');
 const os = require('os');
 const http = require('http');
-const { create, NAME_RE } = require('./local-server');
+const { create, createShare, NAME_RE } = require('./local-server');
+const { Manager } = require('./modules-manager');
+const { Reader } = require('./reader');
+const { Share } = require('./share');
 const updaterLib = require('./updater');
 const { spawn, execFile } = require('child_process');
 
@@ -14,7 +17,7 @@ const KIOSK = process.argv.includes('--kiosk');   // full-screen, for a Pi with 
 // AppImages (and root/CI runs) can't use Chromium's setuid sandbox
 if (process.env.APPIMAGE || process.argv.includes('--no-sandbox')) app.commandLine.appendSwitch('no-sandbox');
 
-let win, server, home;
+let win, server, home, reader, share;
 
 // ---- device name (shared with anything that connects to the local instance) ----
 function cfgFile() { return path.join(app.getPath('userData'), 'device.json'); }
@@ -70,8 +73,23 @@ async function startServer() {
   const filesDir = path.join(app.getPath('userData'), 'files');
   fs.mkdirSync(filesDir, { recursive: true });
   let name = loadName();
+  // The library: content packs, maps and hosted apps live in this app's own folder, on any device. No Pi involved.
+  const dataDir = path.join(app.getPath('userData'), 'library'), siteDir = path.join(__dirname, 'site');
+  for (const d of ['zim', 'maps', 'apps']) fs.mkdirSync(path.join(dataDir, d), { recursive: true });
+  reader = new Reader({ binDir: path.join(dataDir, 'reader'), zimDir: path.join(dataDir, 'zim') });
+  const env = process.env;
+  const modules = new Manager({
+    catalog: path.join(siteDir, 'catalog.json'), dataDir, onLibraryChange: () => reader.restart(),
+    kiwix: env.NORWINPREP_KIWIX_BASE || undefined, githubApi: env.NORWINPREP_API_BASE || undefined, githubDl: env.NORWINPREP_DL_BASE || undefined, protomaps: env.NORWINPREP_PROTOMAPS_BASE || undefined
+  });
+  share = new Share({
+    dataDir: app.getPath('userData'),
+    makeServer: () => createShare({ siteDir, mapsDir: path.join(dataDir, 'maps'), appsDir: path.join(dataDir, 'apps'), reader, getName: () => name, version: app.getVersion() })
+  });
+  reader.restart().catch(() => {});             // start the reader if a content pack is already installed
+  share.resume().catch(() => {});               // and resume sharing over Wi-Fi if it was on when the app last ran
   server = create({
-    siteDir: path.join(__dirname, 'site'), filesDir,
+    siteDir, filesDir, modules, mapsDir: path.join(dataDir, 'maps'), appsDir: path.join(dataDir, 'apps'), reader, share,
     getName: () => name, setName: (n) => { name = n; saveName(n); },
     version: app.getVersion(), platform: process.platform === 'win32' ? 'windows' : process.platform,
     arch: ARCH, packaging: detectPackaging(), update: makeUpdater()
@@ -143,6 +161,20 @@ async function selftest(port) {
   check(r.code === 400 || r.code === 404, 'path traversal refused');
   r = await request(port, 'GET', '/api/update/status');
   check(r.code === 200 && JSON.parse(r.body).state === 'idle', 'update status idle');
+  r = await request(port, 'GET', '/api/modules/catalog');
+  let cat = {}; try { cat = JSON.parse(r.body); } catch (e) { /* below */ }
+  check(r.code === 200 && Array.isArray(cat.modules) && cat.modules.length > 30 && cat.disk && cat.disk.free > 0, 'module store works on this device (' + (cat.modules || []).length + ' modules, no Pi needed)');
+  r = await request(port, 'POST', '/api/modules/install', { headers: { 'X-NorwinPrep': '1' }, body: JSON.stringify({ id: '../../x' }) });
+  check(r.code === 404, 'module install rejects an unknown id');
+  r = await request(port, 'POST', '/api/modules/install', { body: JSON.stringify({ id: 'water' }) });
+  check(r.code === 403, 'module install without the app header refused');
+  r = await request(port, 'GET', '/api/modules/catalog', { headers: { Host: 'evil.example:' + port } });
+  check(r.code === 403, 'module API refuses a foreign Host header');
+  r = await request(port, 'GET', '/api/share'); let sh = {}; try { sh = JSON.parse(r.body); } catch (e) { /* below */ }
+  check(r.code === 200 && typeof sh.supported === 'boolean', 'share status answers (supported=' + sh.supported + ')');
+  r = await request(port, 'GET', '/tiles/'); check(r.code === 200 && Array.isArray(JSON.parse(r.body)), 'map tile listing answers');
+  r = await request(port, 'GET', '/apps/'); check(r.code === 200 && /Apps/.test(r.body), 'hosted apps page answers');
+  r = await request(port, 'GET', '/wiki/'); check(r.code === 503, 'library says "not ready" until a content pack is installed');
   r = await request(port, 'GET', '/api/update/check');
   check(r.code === 502 && /Could not reach GitHub/.test(r.body), 'update check reports an unreachable GitHub cleanly');
   r = await request(port, 'POST', '/api/update/install', { headers: { 'X-NorwinPrep': '1' }, body: JSON.stringify({ tag: 'v1', asset: 'x' }) });
@@ -158,7 +190,7 @@ async function selftest(port) {
   return fails;
 }
 
-if (SELFTEST) process.env.NORWINPREP_API_BASE = 'http://127.0.0.1:1';   // never touch the real GitHub in tests
+if (SELFTEST) { for (const k of ['NORWINPREP_API_BASE', 'NORWINPREP_DL_BASE', 'NORWINPREP_KIWIX_BASE', 'NORWINPREP_PROTOMAPS_BASE']) process.env[k] = 'http://127.0.0.1:1'; }   // never touch the real internet in tests
 
 app.whenReady().then(async () => {
   const info = await startServer();
@@ -176,4 +208,8 @@ app.whenReady().then(async () => {
   }
 });
 app.on('window-all-closed', () => app.quit());
-app.on('quit', () => { try { server.stop(); } catch (e) { /* ignore */ } });
+let quitting = false;
+app.on('before-quit', (e) => {      // bring the hotspot down and stop the reader before exiting, so Wi-Fi comes back
+  if (quitting) return; quitting = true; e.preventDefault();
+  Promise.all([share ? share.shutdown().catch(() => {}) : null, reader ? reader.stop().catch(() => {}) : null]).then(() => { try { server.stop(); } catch (x) { /* ignore */ } app.exit(0); });
+});

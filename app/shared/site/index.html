@@ -169,6 +169,7 @@
     <button class="sq mono" data-t="content">Content</button>
     <button class="sq mono" data-t="maps">Maps</button>
     <button class="sq mono" data-t="app">Apps</button>
+    <button class="sq mono" data-t="tool">Tools</button>
   </div>
   <span class="sortlbl mono">Sort</span>
   <select id="sort" aria-label="Sort modules">
@@ -198,6 +199,8 @@
   var browse = false;     // inside an app with no device connected: show the bundled catalog, install disabled
   var offline = false;    // connected device could not be reached
   var IS_APP = false;     // served by an app's local instance (has the connections icon)
+  var localMgr = false;   // installs happen on THIS device (the app's own module manager; no PIN needed)
+  var devPlatform = '';   // windows / linux / darwin / android, when running inside an app
   function pinKey() { return 'norwinprep.pin' + (base ? '@' + base : ''); }
   var H = { 'X-NorwinPrep': '1' };
   var state = { mods: [], disk: null, type: 'all', sort: 'name', q: '', view: 'grid', sig: '', showHidden: false, pending: false, sizeTries: 0 };
@@ -286,7 +289,7 @@
     b.appendChild(bv); f.appendChild(b);
     return f;
   }
-  function typeLabel(t) { return t === 'app' ? 'App' : t === 'maps' ? 'Map' : 'Content'; }
+  function typeLabel(t) { return t === 'app' ? 'App' : t === 'maps' ? 'Map' : t === 'tool' ? 'Tool' : 'Content'; }
   function openHref(m) { return base + (m.type === 'maps' ? '/maps/' : m.type === 'app' ? '/apps/' : '/wiki/'); }
   function active(m) { return m.job && (m.job.state === 'queued' || m.job.state === 'running'); }
 
@@ -327,6 +330,7 @@
     });
   }
   function withPin(fn) {   // run fn(pin); if the saved PIN is wrong/missing, ask and retry once
+    if (localMgr) return Promise.resolve().then(function () { return fn(''); });   // your own device: no PIN
     var saved = store(pinKey());
     var go = function (pin) { return fn(pin); };
     var first = saved ? go(saved) : askPin().then(go);
@@ -338,7 +342,7 @@
 
   // ---------- actions ----------
   function needConnection() {
-    if (window.NPApp) window.NPApp.openConnections(browse ? 'Connect to a NorwinPrep device to install modules.' : 'The device could not be reached. Pick a connection.');
+    if (window.NPApp) window.NPApp.openConnections(browse ? 'Installing is not available on this device yet. You can manage another NorwinPrep device instead.' : 'The device could not be reached. Pick a connection.');
     else toast('This needs a NorwinPrep device.');
   }
   function startInstall(m) {
@@ -356,6 +360,8 @@
         });
         mb.appendChild(dl);
         var tooBig = i.bytes && i.bytes * 1.05 + 52428800 > i.free;
+        var rd = state.mods.filter(function (x) { return x.id === 'reader'; })[0];
+        if (m.type === 'content' && rd && !rd.installed && localMgr) mb.appendChild(el('div', 'note', 'The Content Reader (a small program that shows content packs) is installed first, automatically.'));
         if (tooBig) mb.appendChild(el('div', 'note bad', 'Not enough free space on this device for this download.'));
         else if (i.note) mb.appendChild(el('div', 'note', i.note));
         else mb.appendChild(el('div', 'note', 'Downloads need this device to have internet (for example Ethernet). The download is checked before it is installed.'));
@@ -408,13 +414,13 @@
       mb.appendChild(el('div', 'note', inst + ' of ' + state.mods.length + ' modules installed.'));
       var hn = hiddenCount();
       mb.appendChild(el('div', 'note', hn ? hn + ' module' + (hn === 1 ? ' is' : 's are') + ' hidden in this browser.' : 'No modules are hidden. Use "Hide" in a module\u2019s \u2026 menu to tidy the list.'));
-      mb.appendChild(el('div', 'note', store(pinKey()) ? 'This browser remembers your admin PIN.' : 'No admin PIN saved in this browser.'));
+      mb.appendChild(el('div', 'note', localMgr ? 'Modules install on this device, so no PIN is needed.' : store(pinKey()) ? 'This browser remembers your admin PIN.' : 'No admin PIN saved in this browser.'));
       mb.appendChild(el('div', 'note', 'In the NorwinPrep app: press Back (Android) or Ctrl+H (desktop) to return to the device list and change what opens at launch.'));
       md.appendChild(mb);
       var mf = el('div', 'mf');
       mf.appendChild(btn('Close', '', closeModal));
       if (hn) mf.appendChild(btn('Unhide all', '', function () { store(HID_KEY, null); closeModal(); render(); toast('All modules are visible again'); }));
-      if (store(pinKey())) mf.appendChild(btn('Forget PIN', 'warn', function () { store(pinKey(), null); closeModal(); toast('PIN forgotten'); }));
+      if (!localMgr && store(pinKey())) mf.appendChild(btn('Forget PIN', 'warn', function () { store(pinKey(), null); closeModal(); toast('PIN forgotten'); }));
       md.appendChild(mf);
     });
   }
@@ -452,6 +458,7 @@
     } else {
       if (m.job && m.job.state === 'error') act.appendChild(el('div', 'err', m.job.message));
       if (isHid) act.appendChild(btn('Unhide', 'solid', function () { setHidden(m.id, false); render(); }));
+      else if (m.installed && m.type === 'tool') { var tb = el('button', 'btn', 'Installed'); tb.type = 'button'; tb.disabled = true; act.appendChild(tb); }
       else if (m.installed) {
         var o = el('a', 'btn', 'Open'); o.href = openHref(m); act.appendChild(o);
         if (m.updateAvailable) act.appendChild(btn('Update', 'solid', function () { startInstall(m); }));
@@ -544,7 +551,7 @@
     var c = $('conn'); c.textContent = ''; c.className = 'connbar';
     if (!IS_APP || (!browse && !offline)) return;
     c.classList.add('show'); if (offline) c.classList.add('bad');
-    c.appendChild(el('div', 'grow', browse ? 'No NorwinPrep device is connected, so you are browsing the catalog. Connect to a device to install modules.' : "Can't reach " + connLabel() + '. Showing the catalog only.'));
+    c.appendChild(el('div', 'grow', browse ? "Installing isn't available in this app on this device yet, so you are browsing the catalog. You can still manage another NorwinPrep device from Connections." : "Can't reach " + connLabel() + '. Showing the catalog only.'));
     var b = el('button', 'sq mono', 'Connections'); b.type = 'button'; b.addEventListener('click', function () { window.NPApp.openConnections(); }); c.appendChild(b);
   }
   function failPage(e) {
@@ -557,7 +564,7 @@
   function loadStatic() {   // the catalog shipped inside the app: browse without a device
     return fetch('/catalog.json', { cache: 'no-store' }).then(function (r) { if (!r.ok) throw new Error('catalog missing'); return r.json(); }).then(function (c) {
       var before = state.sig;
-      state.mods = c.modules.map(function (m) { return { id: m.id, type: m.type, name: m.name, tagline: m.tagline, description: m.description, by: m.by, source: m.source, icon: m.icon, color: m.color, sizeClass: m.sizeClass, installed: false }; });
+      state.mods = c.modules.filter(function (m) { return (!devPlatform || !m.platforms || m.platforms.indexOf(devPlatform) >= 0) && (!IS_APP || !m.hosts || m.hosts.indexOf('app') >= 0); }).map(function (m) { return { id: m.id, type: m.type, name: m.name, tagline: m.tagline, description: m.description, by: m.by, source: m.source, icon: m.icon, color: m.color, sizeClass: m.sizeClass, installed: false }; });
       state.disk = null; state.pending = false;
       if (signature() !== before) render();
       document.body.setAttribute('data-loaded', '1'); showConn();
@@ -574,6 +581,7 @@
       schedulePoll();
     }).catch(function (e) {
       if (!IS_APP) return failPage(e);
+      if (localMgr) { browse = true; return loadStatic().catch(failPage); }   // this app has no module manager here (yet): browse only
       offline = true; return loadStatic().catch(failPage);
     });
   }
@@ -604,9 +612,10 @@
   // Shared with app-ui.js (the connections icon, connection picker and app updates), which only the apps load.
   window.NPStore = {
     ui: { openModal: openModal, closeModal: closeModal, el: el, btn: btn, toast: toast, human: human },
-    reload: function (b) { setBase(b); state.sig = ''; state.sizeTries = 0; return load(); }
+    reload: function (b) { setBase(b); state.sig = ''; state.sizeTries = 0; return load(); },
+    isLocal: function () { return localMgr; }
   };
-  function setBase(b) { if (b === null || b === undefined) { browse = true; base = ''; } else { browse = false; base = b; } offline = false; }
+  function setBase(b) { base = b || ''; browse = false; offline = false; localMgr = IS_APP && base === ''; }
   function loadScript(src) {
     return new Promise(function (res, rej) { var s = document.createElement('script'); s.src = src; s.onload = res; s.onerror = function () { rej(new Error('missing ' + src)); }; document.head.appendChild(s); });
   }
@@ -614,8 +623,7 @@
   // Who is serving this page? An app's local instance (mode "local") or a NorwinPrep device itself (mode "pi").
   fetch('/api/device', { cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : {}; }).catch(function () { return {}; }).then(function (d) {
     if (d && d.mode === 'local') {
-      IS_APP = true;
-      var m = $('main'); m.textContent = ''; m.appendChild(el('div', 'empty', 'Looking for your NorwinPrep device\u2026'));
+      IS_APP = true; devPlatform = d.platform || '';
       return loadScript('/app-ui.js').then(function () { return window.NPApp.start(); }).catch(function () { return null; }).then(setBase);
     }
     setBase('');

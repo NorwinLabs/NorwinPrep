@@ -34,6 +34,19 @@ disconnect you) and tells you how to start it later with `sudo /opt/norwinprep/s
 Change the Wi-Fi name/password in `/etc/norwinprep.conf` (defaults: `NorwinPrep` / `prepared123`), then rerun `setup-hotspot.sh`.
 Uninstall with `sudo /opt/norwinprep/scripts/uninstall.sh` (add `--purge` to delete downloaded content too).
 
+## Install on any device, share over Wi-Fi
+
+The desktop app (Windows, Linux x64/arm64/armv7l incl. Raspberry Pi) is its own installer: the Module Store installs content, maps and the
+Content Reader **onto the device you are using** (default connection: "This device"). No Pi and no PIN are needed. Connecting to a headless
+Pi (PIN-protected) is optional.
+
+- **Share over Wi-Fi** (connections icon): turns this device's Wi-Fi into a hotspot (`NorwinPrep`, random password shown in the app,
+  Linux/NetworkManager only; refused if Wi-Fi is your only internet link unless you force it) and starts a read-only server. Devices that join
+  open `http://10.42.0.1:<port>` and get a landing page with the library, maps and hosted apps. Nothing there can install or change anything.
+- Content packs are read through a Kiwix reader (`kiwix-tools`), downloaded on demand as the "Content Reader" tool.
+- Android currently has the browse-only store and in-app updates; on-device installs on Android are not implemented yet.
+- The headless Pi installer below (nginx + Kiwix + Python backend) remains for screenless Pis.
+
 ## Module Store (install content, maps and apps)
 
 Open **Module Store** from the portal (`http://10.42.0.1/modules/`), or tap **Modules** next to a NorwinPrep device in the desktop/Android app.

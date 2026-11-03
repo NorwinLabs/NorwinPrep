@@ -16,8 +16,60 @@ const MAX_UPLOAD = 500 * 1024 * 1024;
 
 const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
+const ASSET_FILE_RE = /^NorwinPrep-[A-Za-z0-9._-]+\.(apk|exe|AppImage|deb)$/;
+const TILE_RE = /^[A-Za-z0-9._-]+\.pmtiles$/;
+
+// Serve a file with HTTP Range support (PMTiles map archives are read with range requests).
+function serveRange(req, res, full, type, head, extra) {
+  let st;
+  try { st = fs.statSync(full); } catch (e) { st = null; }
+  if (!st || !st.isFile()) { res.writeHead(404, { 'Content-Type': 'text/plain' }); return res.end(head ? undefined : 'Not found'); }
+  const m = req.headers.range && /^bytes=(\d*)-(\d*)$/.exec(req.headers.range);
+  let start = 0, end = st.size - 1, code = 200;
+  if (m && (m[1] || m[2])) {
+    if (m[1] === '') start = Math.max(0, st.size - Number(m[2]));
+    else { start = Number(m[1]); if (m[2]) end = Math.min(Number(m[2]), st.size - 1); }
+    if (start > end || start >= st.size) { res.writeHead(416, { 'Content-Range': 'bytes */' + st.size }); return res.end(); }
+    code = 206;
+  }
+  const h = Object.assign({ 'Content-Type': type, 'Accept-Ranges': 'bytes', 'Content-Length': end - start + 1, 'Cache-Control': 'no-cache', 'X-Content-Type-Options': 'nosniff' }, extra || {});
+  if (code === 206) h['Content-Range'] = 'bytes ' + start + '-' + end + '/' + st.size;
+  res.writeHead(code, h);
+  if (head || st.size === 0) return res.end();
+  fs.createReadStream(full, { start, end }).pipe(res);
+}
+function listDir(dir, re) {
+  try { return fs.readdirSync(dir, { withFileTypes: true }).filter((d) => d.isFile() && re.test(d.name)).map((d) => ({ name: d.name, st: fs.statSync(path.join(dir, d.name)) })).sort((a, b) => a.name.localeCompare(b.name)); }
+  catch (e) { return []; }
+}
+const page = (title, body) => '<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>' + title + '</title>' +
+  '<body style="font:16px system-ui;background:#0d0f14;color:#e9ebf1;padding:1.2rem;max-width:760px;margin:0 auto">' + body;
+
+// Routes both servers share: map tiles, hosted app downloads, and the content reader. Returns true when it handled the request.
+function serveContent(req, res, p, head, o) {
+  const send = (code, type, body) => { res.writeHead(code, { 'Content-Type': type, 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff' }); res.end(head ? undefined : body); };
+  if (p === '/tiles' || p === '/tiles/') {            // same shape as nginx's JSON listing on the Pi, so the map viewer works unchanged
+    send(200, 'application/json; charset=utf-8', JSON.stringify(listDir(o.mapsDir, TILE_RE).map((f) => ({ name: f.name, type: 'file', size: f.st.size, mtime: new Date(f.st.mtimeMs).toUTCString() }))));
+    return true;
+  }
+  if (p.startsWith('/tiles/')) { const n = p.slice(7); if (!TILE_RE.test(n)) send(400, 'text/plain', 'Bad file name'); else serveRange(req, res, path.join(o.mapsDir, n), 'application/octet-stream', head); return true; }
+  if (p === '/apps' || p === '/apps/') {
+    const rows = listDir(o.appsDir, ASSET_FILE_RE).map((f) => '<li style="margin:.5rem 0"><a style="color:#4aa3ff" href="/apps/' + encodeURIComponent(f.name) + '">' + esc(f.name) + '</a> <span style="color:#8b92a3">' + (f.st.size / 1048576).toFixed(1) + ' MB</span></li>').join('');
+    send(200, 'text/html; charset=utf-8', page('Apps', '<p><a style="color:#4aa3ff" href="/">&larr; Back</a></p><h1>Apps</h1><p style="color:#8b92a3">Install NorwinPrep on your own device from here.</p><ul>' + (rows || '<li>No apps are installed on this device yet.</li>') + '</ul>'));
+    return true;
+  }
+  if (p.startsWith('/apps/')) { const n = p.slice(6); if (!ASSET_FILE_RE.test(n)) send(400, 'text/plain', 'Bad file name'); else serveRange(req, res, path.join(o.appsDir, n), 'application/octet-stream', head, { 'Content-Disposition': 'attachment; filename="' + n + '"' }); return true; }
+  if (p === '/wiki') { res.writeHead(302, { Location: '/wiki/' }); res.end(); return true; }
+  if (p.startsWith('/wiki/')) {
+    if (o.reader && o.reader.ready()) o.reader.proxy(req, res);
+    else send(503, 'text/html; charset=utf-8', page('Library not ready', '<p><a style="color:#4aa3ff" href="/">&larr; Back</a></p><h1>The library is not ready</h1><p style="color:#8b92a3">Install a content pack from the Module Store (the reader comes with it), then try again.</p>'));
+    return true;
+  }
+  return false;
+}
+
 function create(opts) {
-  // opts: siteDir, filesDir, getName(), setName(n), version, platform
+  // opts: siteDir, filesDir, getName(), setName(n), version, platform, modules (Manager), mapsDir, appsDir, reader, share
   let port = 0;
   const origins = () => ['http://127.0.0.1:' + port, 'http://localhost:' + port];
   const hostOk = (h) => origins().some((o) => o === 'http://' + h);
@@ -25,7 +77,7 @@ function create(opts) {
   const deviceInfo = () => ({
     name: opts.getName(), mode: 'local', platform: opts.platform, version: opts.version,
     address: 'http://127.0.0.1:' + port, filesDir: opts.filesDir,
-    arch: opts.arch || '', packaging: opts.packaging || ''
+    arch: opts.arch || '', packaging: opts.packaging || '', canShare: !!opts.share, hasModules: !!opts.modules
   });
 
   const server = http.createServer((req, res) => {
@@ -66,6 +118,34 @@ function create(opts) {
       });
       return;
     }
+
+    // ---- module store: the manager installs into this device's own library, no PIN needed (it is your own app) ----
+    if (p === '/api/modules' || p.startsWith('/api/modules/')) {
+      if (!opts.modules) return json(404, { error: 'modules not available' });
+      const route = p.slice('/api/modules'.length) || '/', q = new URL(req.url, 'http://x').searchParams;
+      const run = (body) => opts.modules.handle(req.method, route, q, body).then((r) => json(r.code, r.body), () => json(500, { error: 'Server error' }));
+      if (!writes) return void run(null);
+      let body = '';
+      req.on('data', (c) => { body += c; if (body.length > 4096) req.destroy(); });
+      req.on('end', () => { let b; try { b = body ? JSON.parse(body) : {}; } catch (e) { return json(400, { error: 'invalid JSON' }); } run(b); });
+      return;
+    }
+
+    // ---- share over Wi-Fi (start / stop the hotspot and the read-only content server) ----
+    if (p === '/api/share') {
+      if (!opts.share) return json(200, { supported: false });
+      if (!writes) return void opts.share.status().then((r) => json(200, r), () => json(500, { error: 'Server error' }));
+      let body = '';
+      req.on('data', (c) => { body += c; if (body.length > 1024) req.destroy(); });
+      req.on('end', () => {
+        let b; try { b = JSON.parse(body || '{}'); } catch (e) { return json(400, { error: 'invalid JSON' }); }
+        opts.share.set(!!b.on, !!b.force).then((r) => json(200, r), (e) => json(e.code || 500, { error: e.message || 'Server error' }));
+      });
+      return;
+    }
+
+    // ---- content the viewers need: map tiles, hosted apps, the reader ----
+    if (!writes && serveContent(req, res, p, head, { mapsDir: opts.mapsDir, appsDir: opts.appsDir, reader: opts.reader })) return;
 
     // ---- app updates (check GitHub, install the matching build) ----
     if (p === '/api/update/check' && !writes) {
@@ -148,7 +228,7 @@ function create(opts) {
 
     // ---- static site ----
     if (writes) return send(405, 'text/plain', 'Method not allowed');
-    const rel = p === '/' ? 'index.html' : p.slice(1);
+    const rel = p === '/' ? 'index.html' : p.endsWith('/') ? p.slice(1) + 'index.html' : p.slice(1);
     const full = path.join(opts.siteDir, rel);
     if (!full.startsWith(opts.siteDir + path.sep)) return send(400, 'text/plain', 'Bad request');
     fs.readFile(full, (err, data) => {
@@ -172,4 +252,47 @@ function create(opts) {
   };
 }
 
-module.exports = { create, NAME_RE, FILE_RE };
+// Read-only server for devices that join this device's Wi-Fi: the portal, the map viewer, library, hosted apps. No writes, no store API.
+function createShare(opts) {
+  // opts: siteDir, mapsDir, appsDir, reader, getName(), version
+  let port = 0;
+  const server = http.createServer((req, res) => {
+    const head = req.method === 'HEAD';
+    const send = (code, type, body) => { res.writeHead(code, { 'Content-Type': type, 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff' }); res.end(head ? undefined : body); };
+    if (req.method !== 'GET' && !head) return send(405, 'text/plain', 'Method not allowed');
+    let p; try { p = decodeURIComponent(new URL(req.url, 'http://x').pathname); } catch (e) { return send(400, 'text/plain', 'Bad request'); }
+    if (p.includes('\0') || p.includes('\\') || p.split('/').includes('..')) return send(400, 'text/plain', 'Bad request');
+    if (p === '/api/device') {
+      res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store', 'Access-Control-Allow-Origin': '*' });
+      return res.end(head ? undefined : JSON.stringify({ name: opts.getName(), mode: 'pi', version: opts.version, share: true, modules: false, address: 'http://' + (req.headers.host || ''),
+        hasLibrary: !!(opts.reader && opts.reader.ready()), hasMaps: listDir(opts.mapsDir, TILE_RE).length > 0, hasApps: listDir(opts.appsDir, ASSET_FILE_RE).length > 0 }));
+    }
+    if (serveContent(req, res, p, head, opts)) return;
+    // only the portal and the map viewer are public; the store, settings and updates are not
+    const rel = p === '/' ? 'portal.html' : p.startsWith('/maps/') ? (p.endsWith('/') ? p.slice(1) + 'index.html' : p.slice(1)) : null;
+    if (!rel) return send(404, 'text/plain', 'Not found');
+    const full = path.join(opts.siteDir, rel);
+    if (!full.startsWith(opts.siteDir + path.sep)) return send(400, 'text/plain', 'Bad request');
+    fs.readFile(full, (err, data) => err ? send(404, 'text/plain', 'Not found') : send(200, TYPES[path.extname(full).toLowerCase()] || 'application/octet-stream', data));
+  });
+  return {
+    // try each port in turn (80 needs privileges; fall back to 8080, then any free port)
+    start(ports, host) {
+      return new Promise((resolve, reject) => {
+        const list = ports.slice();
+        const next = () => {
+          if (!list.length) return reject(new Error('no free port'));
+          const pt = list.shift();
+          const onErr = (e) => { server.removeListener('listening', onOk); if (e.code === 'EADDRINUSE' || e.code === 'EACCES') next(); else reject(e); };
+          const onOk = () => { server.removeListener('error', onErr); port = server.address().port; resolve(port); };
+          server.once('error', onErr); server.once('listening', onOk); server.listen(pt, host || '0.0.0.0');
+        };
+        next();
+      });
+    },
+    stop() { return new Promise((r) => { try { server.close(() => r()); server.closeAllConnections && server.closeAllConnections(); } catch (e) { r(); } }); },
+    get port() { return port; }
+  };
+}
+
+module.exports = { create, createShare, NAME_RE, FILE_RE };

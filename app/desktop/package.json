@@ -13,8 +13,11 @@
     "selftest": "npm run prepare-assets && electron . --no-sandbox --selftest"
   },
   "devDependencies": {
+    "@protomaps/basemaps": "5.0.0",
     "electron": "^33.2.1",
-    "electron-builder": "^25.1.8"
+    "electron-builder": "^25.1.8",
+    "maplibre-gl": "4.7.1",
+    "pmtiles": "3.2.1"
   },
   "build": {
     "appId": "com.norwinlabs.norwinprep",
@@ -23,6 +26,9 @@
       "main.js",
       "local-server.js",
       "updater.js",
+      "modules-manager.js",
+      "reader.js",
+      "share.js",
       "site/**",
       "icon.png"
     ],

@@ -2,6 +2,29 @@
  "version": 1,
  "modules": [
   {
+   "id": "reader",
+   "type": "tool",
+   "name": "Content Reader",
+   "tagline": "Shows content packs inside the app",
+   "description": "The Kiwix reader (kiwix-serve) that opens content packs inside NorwinPrep. It is installed automatically with your first content pack.",
+   "by": "KIWIX",
+   "source": "https://github.com/kiwix/kiwix-tools",
+   "icon": "chip",
+   "color": "#7c6bd9",
+   "sizeClass": "s",
+   "install": {
+    "kind": "kiwix-tools"
+   },
+   "platforms": [
+    "windows",
+    "linux",
+    "darwin"
+   ],
+   "hosts": [
+    "app"
+   ]
+  },
+  {
    "id": "medicine",
    "type": "content",
    "name": "Medicine Guides",
@@ -16,7 +39,13 @@
     "subdir": "other",
     "prefix": "zimgit-medicine_en"
    },
-   "sizeClass": "s"
+   "sizeClass": "s",
+   "platforms": [
+    "windows",
+    "linux",
+    "darwin",
+    "android"
+   ]
   },
   {
    "id": "water",
@@ -33,7 +62,13 @@
     "subdir": "other",
     "prefix": "zimgit-water_en"
    },
-   "sizeClass": "s"
+   "sizeClass": "s",
+   "platforms": [
+    "windows",
+    "linux",
+    "darwin",
+    "android"
+   ]
   },
   {
    "id": "post-disaster",
@@ -50,7 +85,13 @@
     "subdir": "other",
     "prefix": "zimgit-post-disaster_en"
    },
-   "sizeClass": "s"
+   "sizeClass": "s",
+   "platforms": [
+    "windows",
+    "linux",
+    "darwin",
+    "android"
+   ]
   },
   {
    "id": "food",
@@ -67,7 +108,13 @@
     "subdir": "other",
     "prefix": "zimgit-food-preparation_en"
    },
-   "sizeClass": "s"
+   "sizeClass": "s",
+   "platforms": [
+    "windows",
+    "linux",
+    "darwin",
+    "android"
+   ]
   },
   {
    "id": "wikem",
@@ -84,7 +131,13 @@
     "subdir": "wikem",
     "prefix": "wikem_en_all_maxi"
    },
-   "sizeClass": "m"
+   "sizeClass": "m",
+   "platforms": [
+    "windows",
+    "linux",
+    "darwin",
+    "android"
+   ]
   },
   {
    "id": "survival-se",
@@ -101,7 +154,13 @@
     "subdir": "stack_exchange",
     "prefix": "survival.stackexchange.com_en_all"
    },
-   "sizeClass": "s"
+   "sizeClass": "s",
+   "platforms": [
+    "windows",
+    "linux",
+    "darwin",
+    "android"
+   ]
   },
   {
    "id": "outdoors-se",
@@ -118,7 +177,13 @@
     "subdir": "stack_exchange",
     "prefix": "outdoors.stackexchange.com_en_all"
    },
-   "sizeClass": "s"
+   "sizeClass": "s",
+   "platforms": [
+    "windows",
+    "linux",
+    "darwin",
+    "android"
+   ]
   },
   {
    "id": "health-se",
@@ -135,7 +200,13 @@
     "subdir": "stack_exchange",
     "prefix": "health.stackexchange.com_en_all"
    },
-   "sizeClass": "s"
+   "sizeClass": "s",
+   "platforms": [
+    "windows",
+    "linux",
+    "darwin",
+    "android"
+   ]
   },
   {
    "id": "appropedia",
@@ -152,7 +223,13 @@
     "subdir": "other",
     "prefix": "appropedia_en_all_maxi"
    },
-   "sizeClass": "m"
+   "sizeClass": "m",
+   "platforms": [
+    "windows",
+    "linux",
+    "darwin",
+    "android"
+   ]
   },
   {
    "id": "wikipedia-top",
@@ -169,7 +246,13 @@
     "subdir": "wikipedia",
     "prefix": "wikipedia_en_top_nopic"
    },
-   "sizeClass": "m"
+   "sizeClass": "m",
+   "platforms": [
+    "windows",
+    "linux",
+    "darwin",
+    "android"
+   ]
   },
   {
    "id": "wikipedia-top-maxi",
@@ -186,7 +269,13 @@
     "subdir": "wikipedia",
     "prefix": "wikipedia_en_top_maxi"
    },
-   "sizeClass": "m"
+   "sizeClass": "m",
+   "platforms": [
+    "windows",
+    "linux",
+    "darwin",
+    "android"
+   ]
   },
   {
    "id": "wikihow",
@@ -203,7 +292,13 @@
     "subdir": "wikihow",
     "prefix": "wikihow_en_maxi"
    },
-   "sizeClass": "m"
+   "sizeClass": "m",
+   "platforms": [
+    "windows",
+    "linux",
+    "darwin",
+    "android"
+   ]
   },
   {
    "id": "ifixit",
@@ -220,7 +315,13 @@
     "subdir": "ifixit",
     "prefix": "ifixit_en_all"
    },
-   "sizeClass": "m"
+   "sizeClass": "m",
+   "platforms": [
+    "windows",
+    "linux",
+    "darwin",
+    "android"
+   ]
   },
   {
    "id": "mdwiki",
@@ -237,7 +338,13 @@
     "subdir": "mdwiki",
     "prefix": "mdwiki_en_all_maxi"
    },
-   "sizeClass": "m"
+   "sizeClass": "m",
+   "platforms": [
+    "windows",
+    "linux",
+    "darwin",
+    "android"
+   ]
   },
   {
    "id": "diy",
@@ -254,7 +361,13 @@
     "subdir": "stack_exchange",
     "prefix": "diy.stackexchange.com_en_all"
    },
-   "sizeClass": "m"
+   "sizeClass": "m",
+   "platforms": [
+    "windows",
+    "linux",
+    "darwin",
+    "android"
+   ]
   },
   {
    "id": "gardening",
@@ -271,7 +384,13 @@
     "subdir": "stack_exchange",
     "prefix": "gardening.stackexchange.com_en_all"
    },
-   "sizeClass": "s"
+   "sizeClass": "s",
+   "platforms": [
+    "windows",
+    "linux",
+    "darwin",
+    "android"
+   ]
   },
   {
    "id": "cooking",
@@ -288,7 +407,13 @@
     "subdir": "stack_exchange",
     "prefix": "cooking.stackexchange.com_en_all"
    },
-   "sizeClass": "s"
+   "sizeClass": "s",
+   "platforms": [
+    "windows",
+    "linux",
+    "darwin",
+    "android"
+   ]
   },
   {
    "id": "mechanics",
@@ -305,7 +430,13 @@
     "subdir": "stack_exchange",
     "prefix": "mechanics.stackexchange.com_en_all"
    },
-   "sizeClass": "s"
+   "sizeClass": "s",
+   "platforms": [
+    "windows",
+    "linux",
+    "darwin",
+    "android"
+   ]
   },
   {
    "id": "electronics",
@@ -322,7 +453,13 @@
     "subdir": "stack_exchange",
     "prefix": "electronics.stackexchange.com_en_all"
    },
-   "sizeClass": "m"
+   "sizeClass": "m",
+   "platforms": [
+    "windows",
+    "linux",
+    "darwin",
+    "android"
+   ]
   },
   {
    "id": "sustainability",
@@ -339,7 +476,13 @@
     "subdir": "stack_exchange",
     "prefix": "sustainability.stackexchange.com_en_all"
    },
-   "sizeClass": "s"
+   "sizeClass": "s",
+   "platforms": [
+    "windows",
+    "linux",
+    "darwin",
+    "android"
+   ]
   },
   {
    "id": "wikibooks",
@@ -356,7 +499,13 @@
     "subdir": "wikibooks",
     "prefix": "wikibooks_en_all_maxi"
    },
-   "sizeClass": "m"
+   "sizeClass": "m",
+   "platforms": [
+    "windows",
+    "linux",
+    "darwin",
+    "android"
+   ]
   },
   {
    "id": "wikivoyage",
@@ -373,7 +522,13 @@
     "subdir": "wikivoyage",
     "prefix": "wikivoyage_en_all_maxi"
    },
-   "sizeClass": "m"
+   "sizeClass": "m",
+   "platforms": [
+    "windows",
+    "linux",
+    "darwin",
+    "android"
+   ]
   },
   {
    "id": "wikiversity",
@@ -390,7 +545,13 @@
     "subdir": "wikiversity",
     "prefix": "wikiversity_en_all_maxi"
    },
-   "sizeClass": "m"
+   "sizeClass": "m",
+   "platforms": [
+    "windows",
+    "linux",
+    "darwin",
+    "android"
+   ]
   },
   {
    "id": "wiktionary",
@@ -407,7 +568,13 @@
     "subdir": "wiktionary",
     "prefix": "wiktionary_en_all_maxi"
    },
-   "sizeClass": "m"
+   "sizeClass": "m",
+   "platforms": [
+    "windows",
+    "linux",
+    "darwin",
+    "android"
+   ]
   },
   {
    "id": "gutenberg",
@@ -424,7 +591,13 @@
     "subdir": "gutenberg",
     "prefix": "gutenberg_en_all"
    },
-   "sizeClass": "l"
+   "sizeClass": "l",
+   "platforms": [
+    "windows",
+    "linux",
+    "darwin",
+    "android"
+   ]
   },
   {
    "id": "phet",
@@ -441,7 +614,13 @@
     "subdir": "phet",
     "prefix": "phet_en_all"
    },
-   "sizeClass": "s"
+   "sizeClass": "s",
+   "platforms": [
+    "windows",
+    "linux",
+    "darwin",
+    "android"
+   ]
   },
   {
    "id": "libretexts-med",
@@ -458,7 +637,13 @@
     "subdir": "libretexts",
     "prefix": "libretexts.org_en_med"
    },
-   "sizeClass": "m"
+   "sizeClass": "m",
+   "platforms": [
+    "windows",
+    "linux",
+    "darwin",
+    "android"
+   ]
   },
   {
    "id": "libretexts-chem",
@@ -475,7 +660,13 @@
     "subdir": "libretexts",
     "prefix": "libretexts.org_en_chem"
    },
-   "sizeClass": "m"
+   "sizeClass": "m",
+   "platforms": [
+    "windows",
+    "linux",
+    "darwin",
+    "android"
+   ]
   },
   {
    "id": "libretexts-eng",
@@ -492,7 +683,13 @@
     "subdir": "libretexts",
     "prefix": "libretexts.org_en_eng"
    },
-   "sizeClass": "m"
+   "sizeClass": "m",
+   "platforms": [
+    "windows",
+    "linux",
+    "darwin",
+    "android"
+   ]
   },
   {
    "id": "wikipedia-nopic",
@@ -509,7 +706,13 @@
     "subdir": "wikipedia",
     "prefix": "wikipedia_en_all_nopic"
    },
-   "sizeClass": "l"
+   "sizeClass": "l",
+   "platforms": [
+    "windows",
+    "linux",
+    "darwin",
+    "android"
+   ]
   },
   {
    "id": "wikipedia-full",
@@ -526,7 +729,13 @@
     "subdir": "wikipedia",
     "prefix": "wikipedia_en_all_maxi"
    },
-   "sizeClass": "xl"
+   "sizeClass": "xl",
+   "platforms": [
+    "windows",
+    "linux",
+    "darwin",
+    "android"
+   ]
   },
   {
    "id": "wikisource",
@@ -543,7 +752,13 @@
     "subdir": "wikisource",
     "prefix": "wikisource_en_all_maxi"
    },
-   "sizeClass": "m"
+   "sizeClass": "m",
+   "platforms": [
+    "windows",
+    "linux",
+    "darwin",
+    "android"
+   ]
   },
   {
    "id": "khan",
@@ -560,7 +775,13 @@
     "subdir": "khan_academy",
     "prefix": "khan_academy_en_all"
    },
-   "sizeClass": "l"
+   "sizeClass": "l",
+   "platforms": [
+    "windows",
+    "linux",
+    "darwin",
+    "android"
+   ]
   },
   {
    "id": "wikinews",
@@ -577,7 +798,13 @@
     "subdir": "wikinews",
     "prefix": "wikinews_en_all_maxi"
    },
-   "sizeClass": "s"
+   "sizeClass": "s",
+   "platforms": [
+    "windows",
+    "linux",
+    "darwin",
+    "android"
+   ]
   },
   {
    "id": "map-world",
@@ -594,7 +821,12 @@
     "file": "world.pmtiles",
     "maxzoom": 7
    },
-   "sizeClass": "s"
+   "sizeClass": "s",
+   "platforms": [
+    "windows",
+    "linux",
+    "darwin"
+   ]
   },
   {
    "id": "map-usa",
@@ -612,7 +844,12 @@
     "maxzoom": 15,
     "bbox": "-125.0,24.3,-66.9,49.5"
    },
-   "sizeClass": "l"
+   "sizeClass": "l",
+   "platforms": [
+    "windows",
+    "linux",
+    "darwin"
+   ]
   },
   {
    "id": "map-canada",
@@ -630,7 +867,12 @@
     "maxzoom": 14,
     "bbox": "-141.0,41.6,-52.6,70.0"
    },
-   "sizeClass": "l"
+   "sizeClass": "l",
+   "platforms": [
+    "windows",
+    "linux",
+    "darwin"
+   ]
   },
   {
    "id": "map-europe",
@@ -648,7 +890,12 @@
     "maxzoom": 14,
     "bbox": "-25.0,34.0,45.0,72.0"
    },
-   "sizeClass": "l"
+   "sizeClass": "l",
+   "platforms": [
+    "windows",
+    "linux",
+    "darwin"
+   ]
   },
   {
    "id": "map-uk",
@@ -666,7 +913,12 @@
     "maxzoom": 15,
     "bbox": "-8.7,49.8,2.0,60.9"
    },
-   "sizeClass": "m"
+   "sizeClass": "m",
+   "platforms": [
+    "windows",
+    "linux",
+    "darwin"
+   ]
   },
   {
    "id": "map-australia",
@@ -684,7 +936,12 @@
     "maxzoom": 14,
     "bbox": "112.0,-44.0,154.0,-10.0"
    },
-   "sizeClass": "m"
+   "sizeClass": "m",
+   "platforms": [
+    "windows",
+    "linux",
+    "darwin"
+   ]
   },
   {
    "id": "app-android",
@@ -702,7 +959,12 @@
      "android.apk"
     ]
    },
-   "sizeClass": "s"
+   "sizeClass": "s",
+   "platforms": [
+    "windows",
+    "linux",
+    "darwin"
+   ]
   },
   {
    "id": "app-windows",
@@ -721,7 +983,12 @@
      "portable-x64.exe"
     ]
    },
-   "sizeClass": "s"
+   "sizeClass": "s",
+   "platforms": [
+    "windows",
+    "linux",
+    "darwin"
+   ]
   },
   {
    "id": "app-pi64",
@@ -740,7 +1007,12 @@
      "linux-arm64.deb"
     ]
    },
-   "sizeClass": "s"
+   "sizeClass": "s",
+   "platforms": [
+    "windows",
+    "linux",
+    "darwin"
+   ]
   },
   {
    "id": "app-pi32",
@@ -759,7 +1031,12 @@
      "linux-armv7l.deb"
     ]
    },
-   "sizeClass": "s"
+   "sizeClass": "s",
+   "platforms": [
+    "windows",
+    "linux",
+    "darwin"
+   ]
   },
   {
    "id": "app-linux",
@@ -778,7 +1055,12 @@
      "linux-amd64.deb"
     ]
    },
-   "sizeClass": "s"
+   "sizeClass": "s",
+   "platforms": [
+    "windows",
+    "linux",
+    "darwin"
+   ]
   }
  ]
 }

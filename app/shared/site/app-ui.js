@@ -27,7 +27,7 @@
   ];
   function customList() { try { return JSON.parse(store(CUSTOM) || '[]'); } catch (e) { return []; } }
   function saveCustom(l) { store(CUSTOM, JSON.stringify(l.slice(0, 6))); }
-  var current = { url: null, auto: true };     // url null = this app only (browse the catalog)
+  var current = { url: null };     // url null = THIS device (the default); otherwise another NorwinPrep device whose modules we manage
   var results = {}, panelBox = null, panelMsg = '';
 
   function options() {
@@ -46,7 +46,7 @@
       .then(function (r) { if (!r.ok) throw 0; return r.json(); })
       .then(function (j) {
         if (!j || typeof j.name !== 'string' || typeof j.version !== 'string') throw 0;
-        return { up: true, verified: true, name: j.name.slice(0, 60), version: j.version.slice(0, 20), modules: j.modules === true };
+        return { up: true, verified: true, name: j.name.slice(0, 60), version: j.version.slice(0, 20), modules: j.modules === true, share: j.share === true };
       })
       .catch(function () {
         return fetch(url + '/', { mode: 'no-cors', cache: 'no-store', signal: t(2500) })
@@ -60,11 +60,11 @@
 
   function nameOf(url) { var r = results[url]; return r && r.verified && r.name ? r.name : ''; }
   function label() {
-    if (!current.url) return 'this app';
+    if (!current.url) return 'this device';
     var o = optionFor(current.url), n = nameOf(current.url);
     return (n ? n + ' — ' : '') + (o ? o.label : current.url);
   }
-  function statusText(r) { return !r ? 'Checking…' : r.up ? (r.verified ? 'Online' : 'Answers, but not identified as NorwinPrep') : 'Not reachable'; }
+  function statusText(r) { return !r ? 'Checking\u2026' : r.up ? (r.verified ? (r.share ? 'Sharing its library over Wi-Fi' : 'Online') : 'Answers, but not identified as NorwinPrep') : 'Not reachable'; }
 
   // ---- header icon with a status dot ----
   var cdot = el('span', 'cdot');
@@ -76,13 +76,13 @@
   connBtn.addEventListener('click', function () { openConnections(); });
   function updateDot() {
     var r = current.url ? results[current.url] : null;
-    cdot.className = 'cdot' + (!current.url || !r ? '' : r.up ? (r.verified ? ' on' : ' warn') : ' off');
+    cdot.className = 'cdot' + (!current.url ? ' on' : !r ? '' : r.up ? (r.verified ? ' on' : ' warn') : ' off');
   }
 
   // ---- the picker ----
   function choose(url) {
-    store(CONN, url || 'local'); current = { url: url, auto: false };
-    U.closeModal(); updateDot(); S.reload(url);
+    store(CONN, url || 'local'); current = { url: url };
+    U.closeModal(); updateDot(); S.reload(url === null ? '' : url);
   }
   function optionRow(title, desc, r, url, o) {
     var row = el('div', 'opt'), dot = el('span', 'dot' + (url === null ? ' on' : r ? (r.up ? (r.verified ? ' on' : ' warn') : ' off') : ''));
@@ -90,7 +90,9 @@
     row.appendChild(dot); row.appendChild(mid);
     var active = (url === null && current.url === null) || (url !== null && url === current.url);
     if (active) row.appendChild(el('span', 'tagon', 'Active'));
-    else {
+    else if (r && r.verified && r.share) {           // another device sharing its library over Wi-Fi: read-only, so open it
+      var op = el('a', 'btn sm solid', 'Open'); op.href = url + '/'; row.appendChild(op);
+    } else {
       var usable = url === null || (r && r.up && (!r.verified || r.modules));
       var b = el('button', 'btn sm solid', 'Use'); b.type = 'button'; b.disabled = !usable;
       if (!usable) b.title = r && r.verified && !r.modules ? 'This device needs an update to offer the Module Store' : 'Not reachable right now';
@@ -100,13 +102,41 @@
       var rm = el('button', 'btn sm', 'Remove'); rm.type = 'button';
       rm.addEventListener('click', function () {
         saveCustom(customList().filter(function (u) { return u !== o.url; }));
-        if (current.url === o.url) { store(CONN, 'local'); current = { url: null, auto: false }; S.reload(null); updateDot(); }
+        if (current.url === o.url) { store(CONN, 'local'); current = { url: null }; S.reload(''); updateDot(); }
         refreshUi();
       });
       row.appendChild(rm);
     }
     return row;
   }
+  // ---- share over Wi-Fi (this device becomes a hotspot that serves its library, read-only, to devices that join) ----
+  var shareState = null, shareMsg = '', dev0 = null;
+  function loadShare() { return jf('/api/share', { cache: 'no-store' }).then(function (j) { shareState = j; refreshUi(); }).catch(function () { shareState = { supported: false }; }); }
+  function setShare(on, force) {
+    shareMsg = on ? 'Starting the hotspot…' : 'Stopping…'; refreshUi();
+    return jf('/api/share', { method: 'POST', headers: Object.assign({ 'Content-Type': 'application/json' }, H), body: JSON.stringify({ on: on, force: !!force }) })
+      .then(function (j) { shareState = j; shareMsg = ''; refreshUi(); })
+      .catch(function (e) { shareMsg = e.message; shareState = Object.assign({}, shareState); shareState.needForce = /online through its Wi-Fi/.test(e.message); refreshUi(); });
+  }
+  function shareSection() {
+    var st = shareState;
+    if (!st || (!st.supported && !(dev0 && dev0.platform === 'linux'))) return null;
+    var box = el('div', 'sumbox'); box.appendChild(el('div', 'mono', 'Share over Wi-Fi'));
+    if (!st.supported) { box.appendChild(el('div', 'note', st.reason || 'Not available on this device.')); return box; }
+    box.appendChild(el('div', 'note', 'Turn this device into a Wi-Fi hotspot. Other devices join it and read your library, maps and apps, with no internet needed.'));
+    if (st.active) {
+      var dl = el('dl', 'kv'); dl.style.marginTop = '10px';
+      [['Wi-Fi name', st.ssid], ['Password', st.password], ['Then open', st.url]].forEach(function (r) { dl.appendChild(el('dt', null, r[0])); var dd = el('dd', null, String(r[1])); dd.style.fontFamily = 'var(--mono)'; dl.appendChild(dd); });
+      box.appendChild(dl);
+    }
+    if (shareMsg) box.appendChild(el('div', 'note bad', shareMsg));
+    var row = el('div'); row.style.cssText = 'display:flex;gap:8px;margin-top:10px';
+    var b = el('button', 'btn sm ' + (st.active ? '' : 'solid'), st.active ? 'Stop sharing' : 'Start sharing'); b.type = 'button';
+    b.addEventListener('click', function () { setShare(!st.active, false); }); row.appendChild(b);
+    if (st.needForce && !st.active) { var f = el('button', 'btn sm warn', 'Share anyway'); f.type = 'button'; f.addEventListener('click', function () { setShare(true, true); }); row.appendChild(f); }
+    box.appendChild(row); return box;
+  }
+
   function buildPanel(box) {
     box.textContent = '';
     if (panelMsg) box.appendChild(el('div', 'note bad', panelMsg));
@@ -116,21 +146,24 @@
     if (current.url) {
       var o = optionFor(current.url), b = el('b', null, o ? o.label : current.url);
       line.appendChild(b);
-      line.appendChild(document.createTextNode(nameOf(current.url) ? '  ·  ' + nameOf(current.url) + (r.version ? ' (v' + r.version + ')' : '') : ''));
+      line.appendChild(document.createTextNode(nameOf(current.url) ? '  ·  ' + nameOf(current.url) + (r && r.version ? ' (v' + r.version + ')' : '') : ''));
       sum.appendChild(line);
-      sum.appendChild(el('div', 'note', statusText(r) + '  ·  ' + current.url + (current.auto ? '  ·  found automatically' : '')));
-      sum.appendChild(el('div', 'note', 'Modules you install or remove are changed on this device.'));
+      sum.appendChild(el('div', 'note', statusText(r) + '  ·  ' + current.url));
+      sum.appendChild(el('div', 'note', 'Modules you install or remove are changed on that device (it asks for its admin PIN).'));
     } else {
-      line.appendChild(el('b', null, 'This app only'));
+      line.appendChild(el('b', null, 'This device'));
       sum.appendChild(line);
-      sum.appendChild(el('div', 'note', 'No NorwinPrep device is connected. You can browse the catalog; connect a device below to install modules.'));
+      sum.appendChild(el('div', 'note', 'Modules install on this device and open inside the app. Once installed they work with no internet.'));
     }
     box.appendChild(sum);
+    var sh = shareSection(); if (sh) box.appendChild(sh);
 
-    box.appendChild(optionRow('This app only', 'Browse the module catalog without a device', null, null));
+    box.appendChild(optionRow('This device', 'Install and open modules here', null, null));
+    var cap = el('div', 'mono', 'Other NorwinPrep devices'); cap.style.cssText = 'color:var(--mut);margin:14px 0 0'; box.appendChild(cap);
+    box.appendChild(el('div', 'note', 'Optional. Manage another device’s modules, or open a library it shares over Wi-Fi.'));
     options().forEach(function (o) {
       var r2 = results[o.url], n = nameOf(o.url);
-      box.appendChild(optionRow((n ? n + ' — ' : '') + o.label, (o.custom ? 'Custom · ' : '') + statusText(r2) + '  ·  ' + o.url + (r2 && r2.verified && !r2.modules ? '  ·  needs an update for the Module Store' : ''), r2, o.url, o));
+      box.appendChild(optionRow((n ? n + ' — ' : '') + o.label, (o.custom ? 'Custom · ' : '') + statusText(r2) + '  ·  ' + o.url + (r2 && r2.verified && !r2.modules && !r2.share ? '  ·  needs an update for the Module Store' : ''), r2, o.url, o));
     });
 
     var form = el('form', 'addr'), inp = el('input'); inp.type = 'text'; inp.placeholder = 'Other address, e.g. 192.168.1.20 or localhost:8080';
@@ -143,12 +176,13 @@
     box.appendChild(form);
 
     var foot = el('div', 'note'); foot.style.marginTop = '14px';
-    if (current.url && r && r.up) { var a = el('a', null, 'Open this device’s portal'); a.href = current.url + '/'; a.style.color = 'var(--blue)'; foot.appendChild(a); foot.appendChild(document.createTextNode('   ·   ')); }
+    if (current.url && r && r.up) { var a = el('a', null, 'Open that device’s portal'); a.href = current.url + '/'; a.style.color = 'var(--blue)'; foot.appendChild(a); foot.appendChild(document.createTextNode('   ·   ')); }
     var d = el('a', null, 'This device: name and files'); d.href = '/device.html'; d.style.color = 'var(--blue)'; foot.appendChild(d);
     box.appendChild(foot);
   }
   function openConnections(msg) {
     panelMsg = msg || '';          // kept so the picker's re-draws (after each scan result) still show it
+    shareMsg = ''; loadShare();
     U.openModal(function (m) {
       m.appendChild(el('h3', null, 'Connection'));
       var mb = el('div', 'mb'); panelBox = el('div'); mb.appendChild(panelBox); m.appendChild(mb);
@@ -159,19 +193,14 @@
   }
   function refreshUi() { updateDot(); if (panelBox && panelBox.isConnected) buildPanel(panelBox); }
 
-  // Which connection to use at start-up: the one you chose, otherwise the first device that offers the Module Store.
+  // Which connection to use at start-up: the one you chose; otherwise THIS device (modules install here, no Pi needed).
   function start() {
-    var saved = store(CONN), unreachable = params.get('unreachable'), p;
-    if (saved === 'local') { current = { url: null, auto: false }; scan(); p = Promise.resolve(null); }
-    else if (saved) { current = { url: saved, auto: false }; scan(); p = Promise.resolve(saved); }
-    else p = scan().then(function () {
-      var hit = options().filter(function (o) { var r = results[o.url]; return r && r.verified && r.modules; })[0];
-      current = { url: hit ? hit.url : null, auto: true }; updateDot(); return current.url;
-    });
-    return p.then(function (url) {
-      if (unreachable) setTimeout(function () { openConnections('Could not reach ' + unreachable + '. Pick a connection.'); }, 300);
-      return url;
-    });
+    var saved = store(CONN), unreachable = params.get('unreachable');
+    jf('/api/device', { cache: 'no-store' }).then(function (d) { dev0 = d; }).catch(function () {});
+    current = saved && saved !== 'local' ? { url: saved } : { url: null };
+    scan(); updateDot();
+    if (unreachable) setTimeout(function () { openConnections('Could not reach ' + unreachable + '. Pick a connection.'); }, 300);
+    return Promise.resolve(current.url === null ? '' : current.url);
   }
   window.NPApp = { start: start, openConnections: openConnections, label: label };
 

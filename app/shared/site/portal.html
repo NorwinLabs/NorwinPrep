@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>NorwinPrep</title>
+<style>
+  :root{--bg:#0d0f14;--card:#12151c;--line:#272b36;--text:#e9ebf1;--mut:#8b92a3;--blue:#4aa3ff;--green:#58d68d;
+    --mono:ui-monospace,"SF Mono",SFMono-Regular,Menlo,Consolas,monospace}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+  header{text-align:center;padding:2.2rem 1rem 1rem}
+  h1{margin:0;font-size:1.9rem;letter-spacing:-.01em}
+  .sub{margin:.3rem 0 0;color:var(--mut)}
+  .tag{display:inline-block;margin-top:.8rem;font-family:var(--mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--green);border:1px solid #1f5a3a;border-radius:999px;padding:3px 12px}
+  main{max-width:760px;margin:0 auto;padding:1rem;display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
+  a.card{display:block;background:var(--card);border:1px solid var(--line);border-radius:18px;padding:1.2rem;color:inherit;text-decoration:none}
+  a.card:hover{border-color:var(--blue)}
+  a.card h2{margin:0 0 .25rem;font-size:1.15rem}
+  a.card p{margin:0;color:var(--mut);font-size:.92rem}
+  .off{opacity:.45;pointer-events:none}
+  .empty{grid-column:1/-1;text-align:center;color:var(--mut);padding:1.5rem}
+  footer{text-align:center;color:var(--mut);font-size:.82rem;padding:1.5rem 1rem 2.5rem}
+</style>
+</head>
+<body>
+<header>
+  <h1 id="name">NorwinPrep</h1>
+  <p class="sub">Library, maps and apps, shared over Wi-Fi. No internet needed.</p>
+  <span class="tag">Read-only</span>
+</header>
+<main id="cards"></main>
+<footer>You are connected to this device&rsquo;s Wi-Fi. Nothing here needs the internet.</footer>
+<script>
+(function () {
+  'use strict';
+  function card(href, title, desc, on) {
+    var a = document.createElement('a'); a.className = 'card' + (on ? '' : ' off'); a.href = on ? href : '#';
+    var h = document.createElement('h2'); h.textContent = title; var p = document.createElement('p'); p.textContent = desc;
+    a.appendChild(h); a.appendChild(p); return a;
+  }
+  fetch('/api/device', { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (d) {
+    if (typeof d.name === 'string') { document.getElementById('name').textContent = d.name.slice(0, 60); document.title = d.name.slice(0, 60) + ' – NorwinPrep'; }
+    var box = document.getElementById('cards'); box.textContent = '';
+    box.appendChild(card('/wiki/', 'Library', 'Encyclopedias, medical and survival guides, how-tos.', !!d.hasLibrary));
+    box.appendChild(card('/maps/', 'Maps', 'Offline street maps. Zoom and pan; no signal needed.', !!d.hasMaps));
+    box.appendChild(card('/apps/', 'Apps', 'Install NorwinPrep on your own phone or computer.', !!d.hasApps));
+    if (!d.hasLibrary && !d.hasMaps && !d.hasApps) { var e = document.createElement('div'); e.className = 'empty'; e.textContent = 'Nothing has been added to this device yet.'; box.appendChild(e); }
+  }).catch(function () { document.getElementById('cards').textContent = 'Could not load.'; });
+})();
+</script>
+</body>
+</html>

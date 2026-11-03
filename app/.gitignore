@@ -7,3 +7,4 @@ dist-test*/
 .gradle/
 android/**/build/
 local.properties
+.cache/

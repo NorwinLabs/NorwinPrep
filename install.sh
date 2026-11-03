@@ -54,6 +54,8 @@ install -d /opt/norwinprep/web/modules
 install -m 644 "$SRC/app/shared/site/index.html" /opt/norwinprep/web/modules/index.html
 install -m 755 "$SRC/uninstall.sh" /opt/norwinprep/scripts/uninstall.sh
 cp -r "$SRC"/web/. /opt/norwinprep/web/
+install -d /opt/norwinprep/web/maps
+install -m 644 "$SRC/app/shared/site/maps/index.html" /opt/norwinprep/web/maps/index.html
 # Version = the release tag this checkout is (get.sh / update.sh check out tags); otherwise "<MAJOR.MINOR>-dev"
 APP_VERSION="$(git -C "$SRC" describe --tags --exact-match 2>/dev/null | sed 's/^v//' || true)"
 [ -n "$APP_VERSION" ] || APP_VERSION="$(cat "$SRC/VERSION")-dev"
