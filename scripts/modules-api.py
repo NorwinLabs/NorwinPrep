@@ -290,23 +290,30 @@ class Manager:
         ok = True
         try:
             zims = [m for m in self.mods if m["install"]["kind"] == "zim"]
-            for sub in sorted({m["install"]["subdir"] for m in zims}):
-                self.kiwix_versions(next(m for m in zims if m["install"]["subdir"] == sub), force=True)   # offline -> URLError -> give up
+            subs = sorted({m["install"]["subdir"] for m in zims})
+            failed = 0
+            for sub in subs:
+                try:
+                    self.kiwix_versions(next(m for m in zims if m["install"]["subdir"] == sub), force=True)
+                except Exception:
+                    failed += 1                  # one bad listing must not hide the others
+            if subs and failed == len(subs):
+                raise urllib.error.URLError("no library listing reachable")   # offline -> give up, back off
 
             def one(m):
-                vs = self.kiwix_versions(m)
-                if not vs:
-                    return
-                i = m["install"]
                 try:
+                    vs = self.kiwix_versions(m)
+                    if not vs:
+                        return
+                    i = m["install"]
                     self.head_size("%s/zim/%s/%s_%s.zim" % (self.cfg["kiwix"], i["subdir"], i["prefix"], vs[-1]))
-                except urllib.error.HTTPError:
-                    pass
+                except Exception:
+                    pass                         # this one module just shows its estimate
             with concurrent.futures.ThreadPoolExecutor(max_workers=4) as ex:
                 list(ex.map(one, zims))
             try:
                 self.latest_release(force=True)
-            except urllib.error.HTTPError:
+            except Exception:
                 pass
         except Exception:
             ok = False
@@ -696,7 +703,9 @@ def make_handler(mgr):
                 route = path[len("/api/modules"):] or "/"
                 if method == "GET":
                     if route == "/catalog":
-                        return self.send_json(200, {"modules": mgr.catalog(), "disk": mgr.disk(), "sizesPending": mgr.sizes_pending()})
+                        mgr.kick_sizes()
+                        pending = mgr.sizes_pending()        # read BEFORE building the list: if it says "done", the list below has every size
+                        return self.send_json(200, {"modules": mgr.catalog(), "disk": mgr.disk(), "sizesPending": pending})
                     if route == "/status":
                         return self.send_json(200, mgr.status())
                     if route == "/info":
