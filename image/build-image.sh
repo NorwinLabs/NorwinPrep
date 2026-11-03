@@ -15,5 +15,13 @@ mkdir -p pi-gen/stage-norwin/00-install/repo
 # pi-gen's docker build gets no working DNS in BuildKit on GitHub runners; build on the host network
 sed -i 's|${DOCKER} build --build-arg|${DOCKER} build --network=host --build-arg|' pi-gen/build-docker.sh
 grep -q -- '--network=host' pi-gen/build-docker.sh || { echo "failed to patch build-docker.sh" >&2; exit 1; }
+# The 32-bit i386 host image pi-gen picks on x86_64 can fail DNS on some runners (the 64-bit image is fine).
+# The target image is still armhf; this only changes the build container.
+echo "--- DNS check for pi-gen host image ---"
+docker run --rm --network=host i386/debian:bookworm cat /etc/resolv.conf || true
+if ! docker run --rm --network=host i386/debian:bookworm getent hosts deb.debian.org; then
+  echo "i386 base image cannot resolve DNS here; using debian:bookworm as the pi-gen host image"
+  sed -i 's|BASE_IMAGE=i386/debian:bookworm|BASE_IMAGE=debian:bookworm|' pi-gen/build-docker.sh
+fi
 (cd pi-gen && ./build-docker.sh)
 echo "Image in image/pi-gen/deploy/"
