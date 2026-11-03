@@ -330,6 +330,7 @@
       var inst = state.mods.filter(function (m) { return m.installed; }).length;
       mb.appendChild(el('div', 'note', inst + ' of ' + state.mods.length + ' modules installed.'));
       mb.appendChild(el('div', 'note', store('norwinprep.pin') ? 'This browser remembers your admin PIN.' : 'No admin PIN saved in this browser.'));
+      mb.appendChild(el('div', 'note', 'In the NorwinPrep app: press Back (Android) or Ctrl+H (desktop) to return to the device list and change what opens at launch.'));
       md.appendChild(mb);
       var mf = el('div', 'mf');
       mf.appendChild(btn('Close', '', closeModal));

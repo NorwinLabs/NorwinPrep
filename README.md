@@ -68,6 +68,10 @@ The app opens into a home page that shows the **device name** and lets you pick 
 | `norwinprep.local` | `http://norwinprep.local` | a Pi on your network |
 | Custom | anything you type | any other address; saved for next time |
 
+**Open the Module Store at launch:** on a verified NorwinPrep device that offers it, tick **Open Modules on launch**. From then on the app opens straight to
+that device's Module Store (after the same cancelable 3-second countdown; if the device is offline you simply stay on this list).
+**Make default** opens the device's portal instead. Press **Back** (Android) or **Ctrl+H** (desktop) any time to return to this list.
+
 Each option shows whether it is online and the device name it reports. Anything that merely answers but doesn't identify itself
 as NorwinPrep is flagged as such. **Make default** opens an option automatically on launch after a 3-second countdown you can cancel;
 **Home** (Ctrl+H on desktop, Back on Android) always returns to the options.

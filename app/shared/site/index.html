@@ -253,17 +253,21 @@
   }
 
   var defaultUrl = function () { return store('norwinprep.default'); };
+  // what to open on that device at launch: '' = its portal, '/modules/' = its Module Store
+  var defaultPath = function () { return store('norwinprep.defaultPath') === '/modules/' ? '/modules/' : ''; };
+  function setDefault(url, path) { store('norwinprep.default', url); store('norwinprep.defaultPath', url && path ? path : null); }
   var results = {};
   function render() {
     var box = $('options'); box.textContent = '';
     allOptions().forEach(function (o) {
       var r = results[o.url], isHere = o.url === localOrigin, def = defaultUrl() === o.url;
+      var defMods = def && defaultPath() === '/modules/', defHome = def && !defMods;
       var card = document.createElement('div'); card.className = 'card row';
       var dot = document.createElement('span'); dot.className = 'dot ' + (isHere ? 'on' : r ? (r.up ? (r.verified ? 'on' : 'warn') : 'off') : '');
       var mid = document.createElement('div'); mid.className = 'grow';
       var title = document.createElement('div'); title.className = 'title';
       title.textContent = (r && r.verified && r.name && !isHere ? r.name + ' — ' : '') + o.label;
-      if (def) { var b = document.createElement('span'); b.className = 'badge'; b.textContent = 'default'; title.appendChild(b); }
+      if (def) { var b = document.createElement('span'); b.className = 'badge'; b.textContent = defMods ? 'default · Module Store' : 'default'; title.appendChild(b); }
       var desc = document.createElement('div'); desc.className = 'desc';
       desc.textContent = isHere ? o.desc + ' (you are here)' : (o.custom ? 'Custom · ' : '') + (r ? (r.up ? (r.verified ? 'Online' : 'Answers, but not identified as NorwinPrep') : 'Not reachable') + ' · ' : 'Checking… · ') + o.url;
       mid.appendChild(title); mid.appendChild(desc);
@@ -275,15 +279,19 @@
         if (r && r.verified && r.modules) {   // this device offers the Module Store
           var mods = document.createElement('a'); mods.className = 'btn ghost'; mods.textContent = 'Modules'; mods.href = o.url + '/modules/';
           mods.title = 'Install content, maps and apps on this device'; card.appendChild(mods);
+          var launch = document.createElement('button'); launch.className = 'ghost launchmods';   // open the Module Store at every launch
+          launch.textContent = defMods ? 'Stop opening Modules' : 'Open Modules on launch';
+          launch.onclick = function () { if (defMods) setDefault(null); else setDefault(o.url, '/modules/'); render(); };
+          card.appendChild(launch);
         }
       }
       var star = document.createElement('button'); star.className = 'ghost';
-      star.textContent = def ? 'Clear default' : 'Make default';
-      star.onclick = function () { store('norwinprep.default', def ? null : o.url); render(); };
+      star.textContent = defHome ? 'Clear default' : 'Make default';
+      star.onclick = function () { if (defHome) setDefault(null); else setDefault(o.url, ''); render(); };
       card.appendChild(star);
       if (o.custom) {
         var rm = document.createElement('button'); rm.className = 'ghost'; rm.textContent = 'Remove';
-        rm.onclick = function () { saveCustom(customList().filter(function (u) { return u !== o.url; })); if (def) store('norwinprep.default', null); render(); };
+        rm.onclick = function () { saveCustom(customList().filter(function (u) { return u !== o.url; })); if (def) setDefault(null); render(); };
         card.appendChild(rm);
       }
       box.appendChild(card);
@@ -304,15 +312,16 @@
 
   // ---- auto-open the default (cancelable, so you can never get locked out) ----
   function autoOpen() {
-    var d = defaultUrl();
+    var d = defaultUrl(), path = defaultPath();
     if (!d || params.has('stay') || params.has('unreachable') || d === localOrigin) return;
+    var target = d + (path || '/');
     probe(d).then(function (r) {
       if (!r.up) return;
       var left = 3, timer;
       $('banner').style.display = 'flex';
-      function txt() { $('bannerText').textContent = 'Opening ' + d + ' in ' + left + 's…'; }
+      function txt() { $('bannerText').textContent = 'Opening ' + (path ? 'the Module Store on ' + d : d) + ' in ' + left + 's…'; }
       txt();
-      timer = setInterval(function () { left--; if (left <= 0) { clearInterval(timer); location.href = d + '/'; } else txt(); }, 1000);
+      timer = setInterval(function () { left--; if (left <= 0) { clearInterval(timer); location.replace(target); } else txt(); }, 1000);
       $('bannerCancel').onclick = function () { clearInterval(timer); $('banner').style.display = 'none'; };
     });
   }
