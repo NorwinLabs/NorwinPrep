@@ -23,5 +23,12 @@ if ! docker run --rm --network=host i386/debian:bookworm getent hosts deb.debian
   echo "i386 base image cannot resolve DNS here; using debian:bookworm as the pi-gen host image"
   sed -i 's|BASE_IMAGE=i386/debian:bookworm|BASE_IMAGE=debian:bookworm|' pi-gen/build-docker.sh
 fi
+# pi-gen's host-side check wants a host qemu-user-static package; newer runners don't ship one.
+# The workflow registers ARM binfmt with docker/setup-qemu-action instead, so skip that check.
+# (Locally, install qemu-user-static as pi-gen's README says and remove this line if you prefer.)
+if [ -n "${CI:-}" ]; then
+  sed -i 's|^if \[\[ "${binfmt_misc_required}" == "1" \]\]; then|if false; then # patched: qemu registered by CI|' pi-gen/build-docker.sh
+  grep -q 'patched: qemu registered by CI' pi-gen/build-docker.sh || { echo "failed to patch qemu check" >&2; exit 1; }
+fi
 (cd pi-gen && ./build-docker.sh)
 echo "Image in image/pi-gen/deploy/"
