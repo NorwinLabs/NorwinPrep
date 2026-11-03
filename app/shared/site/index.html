@@ -245,12 +245,12 @@
   }
   function fmtDate(sec) { return new Date(sec * 1000).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }); }
   function toast(msg) { var t = $('toast'); t.textContent = msg; t.style.display = 'block'; clearTimeout(toast.t); toast.t = setTimeout(function () { t.style.display = 'none'; }, 4200); }
-  function api(method, path, body, pin) {
+  function api(method, path, body, pin, toLocal) {
     var h = Object.assign({}, H);
     if (pin) h['X-NorwinPrep-PIN'] = pin;
     var opt = { method: method, headers: h, cache: 'no-store' };
     if (body !== undefined) { opt.body = JSON.stringify(body); h['Content-Type'] = 'application/json'; }
-    return fetch(base + API + path, opt).then(function (r) {
+    return fetch((toLocal ? '' : base) + API + path, opt).then(function (r) {
       return r.json().catch(function () { return {}; }).then(function (j) { if (!r.ok) { var e = new Error(j.error || ('Request failed (' + r.status + ')')); e.status = r.status; throw e; } return j; });
     });
   }
@@ -347,31 +347,60 @@
   }
   function startInstall(m) {
     if (browse || offline) return needConnection();
+    var canBoth = IS_APP && base !== '';          // connected to another device: the app can still install onto this one
+    var toLocal = false;
     openModal(function (md) {
       md.appendChild(el('h3', null, (m.installed ? 'Update ' : 'Install ') + m.name));
-      var mb = el('div', 'mb'); mb.appendChild(el('div', 'note', 'Checking size and free space…')); md.appendChild(mb);
-      var mf = el('div', 'mf'); md.appendChild(mf);
-      mf.appendChild(btn('Cancel', '', closeModal));
-      api('GET', '/info?id=' + encodeURIComponent(m.id)).then(function (i) {
-        mb.textContent = '';
-        var dl = el('dl', 'kv');
-        [['File', i.file], ['Version', i.version], ['Download', i.bytes ? human(i.bytes) : 'size unknown'], ['Free space', human(i.free)]].forEach(function (r) {
-          dl.appendChild(el('dt', null, r[0])); dl.appendChild(el('dd', null, String(r[1])));
+      var tg = el('div', 'row'); tg.style.cssText = 'display:flex;gap:8px;margin:0 0 10px';
+      var mb = el('div', 'mb');
+      var mf = el('div', 'mf');
+      var tbtns = [];
+      if (canBoth) {
+        md.appendChild(el('div', 'note', 'Install on:'));
+        [[false, 'Connected device'], [true, 'This device']].forEach(function (o) {
+          var b = btn(o[1], o[0] === toLocal ? 'solid' : '', function () { toLocal = o[0]; tbtns.forEach(function (x) { x.b.className = 'btn' + (x.v === toLocal ? ' solid' : ''); }); draw(); });
+          b.setAttribute('data-target', o[0] ? 'local' : 'remote'); tbtns.push({ b: b, v: o[0] }); tg.appendChild(b);
         });
-        mb.appendChild(dl);
-        var tooBig = i.bytes && i.bytes * 1.05 + 52428800 > i.free;
-        var rd = state.mods.filter(function (x) { return x.id === 'reader'; })[0];
-        if (m.type === 'content' && rd && !rd.installed && localMgr) mb.appendChild(el('div', 'note', 'The Content Reader (a small program that shows content packs) is installed first, automatically.'));
-        if (tooBig) mb.appendChild(el('div', 'note bad', 'Not enough free space on this device for this download.'));
-        else if (i.note) mb.appendChild(el('div', 'note', i.note));
-        else mb.appendChild(el('div', 'note', 'Downloads need this device to have internet (for example Ethernet). The download is checked before it is installed.'));
-        var go = btn(m.installed ? 'Update' : 'Install', 'solid', function () {
-          closeModal();
-          withPin(function (pin) { return api('POST', '/install', { id: m.id }, pin); })
-            .then(function () { load(); }).catch(function (e) { if (e.message !== 'cancelled') toast(e.message); });
+        md.appendChild(tg);
+      }
+      md.appendChild(mb); md.appendChild(mf);
+      function draw() {
+        mb.textContent = ''; mf.textContent = '';
+        mb.appendChild(el('div', 'note', 'Checking size and free space…'));
+        mf.appendChild(btn('Cancel', '', closeModal));
+        var mine = toLocal;
+        api('GET', '/info?id=' + encodeURIComponent(m.id), undefined, undefined, mine).then(function (i) {
+          if (mine !== toLocal) return;
+          mb.textContent = '';
+          var dl = el('dl', 'kv');
+          [['File', i.file], ['Version', i.version], ['Download', i.bytes ? human(i.bytes) : 'size unknown'], ['Free space', human(i.free)]].forEach(function (r) {
+            dl.appendChild(el('dt', null, r[0])); dl.appendChild(el('dd', null, String(r[1])));
+          });
+          mb.appendChild(dl);
+          var tooBig = i.bytes && i.bytes * 1.05 + 52428800 > i.free;
+          var rd = state.mods.filter(function (x) { return x.id === 'reader'; })[0];
+          var onThis = localMgr || mine;
+          if (m.type === 'content' && onThis && (mine || (rd && !rd.installed))) mb.appendChild(el('div', 'note', 'The Content Reader (a small program that shows content packs) is installed first if it is missing.'));
+          if (tooBig) mb.appendChild(el('div', 'note bad', 'Not enough free space on ' + (mine ? 'this device' : 'the device') + ' for this download.'));
+          else if (i.note) mb.appendChild(el('div', 'note', i.note));
+          else mb.appendChild(el('div', 'note', 'Downloads need ' + (mine ? 'this device' : 'the device') + ' to have internet. The download is checked before it is installed.'));
+          var go = btn(m.installed && !mine ? 'Update' : 'Install', 'solid', function () {
+            closeModal();
+            var run = mine ? Promise.resolve().then(function () { return api('POST', '/install', { id: m.id }, '', true); })
+                           : withPin(function (pin) { return api('POST', '/install', { id: m.id }, pin); });
+            run.then(function () {
+              if (mine) toast('Installing ' + m.name + ' on this device. Switch the connection to "This device" to watch it.');
+              load();
+            }).catch(function (e) { if (e.message !== 'cancelled') toast(e.message); });
+          });
+          go.disabled = !!tooBig; mf.appendChild(go);
+        }).catch(function (e) {
+          if (mine !== toLocal) return;
+          mb.textContent = '';
+          mb.appendChild(el('div', 'bad', mine ? 'This device cannot install modules (' + e.message + ').' : e.message));
         });
-        go.disabled = !!tooBig; mf.appendChild(go);
-      }).catch(function (e) { mb.textContent = ''; mb.appendChild(el('div', 'bad', e.message)); });
+      }
+      draw();
     });
   }
   function startRemove(m) {
