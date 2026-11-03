@@ -117,7 +117,16 @@ jobs:
         with:
           distribution: temurin
           java-version: 17
-      - uses: android-actions/setup-android@v3
+      - name: Prepare Android SDK (preinstalled on the runner)
+        run: |
+          set -e
+          SDK="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}}"
+          echo "ANDROID_HOME=$SDK" >> "$GITHUB_ENV"
+          SM="$(ls "$SDK"/cmdline-tools/*/bin/sdkmanager | sort -V | tail -1)"
+          echo "sdkmanager: $SM"
+          yes | "$SM" --sdk_root="$SDK" --licenses > /dev/null || true
+          "$SM" --sdk_root="$SDK" "platforms;android-34" "build-tools;34.0.0"
+          ls "$SDK/platforms" "$SDK/build-tools"
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: 8.10.2
@@ -151,7 +160,8 @@ jobs:
   # ---------- Release on every push to main ----------
   release:
     needs: [linux, windows, android]
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    # Linux and Windows are required; Android failing is reported but doesn't block the other platforms
+    if: ${{ !cancelled() && github.ref == 'refs/heads/main' && github.event_name == 'push' && needs.linux.result == 'success' && needs.windows.result == 'success' }}
     runs-on: ubuntu-latest
     env:
       GH_TOKEN: ${{ github.token }}
@@ -166,7 +176,7 @@ jobs:
           set -e
           cd release
           ls -lh
-          [ "$(ls *.apk | wc -l)" -eq 1 ]
+          if [ "$(ls *.apk 2>/dev/null | wc -l)" -eq 1 ]; then echo "APK: present"; else echo "::warning::Android APK is missing from this release (android job: ${{ needs.android.result }})"; fi
           [ "$(ls *.exe | wc -l)" -eq 2 ]
           [ "$(ls *.AppImage | wc -l)" -eq 3 ]
           [ "$(ls *.deb | wc -l)" -eq 3 ]
