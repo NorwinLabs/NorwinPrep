@@ -8,6 +8,7 @@
   :root{
     --bg:#0d0f14; --panel:#12151c; --line:#272b36; --line2:#363c4b; --text:#e9ebf1; --mut:#8b92a3;
     --blue:#4aa3ff; --red:#ff5a6e; --green:#58d68d; --amber:#f0b84a;
+    --r-lg:20px; --r:16px; --r-md:12px; --r-sm:10px; --pill:999px;
     --mono:ui-monospace,"SF Mono",SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
     --sans:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
   }
@@ -18,94 +19,103 @@
   .mono{font-family:var(--mono);letter-spacing:.18em;text-transform:uppercase;font-size:11px}
 
   /* ---------- top bar ---------- */
-  header{height:44px;display:flex;align-items:stretch;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--bg);z-index:20}
-  .brand{display:flex;align-items:center;padding:0 18px;text-decoration:none;font-weight:800;font-size:18px;letter-spacing:.1em}
-  .brand i{font-style:normal;margin-right:8px;display:inline-block;width:16px;height:16px;border:2px solid #fff;transform:rotate(45deg) scale(.85)}
-  .sub{display:flex;align-items:center;padding:0 18px;border-left:1px solid var(--line);color:var(--mut);letter-spacing:.28em}
+  header{height:48px;display:flex;align-items:center;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--bg);z-index:20;padding:0 8px 0 0}
+  .brand{display:flex;align-items:center;padding:0 18px;text-decoration:none;font-weight:800;font-size:18px;letter-spacing:.1em;height:100%}
+  .brand i{font-style:normal;margin-right:8px;display:inline-block;width:16px;height:16px;border:2px solid #fff;border-radius:5px;transform:rotate(45deg) scale(.85)}
+  .sub{display:flex;align-items:center;padding:0 18px;border-left:1px solid var(--line);color:var(--mut);letter-spacing:.28em;height:24px}
   .spacer{flex:1}
-  .iconbtn{width:48px;border:0;border-left:1px solid var(--line);background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--mut)}
-  .iconbtn:hover{color:#fff;background:#171b24}
+  .iconbtn{position:relative;width:40px;height:34px;margin-left:4px;border:1px solid transparent;border-radius:var(--r-sm);background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--mut)}
+  .iconbtn:hover{color:#fff;background:#1a1f2a;border-color:var(--line2)}
 
   /* ---------- toolbar ---------- */
   .toolbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;padding:16px}
-  .sq{height:34px;min-width:34px;border:1px solid var(--line2);background:transparent;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;padding:0 12px}
+  .sq{height:36px;min-width:36px;border:1px solid var(--line2);border-radius:var(--r-sm);background:transparent;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:0 12px}
   .sq:hover{border-color:#6b7488}
   .sq.on{background:#fff;color:#0d0f14;border-color:#fff}
   .sq svg{width:16px;height:16px}
-  .chips{display:flex;gap:0}
-  .chips .sq{margin-left:-1px;letter-spacing:.14em}
+  .chips{display:flex;gap:3px;padding:3px;border:1px solid var(--line2);border-radius:var(--r-md);background:#10131a}
+  .chips .sq{border:0;border-radius:9px;height:28px;min-width:0;padding:0 13px;letter-spacing:.14em}
+  .chips .sq:hover{background:#1a1f2a}
+  .chips .sq.on:hover{background:#fff}
   .sortlbl{color:var(--mut);margin-left:auto}
-  select,input[type=search],input[type=password],input[type=text]{height:34px;background:var(--panel);border:1px solid var(--line2);padding:0 12px;border-radius:0;outline:none}
+  select,input[type=search],input[type=password],input[type=text]{height:36px;background:var(--panel);border:1px solid var(--line2);padding:0 14px;border-radius:var(--r-sm);outline:none}
   select{min-width:150px}
   input[type=search]{width:min(210px,100%)}
-  select:focus,input:focus,.sq:focus-visible,button:focus-visible,a:focus-visible{outline:2px solid var(--blue);outline-offset:1px}
+  select:focus,input:focus,.sq:focus-visible,button:focus-visible,a:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
   .spin svg{animation:spin 1s linear infinite}
   @keyframes spin{to{transform:rotate(360deg)}}
 
-  main{padding:0 16px 56px}
-  .section{margin:22px 0 10px;color:var(--mut)}
+  main{padding:0 16px 64px}
+  .section{margin:24px 0 12px;color:var(--mut)}
   .section b{color:var(--text);font-weight:600}
 
-  /* ---------- grid of cards (shared borders, like a table) ---------- */
-  .grid{display:grid;grid-template-columns:repeat(auto-fill,376px);justify-content:start;padding:0 1px 1px 0}
-  .card{border:1px solid var(--line);margin:0 -1px -1px 0;background:var(--bg);display:flex;flex-direction:column;min-height:316px;position:relative}
-  .top{display:flex;justify-content:space-between;align-items:center;padding:0 20px;height:40px;border-bottom:1px solid var(--line)}
+  /* ---------- cards ---------- */
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,376px);gap:16px;justify-content:start}
+  .card{border:1px solid var(--line);border-radius:var(--r);background:#0f1218;display:flex;flex-direction:column;min-height:340px;position:relative}
+  .card.dim{opacity:.6}
+  .top{display:flex;justify-content:space-between;align-items:center;padding:0 20px;height:42px;border-bottom:1px solid var(--line)}
   .ver{color:var(--blue)} .ver.upd{color:var(--red)}
-  .src{color:var(--mut);text-decoration:none} .src:hover{color:#fff}
+  .src{color:var(--mut);text-decoration:none;border-radius:6px} .src:hover{color:#fff}
   .body{padding:18px 20px 20px;display:flex;flex-direction:column;flex:1;min-width:0}
   .head{display:flex;gap:16px;align-items:center}
-  .icon{width:56px;height:56px;border-radius:13px;flex:none;display:flex;align-items:center;justify-content:center;box-shadow:inset 0 0 0 1px #ffffff22,0 4px 14px #0008}
+  .icon{width:56px;height:56px;border-radius:15px;flex:none;display:flex;align-items:center;justify-content:center;box-shadow:inset 0 0 0 1px #ffffff22,0 4px 14px #0008}
   .icon svg{width:30px;height:30px;stroke:#fff;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
   .titles{min-width:0}
   .title{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:22px;font-weight:700;line-height:1.15;letter-spacing:-.01em}
   .title .n2{opacity:.95}
-  .by{font-family:var(--mono);font-size:10px;letter-spacing:.14em;color:var(--blue);border:1px solid #2a4a73;background:#10233b55;padding:2px 7px;text-transform:uppercase;font-weight:500}
+  .by{font-family:var(--mono);font-size:10px;letter-spacing:.14em;color:var(--blue);border:1px solid #2a4a73;background:#10233b55;padding:2px 9px;border-radius:var(--pill);text-transform:uppercase;font-weight:500}
   .tag{color:var(--mut);margin-top:3px;font-size:14.5px}
-  .avail{margin-top:18px}
-  .pill{font-family:var(--mono);font-size:10px;letter-spacing:.14em;color:var(--blue);border:1px solid #2a4a73;background:#10233b55;padding:3px 8px;text-transform:uppercase;display:inline-block}
+  .avail{margin-top:16px}
+  .pill{font-family:var(--mono);font-size:10px;letter-spacing:.14em;color:var(--blue);border:1px solid #2a4a73;background:#10233b55;padding:3px 10px;border-radius:var(--pill);text-transform:uppercase;display:inline-block}
   .pill.warn{color:var(--red);border-color:#7a2a36;background:#3b101855}
-  .desc{margin:16px 0 0;font-size:14.5px;color:#d3d7e0}
-  .meta{margin-top:12px;font-size:13px;color:var(--mut)}
-  .actions{margin-top:auto;padding-top:22px;display:flex;gap:10px;align-items:stretch}
-  .btn{flex:1;height:36px;border:1px solid var(--line2);background:transparent;cursor:pointer;font-family:var(--mono);font-size:11px;letter-spacing:.2em;text-transform:uppercase;font-weight:700;text-align:center;text-decoration:none;display:inline-flex;align-items:center;justify-content:center}
+  .desc{margin:14px 0 0;font-size:14.5px;color:#d3d7e0}
+  .facts{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px}
+  .fact{border:1px solid var(--line);background:#10131a;border-radius:var(--r-md);padding:8px 12px;min-width:0}
+  .fact .k{font-family:var(--mono);font-size:10px;letter-spacing:.16em;color:var(--mut);text-transform:uppercase}
+  .fact .v{font-weight:600;font-size:15px;margin-top:2px;overflow-wrap:anywhere}
+  .fact .v small{display:block;color:var(--mut);font-weight:400;font-size:11px;margin-top:1px;letter-spacing:.02em}
+  .fact.bad{border-color:#7a2a36;background:#2a1015} .fact.bad .v{color:#ff9aa6} .fact.bad .v small{color:#ff9aa6}
+  .meta{margin-top:10px;font-size:13px;color:var(--mut)}
+  .actions{margin-top:auto;padding-top:20px;display:flex;gap:10px;align-items:stretch}
+  .btn{flex:1;height:38px;border:1px solid var(--line2);border-radius:var(--r-sm);background:transparent;cursor:pointer;font-family:var(--mono);font-size:11px;letter-spacing:.2em;text-transform:uppercase;font-weight:700;text-align:center;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;padding:0 12px}
   .btn:hover{border-color:#fff}
   .btn.solid{background:#fff;color:#0d0f14;border-color:#fff} .btn.solid:hover{background:#dfe3ea}
   .btn.warn{border-color:var(--red);color:var(--red)} .btn.warn:hover{background:#3b101855}
-  .btn:disabled{opacity:.4;cursor:default}
-  .more{flex:none;width:38px;height:36px;border:1px solid var(--line2);background:transparent;cursor:pointer;color:var(--mut);letter-spacing:.1em}
+  .btn:disabled{opacity:.45;cursor:default} .btn:disabled:hover{border-color:var(--line2)} .btn.solid:disabled:hover{background:#fff;border-color:#fff}
+  .more{flex:none;width:40px;height:38px;border:1px solid var(--line2);border-radius:var(--r-sm);background:transparent;cursor:pointer;color:var(--mut);letter-spacing:.1em}
   .more:hover{color:#fff;border-color:#fff}
-  .menu{position:absolute;right:20px;bottom:62px;background:#161a23;border:1px solid var(--line2);min-width:190px;z-index:10;box-shadow:0 10px 30px #000c;display:none}
+  .menu{position:absolute;right:20px;bottom:66px;background:#161a23;border:1px solid var(--line2);border-radius:var(--r-md);padding:5px;min-width:190px;z-index:10;box-shadow:0 12px 32px #000c;display:none}
   .menu.open{display:block}
-  .menu button,.menu a{display:block;width:100%;text-align:left;padding:10px 14px;background:transparent;border:0;border-bottom:1px solid var(--line);cursor:pointer;text-decoration:none;font-size:14px}
-  .menu button:last-child,.menu a:last-child{border-bottom:0}
-  .menu button:hover,.menu a:hover{background:#1f2430}
+  .menu button,.menu a{display:block;width:100%;text-align:left;padding:9px 12px;background:transparent;border:0;border-radius:8px;cursor:pointer;text-decoration:none;font-size:14px}
+  .menu button:hover,.menu a:hover{background:#222836}
   .menu .danger{color:var(--red)}
   .prog{flex:1;min-width:0}
   .prog .lbl{font-family:var(--mono);font-size:11px;letter-spacing:.08em;color:var(--mut);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .bar{height:6px;background:#1b1f2a;margin-top:8px;overflow:hidden}
-  .bar i{display:block;height:100%;width:0;background:var(--blue);transition:width .4s}
+  .bar{height:8px;background:#1b1f2a;border-radius:var(--pill);margin-top:8px;overflow:hidden}
+  .bar i{display:block;height:100%;width:0;background:var(--blue);border-radius:var(--pill);transition:width .4s}
   .bar.ind i{width:35%;animation:slide 1.4s ease-in-out infinite}
   @keyframes slide{0%{margin-left:-35%}100%{margin-left:100%}}
   .err{flex:1;font-size:13px;color:var(--red);min-width:0;overflow-wrap:anywhere}
 
   /* ---------- list view ---------- */
-  .grid.list{grid-template-columns:1fr}
+  .grid.list{grid-template-columns:1fr;gap:12px}
   .list .card{min-height:0;flex-direction:row;align-items:center}
   .list .top{flex-direction:column;align-items:flex-start;justify-content:center;gap:2px;height:auto;border-bottom:0;border-right:1px solid var(--line);width:128px;align-self:stretch;flex:none}
   .list .body{flex-direction:row;align-items:center;gap:20px;padding:12px 20px;flex-wrap:wrap}
   .list .head{flex:1 1 280px}
   .list .avail,.list .meta{display:none}
   .list .desc{margin:0;flex:2 1 260px;font-size:13.5px}
+  .list .facts{margin:0;flex:0 1 310px}
   .list .actions{margin:0;padding:0;flex:0 0 240px}
   .list .menu{bottom:auto;top:calc(100% - 8px)}
 
   /* ---------- modal ---------- */
   .veil{position:fixed;inset:0;background:#000b;display:none;align-items:center;justify-content:center;z-index:50;padding:16px}
   .veil.open{display:flex}
-  .modal{width:min(480px,100%);max-height:88vh;overflow:auto;background:#12151c;border:1px solid var(--line2);box-shadow:0 20px 60px #000}
-  .modal h3{margin:0;padding:16px 20px;border-bottom:1px solid var(--line);font-size:17px}
-  .modal .mb{padding:18px 20px}
-  .modal .mf{display:flex;gap:10px;padding:0 20px 20px}
+  .modal{width:min(480px,100%);max-height:88vh;overflow:auto;background:#12151c;border:1px solid var(--line2);border-radius:var(--r-lg);box-shadow:0 20px 60px #000}
+  .modal h3{margin:0;padding:18px 22px;border-bottom:1px solid var(--line);font-size:17px}
+  .modal .mb{padding:18px 22px}
+  .modal .mf{display:flex;gap:10px;padding:0 22px 22px}
   .kv{display:grid;grid-template-columns:110px 1fr;gap:6px 12px;font-size:14px;margin:0}
   .kv dt{color:var(--mut)} .kv dd{margin:0;overflow-wrap:anywhere}
   .note{color:var(--mut);font-size:13px;margin-top:12px}
@@ -113,31 +123,30 @@
   .field{width:100%;margin-top:10px;font-family:var(--mono);letter-spacing:.3em;font-size:18px;text-align:center}
   .empty{padding:60px 16px;text-align:center;color:var(--mut)}
   .empty h2{color:var(--text);margin:0 0 6px}
-  .toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:#1b2030;border:1px solid var(--line2);padding:10px 16px;z-index:60;display:none;max-width:90vw}
-  .gauge{height:8px;background:#1b1f2a;margin:8px 0}
-  .gauge i{display:block;height:100%;background:var(--blue)}
+  .toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:#1b2030;border:1px solid var(--line2);border-radius:var(--r-md);padding:10px 18px;z-index:60;display:none;max-width:90vw}
+  .gauge{height:10px;background:#1b1f2a;border-radius:var(--pill);margin:10px 0;overflow:hidden}
+  .gauge i{display:block;height:100%;background:var(--blue);border-radius:var(--pill)}
 
-  .iconbtn{position:relative}
-  .cdot{position:absolute;right:11px;top:12px;width:8px;height:8px;border-radius:50%;background:#555;box-sizing:content-box;border:2px solid var(--bg)}
+  .cdot{position:absolute;right:6px;top:6px;width:8px;height:8px;border-radius:50%;background:#555;box-sizing:content-box;border:2px solid var(--bg)}
   .cdot.on{background:var(--green)} .cdot.warn{background:var(--amber)} .cdot.off{background:var(--red)}
   #hdrTools{display:flex}
-  .connbar{margin:0 16px 4px;border:1px solid var(--line2);padding:10px 14px;display:none;align-items:center;gap:12px;font-size:14px;color:var(--mut)}
+  .connbar{margin:0 16px 4px;border:1px solid var(--line2);border-radius:var(--r-md);padding:10px 14px;display:none;align-items:center;gap:12px;font-size:14px;color:var(--mut)}
   .connbar.show{display:flex} .connbar.bad{border-color:#7a2a36;color:#ff9aa6} .connbar .grow{flex:1;min-width:0;overflow-wrap:anywhere}
   .opt{display:flex;gap:12px;align-items:center;padding:12px 0;border-bottom:1px solid var(--line)}
   .opt:last-child{border-bottom:0} .opt .grow{flex:1;min-width:0}
   .opt .t{font-weight:600;overflow-wrap:anywhere} .opt .d{color:var(--mut);font-size:13px;overflow-wrap:anywhere}
   .dot{width:10px;height:10px;border-radius:50%;background:#555;flex:none} .dot.on{background:var(--green)} .dot.warn{background:var(--amber)} .dot.off{background:var(--red)}
-  .tagon{font-family:var(--mono);font-size:10px;letter-spacing:.14em;color:var(--green);border:1px solid #1f5a3a;padding:2px 8px;text-transform:uppercase}
-  .sumbox{border:1px solid var(--line2);padding:12px 14px;margin-bottom:12px;background:#10131a}
+  .tagon{font-family:var(--mono);font-size:10px;letter-spacing:.14em;color:var(--green);border:1px solid #1f5a3a;border-radius:var(--pill);padding:2px 10px;text-transform:uppercase}
+  .sumbox{border:1px solid var(--line2);border-radius:var(--r-md);padding:12px 14px;margin-bottom:12px;background:#10131a}
   .sumbox b{color:#fff}
   .addr{display:flex;gap:8px;margin-top:12px} .addr input{flex:1;min-width:0}
-  .btn.sm{flex:none;height:30px;padding:0 12px}
-  #ver{position:fixed;right:12px;bottom:10px;z-index:40;background:var(--panel);color:var(--mut);border:1px solid var(--line2);padding:4px 12px;font-family:var(--mono);font-size:11px;letter-spacing:.12em;cursor:pointer}
+  .btn.sm{flex:none;height:32px;padding:0 14px}
+  #ver{position:fixed;right:12px;bottom:10px;z-index:40;background:var(--panel);color:var(--mut);border:1px solid var(--line2);border-radius:var(--pill);padding:5px 14px;font-family:var(--mono);font-size:11px;letter-spacing:.12em;cursor:pointer}
   #ver:hover{color:#fff;border-color:#fff} #ver.new{color:var(--green);border-color:var(--green)}
-  #upd{position:fixed;right:12px;bottom:46px;z-index:45;width:min(92vw,350px);display:none;background:#12151c;border:1px solid var(--line2);padding:14px 16px;box-shadow:0 8px 28px #000b}
-  #upd .bar{height:6px;background:#1b1f2a;margin-top:10px;overflow:hidden} #upd .bar i{display:block;height:100%;width:0;background:var(--blue);transition:width .3s}
+  #upd{position:fixed;right:12px;bottom:48px;z-index:45;width:min(92vw,350px);display:none;background:#12151c;border:1px solid var(--line2);border-radius:var(--r);padding:14px 16px;box-shadow:0 8px 28px #000b}
+  #upd .bar{height:8px;margin-top:10px} #upd .bar i{transition:width .3s}
   @media (max-width:440px){ .grid{grid-template-columns:1fr} .sub{display:none} .sortlbl{display:none} }
-  @media (max-width:760px){ .list .card{flex-direction:column;align-items:stretch} .list .top{width:auto;flex-direction:row;border-right:0;border-bottom:1px solid var(--line);height:40px;align-items:center} .list .actions{flex:1 1 auto} }
+  @media (max-width:760px){ .list .card{flex-direction:column;align-items:stretch} .list .top{width:auto;flex-direction:row;border-right:0;border-bottom:1px solid var(--line);height:42px;align-items:center} .list .actions,.list .facts{flex:1 1 auto} }
 </style>
 </head>
 <body>
@@ -169,6 +178,7 @@
     <option value="updated">Recently updated</option>
   </select>
   <input type="search" id="q" placeholder="Search modules" aria-label="Search modules" autocomplete="off">
+  <button class="sq mono" id="hiddenBtn" aria-pressed="false" title="Show hidden modules" style="display:none"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3l18 18"/><path d="M10.6 6.2A9.6 9.6 0 0 1 12 6c5 0 8.5 4 9.5 6a14 14 0 0 1-2.6 3.4M6.5 7.6C4.4 9 3 11 2.5 12c1 2 4.5 6 9.5 6 1.4 0 2.7-.3 3.8-.8"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/></svg>Hidden <span id="hiddenCount">0</span></button>
   <button class="sq on" id="vgrid" aria-label="Grid view" title="Grid view"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 3h8v8H3zM13 3h8v8h-8zM3 13h8v8H3zM13 13h8v8h-8z"/></svg></button>
   <button class="sq" id="vlist" aria-label="List view" title="List view"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 4h18v3H3zM3 10.5h18v3H3zM3 17h18v3H3z"/></svg></button>
 </div>
@@ -190,7 +200,7 @@
   var IS_APP = false;     // served by an app's local instance (has the connections icon)
   function pinKey() { return 'norwinprep.pin' + (base ? '@' + base : ''); }
   var H = { 'X-NorwinPrep': '1' };
-  var state = { mods: [], disk: null, type: 'all', sort: 'name', q: '', view: 'grid', sig: '' };
+  var state = { mods: [], disk: null, type: 'all', sort: 'name', q: '', view: 'grid', sig: '', showHidden: false, pending: false, sizeTries: 0 };
   var pollTimer = null;
   function store(k, v) { try { if (v === undefined) return localStorage.getItem(k); if (v === null) localStorage.removeItem(k); else localStorage.setItem(k, v); } catch (e) { return null; } }
 
@@ -240,6 +250,41 @@
     return fetch(base + API + path, opt).then(function (r) {
       return r.json().catch(function () { return {}; }).then(function (j) { if (!r.ok) { var e = new Error(j.error || ('Request failed (' + r.status + ')')); e.status = r.status; throw e; } return j; });
     });
+  }
+  // ---------- hiding modules (a personal preference, kept in this browser/app) ----------
+  var HID_KEY = 'norwinprep.hidden';
+  function hiddenIds() { try { var a = JSON.parse(store(HID_KEY) || '[]'); return Array.isArray(a) ? a.filter(function (x) { return typeof x === 'string'; }) : []; } catch (e) { return []; } }
+  function isHidden(id) { return hiddenIds().indexOf(id) >= 0; }
+  function setHidden(id, on) { var a = hiddenIds().filter(function (x) { return x !== id; }); if (on) a.push(id); store(HID_KEY, JSON.stringify(a)); }
+  function hiddenCount() { return state.mods.filter(function (m) { return isHidden(m.id); }).length; }
+
+  // ---------- sizes: exact when the device has looked them up, otherwise a labelled estimate ----------
+  var SIZE_CLASS = { s: { label: 'under 1 GB', min: 0 }, m: { label: '1\u201310 GB', min: 1073741824 }, l: { label: '10 GB or more', min: 10737418240 }, xl: { label: '50 GB or more', min: 53687091200 } };
+  function sizeInfo(m) {
+    var exact = m.installed ? (m.bytes === undefined ? null : m.bytes) : (m.size || null);
+    var cls = SIZE_CLASS[m.sizeClass] || null, free = state.disk ? state.disk.free : null;
+    var need = exact !== null ? Math.ceil(exact * 1.05) + 52428800 : (cls ? cls.min : 0);
+    return { exact: exact, cls: cls, free: free,
+      noSpace: !m.installed && free !== null && exact !== null && need > free,            // we know it will not fit
+      mayNot: !m.installed && free !== null && exact === null && !!cls && cls.min > free }; // even the smallest it could be will not fit
+  }
+  function factsEl(m) {
+    var s = sizeInfo(m), f = el('div', 'facts');
+    var a = el('div', 'fact'); a.appendChild(el('div', 'k', m.installed ? 'Size on disk' : 'Install size'));
+    var av = el('div', 'v');
+    if (s.exact !== null) av.textContent = human(s.exact);
+    else if (s.cls) {
+      av.textContent = '\u2248 ' + s.cls.label;
+      av.appendChild(el('small', null, state.pending && m.type !== 'maps' ? 'checking exact size\u2026' : 'estimate'));
+      av.title = 'A rough estimate. The exact size appears once the device can look it up.';
+    } else av.textContent = 'unknown';
+    a.appendChild(av); f.appendChild(a);
+    var b = el('div', 'fact' + (s.noSpace || s.mayNot ? ' bad' : '')); b.appendChild(el('div', 'k', 'Space left'));
+    var bv = el('div', 'v');
+    if (s.free !== null) { bv.textContent = human(s.free); if (s.noSpace) bv.appendChild(el('small', null, 'not enough')); else if (s.mayNot) bv.appendChild(el('small', null, 'may not fit')); }
+    else { bv.textContent = '\u2014'; bv.appendChild(el('small', null, 'connect a device')); }
+    b.appendChild(bv); f.appendChild(b);
+    return f;
   }
   function typeLabel(t) { return t === 'app' ? 'App' : t === 'maps' ? 'Map' : 'Content'; }
   function openHref(m) { return base + (m.type === 'maps' ? '/maps/' : m.type === 'app' ? '/apps/' : '/wiki/'); }
@@ -361,11 +406,14 @@
       }
       var inst = state.mods.filter(function (m) { return m.installed; }).length;
       mb.appendChild(el('div', 'note', inst + ' of ' + state.mods.length + ' modules installed.'));
+      var hn = hiddenCount();
+      mb.appendChild(el('div', 'note', hn ? hn + ' module' + (hn === 1 ? ' is' : 's are') + ' hidden in this browser.' : 'No modules are hidden. Use "Hide" in a module\u2019s \u2026 menu to tidy the list.'));
       mb.appendChild(el('div', 'note', store(pinKey()) ? 'This browser remembers your admin PIN.' : 'No admin PIN saved in this browser.'));
       mb.appendChild(el('div', 'note', 'In the NorwinPrep app: press Back (Android) or Ctrl+H (desktop) to return to the device list and change what opens at launch.'));
       md.appendChild(mb);
       var mf = el('div', 'mf');
       mf.appendChild(btn('Close', '', closeModal));
+      if (hn) mf.appendChild(btn('Unhide all', '', function () { store(HID_KEY, null); closeModal(); render(); toast('All modules are visible again'); }));
       if (store(pinKey())) mf.appendChild(btn('Forget PIN', 'warn', function () { store(pinKey(), null); closeModal(); toast('PIN forgotten'); }));
       md.appendChild(mf);
     });
@@ -375,8 +423,8 @@
   function closeMenus() { var o = document.querySelectorAll('.menu.open'); for (var i = 0; i < o.length; i++) o[i].classList.remove('open'); }
   document.addEventListener('click', function (e) { if (!e.target.closest('.more') && !e.target.closest('.menu')) closeMenus(); });
 
-  function card(m, installedSection) {
-    var c = el('article', 'card'); c.dataset.id = m.id;
+  function card(m, installedSection, isHid) {
+    var c = el('article', 'card' + (isHid ? ' dim' : '')); c.dataset.id = m.id;
     var top = el('div', 'top');
     var v = el('span', 'ver mono' + (m.updateAvailable ? ' upd' : ''), m.version ? 'V' + m.version : typeLabel(m.type));
     if (m.updateAvailable) v.title = 'Update available: v' + m.latest;
@@ -393,7 +441,9 @@
     if (!installedSection) { var av = el('div', 'avail'); av.appendChild(el('span', 'pill', 'Available to install')); body.appendChild(av); }
     else if (m.updateAvailable) { var up = el('div', 'avail'); up.appendChild(el('span', 'pill warn', 'Update available')); body.appendChild(up); }
     body.appendChild(el('p', 'desc', m.description));
-    body.appendChild(el('div', 'meta', m.installed ? 'Last updated: ' + fmtDate(m.updated) + '  ·  ' + human(m.bytes) : (m.latest ? 'Latest: v' + m.latest : 'Size is shown before you install')));
+    body.appendChild(factsEl(m));
+    if (m.installed) body.appendChild(el('div', 'meta', 'Last updated: ' + fmtDate(m.updated)));
+    else if (m.latest) body.appendChild(el('div', 'meta', 'Latest: v' + m.latest));
 
     var act = el('div', 'actions');
     if (m.job && (m.job.state === 'queued' || m.job.state === 'running')) {
@@ -401,15 +451,22 @@
       fill.style.width = (m.job.percent || 0) + '%'; bar.appendChild(fill); p.appendChild(lbl); p.appendChild(bar); act.appendChild(p);
     } else {
       if (m.job && m.job.state === 'error') act.appendChild(el('div', 'err', m.job.message));
-      if (m.installed) {
+      if (isHid) act.appendChild(btn('Unhide', 'solid', function () { setHidden(m.id, false); render(); }));
+      else if (m.installed) {
         var o = el('a', 'btn', 'Open'); o.href = openHref(m); act.appendChild(o);
         if (m.updateAvailable) act.appendChild(btn('Update', 'solid', function () { startInstall(m); }));
-      } else act.appendChild(btn((browse || offline) ? 'Connect to install' : (m.job && m.job.state === 'error' ? 'Retry' : 'Install'), 'solid', function () { startInstall(m); }));
+      } else {
+        var noRoom = !browse && !offline && sizeInfo(m).noSpace;
+        var ib = btn((browse || offline) ? 'Connect to install' : noRoom ? 'Not enough space' : (m.job && m.job.state === 'error' ? 'Retry' : 'Install'), 'solid', function () { startInstall(m); });
+        ib.disabled = noRoom; if (noRoom) ib.title = 'Free up space on the device first'; act.appendChild(ib);
+      }
       var more = el('button', 'more', '…'); more.type = 'button'; more.setAttribute('aria-label', 'More actions for ' + m.name); more.setAttribute('aria-haspopup', 'menu');
       var menu = el('div', 'menu'); menu.setAttribute('role', 'menu');
       function item(label, cls, fn) { var b = el('button', cls || '', label); b.type = 'button'; b.setAttribute('role', 'menuitem'); b.addEventListener('click', function () { closeMenus(); fn(); }); menu.appendChild(b); }
       item('Details', '', function () { showDetails(m); });
-      if (m.installed) { item('Re-download', '', function () { startInstall(m); }); item('Remove', 'danger', function () { startRemove(m); }); }
+      if (m.installed && !isHid) { item('Re-download', '', function () { startInstall(m); }); item('Remove', 'danger', function () { startRemove(m); }); }
+      if (isHid) item('Unhide', '', function () { setHidden(m.id, false); render(); });
+      else item('Hide', '', function () { setHidden(m.id, true); render(); toast(m.name + ' hidden. Use the Hidden button in the toolbar to bring it back.'); });
       more.addEventListener('click', function (e) { e.stopPropagation(); var was = menu.classList.contains('open'); closeMenus(); if (!was) menu.classList.add('open'); });
       act.appendChild(more); c.appendChild(menu);
     }
@@ -432,29 +489,39 @@
     return list.sort(by);
   }
 
-  function section(label, count, mods, installedSection, main) {
+  function section(label, count, mods, installedSection, main, hid) {
     if (!mods.length) return;
     var s = el('div', 'section mono'); s.textContent = label + '  '; s.appendChild(el('b', null, String(count))); main.appendChild(s);
     var g = el('div', 'grid' + (state.view === 'list' ? ' list' : ''));
-    mods.forEach(function (m) { g.appendChild(card(m, installedSection)); });
+    mods.forEach(function (m) { g.appendChild(card(m, installedSection, hid)); });
     main.appendChild(g);
   }
 
+  function updateHiddenBtn() {
+    var n = hiddenCount(), hb = $('hiddenBtn');
+    if (!n) state.showHidden = false;
+    hb.style.display = n ? 'inline-flex' : 'none'; $('hiddenCount').textContent = n;
+    hb.classList.toggle('on', state.showHidden); hb.setAttribute('aria-pressed', state.showHidden ? 'true' : 'false');
+  }
   function render() {
     var main = $('main'); main.textContent = '';
+    updateHiddenBtn();
     var list = visible();
-    var upd = list.filter(function (m) { return m.installed && m.updateAvailable; });
-    var inst = list.filter(function (m) { return m.installed; });
-    var not = list.filter(function (m) { return !m.installed; });
-    if (!list.length) {
-      var e = el('div', 'empty'); e.appendChild(el('h2', null, 'No modules match')); e.appendChild(el('div', null, 'Try a different search or filter.')); main.appendChild(e); return;
+    var shown = list.filter(function (m) { return !isHidden(m.id); }), hid = list.filter(function (m) { return isHidden(m.id); });
+    var inst = shown.filter(function (m) { return m.installed; }), not = shown.filter(function (m) { return !m.installed; });
+    if (!shown.length && !(state.showHidden && hid.length)) {
+      var e = el('div', 'empty'); e.appendChild(el('h2', null, 'No modules match'));
+      e.appendChild(el('div', null, hid.length ? hid.length + ' matching module' + (hid.length === 1 ? ' is' : 's are') + ' hidden. Use the Hidden button to show them.' : 'Try a different search or filter.'));
+      main.appendChild(e); state.sig = signature(); return;
     }
     section('Installed', inst.length, inst, true, main);
     section('Not installed', not.length, not, false, main);
+    if (state.showHidden) section('Hidden', hid.length, hid, null, main, true);
     state.sig = signature();
   }
   function signature() {
-    return state.mods.map(function (m) { return [m.id, m.installed, m.version, m.updateAvailable, m.job ? m.job.state : '', m.job && m.job.state === 'error' ? m.job.message : ''].join('|'); }).join(';') + state.type + state.sort + state.q + state.view + '|' + browse + offline + base;
+    return state.mods.map(function (m) { return [m.id, m.installed, m.version, m.updateAvailable, m.size || '', m.bytes || '', m.job ? m.job.state : '', m.job && m.job.state === 'error' ? m.job.message : ''].join('|'); }).join(';')
+      + state.type + state.sort + state.q + state.view + '|' + browse + offline + base + '|' + hiddenIds().join(',') + state.showHidden + '|' + (state.disk ? state.disk.free : '') + state.pending;
   }
   function patchProgress() {   // update running bars in place so they don't flicker
     state.mods.forEach(function (m) {
@@ -470,6 +537,7 @@
   function schedulePoll() {
     clearTimeout(pollTimer);
     if (state.mods.some(active)) pollTimer = setTimeout(load, 1000);
+    else if (state.pending && state.sizeTries < 40) { state.sizeTries++; pollTimer = setTimeout(load, 2000); }   // exact sizes are still being looked up
   }
   function connLabel() { return (window.NPApp && window.NPApp.label) ? window.NPApp.label() : (base || 'this device'); }
   function showConn() {
@@ -489,8 +557,8 @@
   function loadStatic() {   // the catalog shipped inside the app: browse without a device
     return fetch('/catalog.json', { cache: 'no-store' }).then(function (r) { if (!r.ok) throw new Error('catalog missing'); return r.json(); }).then(function (c) {
       var before = state.sig;
-      state.mods = c.modules.map(function (m) { return { id: m.id, type: m.type, name: m.name, tagline: m.tagline, description: m.description, by: m.by, source: m.source, icon: m.icon, color: m.color, installed: false }; });
-      state.disk = null;
+      state.mods = c.modules.map(function (m) { return { id: m.id, type: m.type, name: m.name, tagline: m.tagline, description: m.description, by: m.by, source: m.source, icon: m.icon, color: m.color, sizeClass: m.sizeClass, installed: false }; });
+      state.disk = null; state.pending = false;
       if (signature() !== before) render();
       document.body.setAttribute('data-loaded', '1'); showConn();
     });
@@ -500,7 +568,7 @@
     return api('GET', '/catalog').then(function (c) {
       var before = state.sig;
       offline = false;
-      state.mods = c.modules; state.disk = c.disk;
+      state.mods = c.modules; state.disk = c.disk; state.pending = !!c.sizesPending;
       if (signature() !== before) render(); else patchProgress();
       document.body.setAttribute('data-loaded', '1'); showConn();
       schedulePoll();
@@ -521,8 +589,10 @@
   $('vgrid').addEventListener('click', function () { setView('grid'); });
   $('vlist').addEventListener('click', function () { setView('list'); });
   $('gear').addEventListener('click', showSettings);
+  $('hiddenBtn').addEventListener('click', function () { state.showHidden = !state.showHidden; render(); });
   $('refresh').addEventListener('click', function () {
     if (browse || offline) return needConnection();
+    state.sizeTries = 0;
     var b = this; b.classList.add('spin');
     api('POST', '/refresh', {}).catch(function (e) { if (e.status !== 429) toast(e.message.indexOf('Could not') === 0 ? e.message : 'Could not check for new versions'); })
       .then(function () { return load(); }).then(function () { b.classList.remove('spin'); });
@@ -534,7 +604,7 @@
   // Shared with app-ui.js (the connections icon, connection picker and app updates), which only the apps load.
   window.NPStore = {
     ui: { openModal: openModal, closeModal: closeModal, el: el, btn: btn, toast: toast, human: human },
-    reload: function (b) { setBase(b); state.sig = ''; return load(); }
+    reload: function (b) { setBase(b); state.sig = ''; state.sizeTries = 0; return load(); }
   };
   function setBase(b) { if (b === null || b === undefined) { browse = true; base = ''; } else { browse = false; base = b; } offline = false; }
   function loadScript(src) {

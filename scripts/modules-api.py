@@ -5,6 +5,7 @@ Runs as the unprivileged `norwinprep` user behind nginx (/api/modules/). Python 
 Reads are public; anything that changes the device needs the admin PIN (header X-NorwinPrep-PIN).
 Nothing here runs shell text from the catalog: install kinds are a fixed allowlist with validated fields.
 """
+import concurrent.futures
 import hashlib
 import hmac
 import json
@@ -80,6 +81,8 @@ def load_catalog(path):
             raise ValueError("bad or duplicate module id: %r" % m.get("id"))
         if m.get("type") not in ("content", "maps", "app"):
             raise ValueError("bad type for %s" % m["id"])
+        if m.get("sizeClass") not in ("s", "m", "l", "xl"):
+            raise ValueError("bad sizeClass for %s" % m["id"])
         k = i.get("kind")
         if k == "zim":
             if not (re.match(r"^[a-z0-9_]+$", i.get("subdir", "")) and re.match(r"^[A-Za-z0-9_.-]+$", i.get("prefix", ""))):
@@ -126,6 +129,7 @@ class Manager:
         self.cache = {}                     # key -> (time, value)
         self.fails = {}                     # ip -> [timestamps]
         self.last_refresh = 0
+        self.sizes_running, self.sizes_ok, self.sizes_fail = False, 0, 0
         threading.Thread(target=self._worker, daemon=True, name="modules-worker").start()
 
     # ---------- dirs
@@ -242,18 +246,97 @@ class Manager:
             return None
         return None
 
+    def known_size(self, m):
+        """Exact download size if the background lookup has found it (cache only; never touches the network)."""
+        i = m["install"]
+        try:
+            if i["kind"] == "zim":
+                base = "%s/zim/%s/" % (self.cfg["kiwix"], i["subdir"])
+                with self.lock:
+                    hit = self.cache.get(("list", base))
+                if not hit:
+                    return None
+                vs = sorted(set(re.findall(r"%s_(\d{4}-\d{2})\.zim(?![\w])" % re.escape(i["prefix"]), hit[1])))
+                if not vs:
+                    return None
+                with self.lock:
+                    sz = self.cache.get(("size", "%s%s_%s.zim" % (base, i["prefix"], vs[-1])))
+                return sz[1] if sz else None
+            if i["kind"] == "app":
+                with self.lock:
+                    hit = self.cache.get(("release", "%s/repos/%s/releases/latest" % (self.cfg["github_api"], self.cfg["slug"])))
+                if not hit:
+                    return None
+                assets = hit[1]["assets"]
+                files = [n for s in i["suffixes"] for n in assets if n.endswith("-" + s)]
+                return sum(assets[n] for n in files) if len(files) == len(i["suffixes"]) else None
+        except Exception:
+            return None
+        return None            # maps: the size depends on the region, so there is no exact number up front
+
+    def kick_sizes(self, force=False):
+        """Look up exact sizes in the background: at most every 6 hours, and not again for 10 minutes after a failure (offline)."""
+        with self.lock:
+            now = time.time()
+            if self.sizes_running or (not force and (now - self.sizes_ok < 6 * 3600 or now - self.sizes_fail < 600)):
+                return
+            self.sizes_running = True
+        threading.Thread(target=self._resolve_sizes, daemon=True, name="modules-sizes").start()
+
+    def _resolve_sizes(self):
+        ok = True
+        try:
+            zims = [m for m in self.mods if m["install"]["kind"] == "zim"]
+            for sub in sorted({m["install"]["subdir"] for m in zims}):
+                self.kiwix_versions(next(m for m in zims if m["install"]["subdir"] == sub), force=True)   # offline -> URLError -> give up
+
+            def one(m):
+                vs = self.kiwix_versions(m)
+                if not vs:
+                    return
+                i = m["install"]
+                try:
+                    self.head_size("%s/zim/%s/%s_%s.zim" % (self.cfg["kiwix"], i["subdir"], i["prefix"], vs[-1]))
+                except urllib.error.HTTPError:
+                    pass
+            with concurrent.futures.ThreadPoolExecutor(max_workers=4) as ex:
+                list(ex.map(one, zims))
+            try:
+                self.latest_release(force=True)
+            except urllib.error.HTTPError:
+                pass
+        except Exception:
+            ok = False
+        finally:
+            with self.lock:
+                self.sizes_running = False
+                if ok:
+                    self.sizes_ok = time.time()
+                else:
+                    self.sizes_fail = time.time()
+
+    def sizes_pending(self):
+        with self.lock:
+            return self.sizes_running
+
     def disk(self):
         u = shutil.disk_usage(self.d("zim"))
         return {"free": u.free, "total": u.total}
 
     # ---------- public views
     def catalog(self):
+        self.kick_sizes()
         out = []
         for m in self.mods:
             ins = self.installed(m)
             lat = self.latest(m)
             item = {k: m[k] for k in ("id", "type", "name", "tagline", "description", "by", "source", "icon", "color")}
             item["installed"] = bool(ins)
+            item["sizeClass"] = m["sizeClass"]
+            if not ins:
+                ks = self.known_size(m)
+                if ks:
+                    item["size"] = ks
             if ins:
                 item["version"] = ins["version"]
                 item["bytes"] = ins["bytes"]
@@ -307,6 +390,7 @@ class Manager:
         if time.time() - self.last_refresh < 15:
             raise ApiError(429, "Refreshed a moment ago")
         self.last_refresh = time.time()
+        self.kick_sizes(force=True)
         errors = 0
         for sub in sorted({m["install"]["subdir"] for m in self.mods if m["install"]["kind"] == "zim"}):
             fake = next(m for m in self.mods if m["install"]["kind"] == "zim" and m["install"]["subdir"] == sub)
@@ -609,7 +693,7 @@ def make_handler(mgr):
                 route = path[len("/api/modules"):] or "/"
                 if method == "GET":
                     if route == "/catalog":
-                        return self.send_json(200, {"modules": mgr.catalog(), "disk": mgr.disk()})
+                        return self.send_json(200, {"modules": mgr.catalog(), "disk": mgr.disk(), "sizesPending": mgr.sizes_pending()})
                     if route == "/status":
                         return self.send_json(200, mgr.status())
                     if route == "/info":

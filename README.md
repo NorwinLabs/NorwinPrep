@@ -47,6 +47,13 @@ for newer versions; a red version tag and an UPDATE button mean one is available
 | Maps | world overview, USA, Canada, Europe, UK, Australia | map viewer (`/maps/`) |
 | Apps | NorwinPrep for Android, Windows, Raspberry Pi (32/64-bit), Linux PC | hosted at `/apps/` for people on the hotspot |
 
+**Size and space on every card:** each module shows its **install size** (the real size on disk once installed; before that, the exact download size once
+the device has looked it up, otherwise a labelled *estimate* such as "1-10 GB") next to **space left** on the device. If a download will not fit, the box turns
+red and the button says "Not enough space"; if even the smallest it could be won't fit, it says "may not fit".
+
+**Hide modules you don't want:** open a module's "..." menu and choose **Hide**. A **Hidden** button (with a count) appears in the toolbar to show them again
+(dimmed, with **Unhide**); Settings has **Unhide all**. Hiding is a personal preference kept in this browser/app, so it doesn't change the device.
+
 Before anything downloads you see the exact file, version, download size and free space. Downloads resume if interrupted, are verified
 (SHA-256) before they replace anything, and queue one at a time. Needs the device to be online (e.g. Ethernet).
 

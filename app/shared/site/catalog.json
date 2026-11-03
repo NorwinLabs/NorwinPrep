@@ -15,7 +15,8 @@
     "kind": "zim",
     "subdir": "other",
     "prefix": "zimgit-medicine_en"
-   }
+   },
+   "sizeClass": "s"
   },
   {
    "id": "water",
@@ -31,7 +32,8 @@
     "kind": "zim",
     "subdir": "other",
     "prefix": "zimgit-water_en"
-   }
+   },
+   "sizeClass": "s"
   },
   {
    "id": "post-disaster",
@@ -47,7 +49,8 @@
     "kind": "zim",
     "subdir": "other",
     "prefix": "zimgit-post-disaster_en"
-   }
+   },
+   "sizeClass": "s"
   },
   {
    "id": "food",
@@ -63,7 +66,8 @@
     "kind": "zim",
     "subdir": "other",
     "prefix": "zimgit-food-preparation_en"
-   }
+   },
+   "sizeClass": "s"
   },
   {
    "id": "wikem",
@@ -79,7 +83,8 @@
     "kind": "zim",
     "subdir": "wikem",
     "prefix": "wikem_en_all_maxi"
-   }
+   },
+   "sizeClass": "m"
   },
   {
    "id": "survival-se",
@@ -95,7 +100,8 @@
     "kind": "zim",
     "subdir": "stack_exchange",
     "prefix": "survival.stackexchange.com_en_all"
-   }
+   },
+   "sizeClass": "s"
   },
   {
    "id": "outdoors-se",
@@ -111,7 +117,8 @@
     "kind": "zim",
     "subdir": "stack_exchange",
     "prefix": "outdoors.stackexchange.com_en_all"
-   }
+   },
+   "sizeClass": "s"
   },
   {
    "id": "health-se",
@@ -127,7 +134,8 @@
     "kind": "zim",
     "subdir": "stack_exchange",
     "prefix": "health.stackexchange.com_en_all"
-   }
+   },
+   "sizeClass": "s"
   },
   {
    "id": "appropedia",
@@ -143,7 +151,8 @@
     "kind": "zim",
     "subdir": "other",
     "prefix": "appropedia_en_all_maxi"
-   }
+   },
+   "sizeClass": "m"
   },
   {
    "id": "wikipedia-top",
@@ -159,7 +168,8 @@
     "kind": "zim",
     "subdir": "wikipedia",
     "prefix": "wikipedia_en_top_nopic"
-   }
+   },
+   "sizeClass": "m"
   },
   {
    "id": "wikipedia-top-maxi",
@@ -175,7 +185,8 @@
     "kind": "zim",
     "subdir": "wikipedia",
     "prefix": "wikipedia_en_top_maxi"
-   }
+   },
+   "sizeClass": "m"
   },
   {
    "id": "wikihow",
@@ -191,7 +202,8 @@
     "kind": "zim",
     "subdir": "wikihow",
     "prefix": "wikihow_en_maxi"
-   }
+   },
+   "sizeClass": "m"
   },
   {
    "id": "ifixit",
@@ -207,7 +219,8 @@
     "kind": "zim",
     "subdir": "ifixit",
     "prefix": "ifixit_en_all"
-   }
+   },
+   "sizeClass": "m"
   },
   {
    "id": "mdwiki",
@@ -223,7 +236,8 @@
     "kind": "zim",
     "subdir": "mdwiki",
     "prefix": "mdwiki_en_all_maxi"
-   }
+   },
+   "sizeClass": "m"
   },
   {
    "id": "diy",
@@ -239,7 +253,8 @@
     "kind": "zim",
     "subdir": "stack_exchange",
     "prefix": "diy.stackexchange.com_en_all"
-   }
+   },
+   "sizeClass": "m"
   },
   {
    "id": "gardening",
@@ -255,7 +270,8 @@
     "kind": "zim",
     "subdir": "stack_exchange",
     "prefix": "gardening.stackexchange.com_en_all"
-   }
+   },
+   "sizeClass": "s"
   },
   {
    "id": "cooking",
@@ -271,7 +287,8 @@
     "kind": "zim",
     "subdir": "stack_exchange",
     "prefix": "cooking.stackexchange.com_en_all"
-   }
+   },
+   "sizeClass": "s"
   },
   {
    "id": "mechanics",
@@ -287,7 +304,8 @@
     "kind": "zim",
     "subdir": "stack_exchange",
     "prefix": "mechanics.stackexchange.com_en_all"
-   }
+   },
+   "sizeClass": "s"
   },
   {
    "id": "electronics",
@@ -303,7 +321,8 @@
     "kind": "zim",
     "subdir": "stack_exchange",
     "prefix": "electronics.stackexchange.com_en_all"
-   }
+   },
+   "sizeClass": "m"
   },
   {
    "id": "sustainability",
@@ -319,7 +338,8 @@
     "kind": "zim",
     "subdir": "stack_exchange",
     "prefix": "sustainability.stackexchange.com_en_all"
-   }
+   },
+   "sizeClass": "s"
   },
   {
    "id": "wikibooks",
@@ -335,7 +355,8 @@
     "kind": "zim",
     "subdir": "wikibooks",
     "prefix": "wikibooks_en_all_maxi"
-   }
+   },
+   "sizeClass": "m"
   },
   {
    "id": "wikivoyage",
@@ -351,7 +372,8 @@
     "kind": "zim",
     "subdir": "wikivoyage",
     "prefix": "wikivoyage_en_all_maxi"
-   }
+   },
+   "sizeClass": "m"
   },
   {
    "id": "wikiversity",
@@ -367,7 +389,8 @@
     "kind": "zim",
     "subdir": "wikiversity",
     "prefix": "wikiversity_en_all_maxi"
-   }
+   },
+   "sizeClass": "m"
   },
   {
    "id": "wiktionary",
@@ -383,7 +406,8 @@
     "kind": "zim",
     "subdir": "wiktionary",
     "prefix": "wiktionary_en_all_maxi"
-   }
+   },
+   "sizeClass": "m"
   },
   {
    "id": "gutenberg",
@@ -399,7 +423,8 @@
     "kind": "zim",
     "subdir": "gutenberg",
     "prefix": "gutenberg_en_all"
-   }
+   },
+   "sizeClass": "l"
   },
   {
    "id": "phet",
@@ -415,7 +440,8 @@
     "kind": "zim",
     "subdir": "phet",
     "prefix": "phet_en_all"
-   }
+   },
+   "sizeClass": "s"
   },
   {
    "id": "libretexts-med",
@@ -431,7 +457,8 @@
     "kind": "zim",
     "subdir": "libretexts",
     "prefix": "libretexts.org_en_med"
-   }
+   },
+   "sizeClass": "m"
   },
   {
    "id": "libretexts-chem",
@@ -447,7 +474,8 @@
     "kind": "zim",
     "subdir": "libretexts",
     "prefix": "libretexts.org_en_chem"
-   }
+   },
+   "sizeClass": "m"
   },
   {
    "id": "libretexts-eng",
@@ -463,7 +491,8 @@
     "kind": "zim",
     "subdir": "libretexts",
     "prefix": "libretexts.org_en_eng"
-   }
+   },
+   "sizeClass": "m"
   },
   {
    "id": "wikipedia-nopic",
@@ -479,7 +508,8 @@
     "kind": "zim",
     "subdir": "wikipedia",
     "prefix": "wikipedia_en_all_nopic"
-   }
+   },
+   "sizeClass": "l"
   },
   {
    "id": "wikipedia-full",
@@ -495,7 +525,8 @@
     "kind": "zim",
     "subdir": "wikipedia",
     "prefix": "wikipedia_en_all_maxi"
-   }
+   },
+   "sizeClass": "xl"
   },
   {
    "id": "wikisource",
@@ -511,7 +542,8 @@
     "kind": "zim",
     "subdir": "wikisource",
     "prefix": "wikisource_en_all_maxi"
-   }
+   },
+   "sizeClass": "m"
   },
   {
    "id": "khan",
@@ -527,7 +559,8 @@
     "kind": "zim",
     "subdir": "khan_academy",
     "prefix": "khan_academy_en_all"
-   }
+   },
+   "sizeClass": "l"
   },
   {
    "id": "wikinews",
@@ -543,7 +576,8 @@
     "kind": "zim",
     "subdir": "wikinews",
     "prefix": "wikinews_en_all_maxi"
-   }
+   },
+   "sizeClass": "s"
   },
   {
    "id": "map-world",
@@ -559,7 +593,8 @@
     "kind": "maps",
     "file": "world.pmtiles",
     "maxzoom": 7
-   }
+   },
+   "sizeClass": "s"
   },
   {
    "id": "map-usa",
@@ -576,7 +611,8 @@
     "file": "usa.pmtiles",
     "maxzoom": 15,
     "bbox": "-125.0,24.3,-66.9,49.5"
-   }
+   },
+   "sizeClass": "l"
   },
   {
    "id": "map-canada",
@@ -593,7 +629,8 @@
     "file": "canada.pmtiles",
     "maxzoom": 14,
     "bbox": "-141.0,41.6,-52.6,70.0"
-   }
+   },
+   "sizeClass": "l"
   },
   {
    "id": "map-europe",
@@ -610,7 +647,8 @@
     "file": "europe.pmtiles",
     "maxzoom": 14,
     "bbox": "-25.0,34.0,45.0,72.0"
-   }
+   },
+   "sizeClass": "l"
   },
   {
    "id": "map-uk",
@@ -627,7 +665,8 @@
     "file": "uk.pmtiles",
     "maxzoom": 15,
     "bbox": "-8.7,49.8,2.0,60.9"
-   }
+   },
+   "sizeClass": "m"
   },
   {
    "id": "map-australia",
@@ -644,7 +683,8 @@
     "file": "australia.pmtiles",
     "maxzoom": 14,
     "bbox": "112.0,-44.0,154.0,-10.0"
-   }
+   },
+   "sizeClass": "m"
   },
   {
    "id": "app-android",
@@ -661,7 +701,8 @@
     "suffixes": [
      "android.apk"
     ]
-   }
+   },
+   "sizeClass": "s"
   },
   {
    "id": "app-windows",
@@ -679,7 +720,8 @@
      "win-x64.exe",
      "portable-x64.exe"
     ]
-   }
+   },
+   "sizeClass": "s"
   },
   {
    "id": "app-pi64",
@@ -697,7 +739,8 @@
      "linux-arm64.AppImage",
      "linux-arm64.deb"
     ]
-   }
+   },
+   "sizeClass": "s"
   },
   {
    "id": "app-pi32",
@@ -715,7 +758,8 @@
      "linux-armv7l.AppImage",
      "linux-armv7l.deb"
     ]
-   }
+   },
+   "sizeClass": "s"
   },
   {
    "id": "app-linux",
@@ -733,7 +777,8 @@
      "linux-x86_64.AppImage",
      "linux-amd64.deb"
     ]
-   }
+   },
+   "sizeClass": "s"
   }
  ]
 }

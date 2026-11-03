@@ -278,5 +278,42 @@ class CorsTests(Base):
         s, _, _ = self.raw("POST", "/api/modules/pin", dict(hdr, Origin="http://10.42.0.1", Host="norwinprep.local"), b"{}"); self.assertEqual(s, 403, "an origin that is not this host is refused")
 
 
+class SizeTests(Base):
+    def settle(self, timeout=15):
+        t0 = time.time()
+        while time.time() - t0 < timeout:
+            c = self.get("/api/modules/catalog")[1]
+            if not c["sizesPending"]: return c
+            time.sleep(0.1)
+        self.fail("size lookup never finished")
+    def test_every_module_has_a_size_class(self):
+        c = self.get("/api/modules/catalog")[1]
+        self.assertTrue(all(m["sizeClass"] in ("s", "m", "l", "xl") for m in c["modules"]))
+        self.assertEqual(next(m for m in c["modules"] if m["id"] == "wikipedia-full")["sizeClass"], "xl")
+    def test_exact_sizes_are_looked_up_in_the_background(self):
+        self.get("/api/modules/catalog"); c = self.settle(); by = {m["id"]: m for m in c["modules"]}
+        self.assertEqual(by["medicine"]["size"], len(ZIM)); self.assertEqual(by["water"]["size"], len(WATER))
+        self.assertEqual(by["app-android"]["size"], len(APK)); self.assertEqual(by["app-windows"]["size"], len(EXE) + len(PORT_EXE))
+        self.assertNotIn("size", by["map-world"], "map size depends on the region, so no exact number is claimed")
+        self.assertNotIn("size", by["survival-se"], "not in the library -> no size")
+        self.assertEqual(by["medicine"]["latest"], "2025.03", "the same lookup also tells us the newest version")
+    def test_installed_module_reports_its_size_on_disk(self):
+        os.makedirs(self.zim); open(os.path.join(self.zim, "zimgit-medicine_en_2024-06.zim"), "wb").write(b"x" * 4321)
+        self.get("/api/modules/catalog"); c = self.settle(); m = next(m for m in c["modules"] if m["id"] == "medicine")
+        self.assertEqual(m["bytes"], 4321); self.assertNotIn("size", m)
+    def test_offline_gives_up_quietly_and_does_not_retry_at_once(self):
+        self.mgr.cfg["kiwix"] = "http://127.0.0.1:1"
+        self.get("/api/modules/catalog"); c = self.settle()
+        self.assertTrue(all("size" not in m for m in c["modules"] if m["type"] == "content")); self.assertGreater(self.mgr.sizes_fail, 0)
+        self.assertFalse(self.get("/api/modules/catalog")[1]["sizesPending"], "backoff: no new lookup straight after a failure")
+    def test_disk_numbers_are_in_the_catalog(self):
+        d = self.get("/api/modules/catalog")[1]["disk"]; self.assertGreater(d["free"], 0); self.assertGreaterEqual(d["total"], d["free"])
+    def test_bad_size_class_is_rejected(self):
+        p = os.path.join(self.tmp, "bad.json"); base = {"id": "okid", "type": "content", "install": {"kind": "zim", "subdir": "a", "prefix": "b"}}
+        for bad in [None, "huge", "S", 5]:
+            json.dump({"modules": [dict(base, **({} if bad is None else {"sizeClass": bad}))]}, open(p, "w"))
+            with self.assertRaises(ValueError): api.load_catalog(p)
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=1)
