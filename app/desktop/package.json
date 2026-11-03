@@ -21,7 +21,8 @@
     "productName": "NorwinPrep",
     "files": [
       "main.js",
-      "connect.html",
+      "local-server.js",
+      "site/**",
       "icon.png"
     ],
     "artifactName": "NorwinPrep-${version}-${os}-${arch}.${ext}",

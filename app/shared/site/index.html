@@ -1,0 +1,238 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>NorwinPrep</title>
+<style>
+  :root{--bg:#10140f;--fg:#e8eddf;--card:#1c231a;--line:#2b3628;--accent:#9acd32;--mut:#8a9684;--bad:#e07a5f}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.5 system-ui,sans-serif}
+  main{max-width:760px;margin:0 auto;padding:1rem 1rem 3rem}
+  h1{margin:.5rem 0 0;font-size:1.7rem;color:var(--accent)}
+  h2{margin:1.6rem 0 .5rem;font-size:1.05rem;color:var(--accent)}
+  .sub{margin:0;color:var(--mut);font-size:.9rem;word-break:break-word}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:.9rem 1rem;margin:.5rem 0}
+  .row{display:flex;gap:.6rem;align-items:center;flex-wrap:wrap}
+  .grow{flex:1;min-width:0}
+  .title{font-weight:600;overflow-wrap:anywhere}
+  .desc{color:var(--mut);font-size:.85rem;overflow-wrap:anywhere}
+  .dot{width:.7rem;height:.7rem;border-radius:50%;background:#555;flex:none}
+  .dot.on{background:var(--accent)} .dot.off{background:var(--bad)} .dot.warn{background:#e0b341}
+  button,a.btn{padding:.45rem .9rem;border-radius:8px;border:0;background:var(--accent);color:#10140f;font:inherit;font-weight:600;cursor:pointer;text-decoration:none;display:inline-block}
+  button.ghost{background:transparent;color:var(--fg);border:1px solid var(--line)}
+  button:disabled{opacity:.45;cursor:default}
+  input[type=text]{flex:1;min-width:0;padding:.5rem .7rem;border-radius:8px;border:1px solid #3a4a35;background:#0d110c;color:var(--fg);font:inherit}
+  .badge{font-size:.72rem;border:1px solid var(--accent);color:var(--accent);border-radius:999px;padding:0 .5rem;margin-left:.4rem}
+  #banner{display:none;border-color:var(--accent)}
+  #msg{color:var(--bad);min-height:1.2em;font-size:.9rem}
+  ul{list-style:none;padding:0;margin:.4rem 0}
+  li{display:flex;gap:.6rem;align-items:center;padding:.3rem 0;border-bottom:1px solid var(--line)}
+  li a{color:var(--accent);overflow-wrap:anywhere}
+  .size{color:var(--mut);font-size:.8rem;margin-left:auto;white-space:nowrap}
+</style>
+</head>
+<body>
+<main>
+  <h1 id="name">NorwinPrep</h1>
+  <p class="sub" id="meta">Starting&hellip;</p>
+
+  <div id="banner" class="card row">
+    <div class="grow" id="bannerText"></div>
+    <button id="bannerCancel" class="ghost">Cancel</button>
+  </div>
+  <div id="msg" role="status"></div>
+
+  <h2>Connect to</h2>
+  <div id="options"></div>
+  <form id="custom" class="row" style="margin-top:.6rem">
+    <input id="addr" type="text" placeholder="Other address, e.g. 192.168.1.20 or localhost:8080" autocapitalize="off" autocomplete="off" spellcheck="false">
+    <button type="submit">Add</button>
+  </form>
+
+  <h2>This device</h2>
+  <div class="card">
+    <form id="renameForm" class="row">
+      <input id="nameInput" type="text" maxlength="40" aria-label="Device name">
+      <button type="submit">Rename</button>
+    </form>
+    <p class="desc" style="margin:.5rem 0 0">The device name is shared with anything that connects to this app's local instance
+    (<span id="localAddr"></span>).</p>
+  </div>
+
+  <h2>Local files</h2>
+  <div class="card">
+    <div class="row">
+      <input id="file" type="file" multiple>
+      <button id="upload">Upload</button>
+    </div>
+    <ul id="files"></ul>
+    <p class="desc" id="filesNote" style="margin:0"></p>
+  </div>
+</main>
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var params = new URLSearchParams(location.search);
+  var H = { 'X-NorwinPrep': '1' };
+  function store(k, v) { try { if (v === undefined) return localStorage.getItem(k); if (v === null) localStorage.removeItem(k); else localStorage.setItem(k, v); } catch (e) { return null; } }
+  function say(t) { $('msg').textContent = t || ''; }
+  function jf(url, opt) {
+    return fetch(url, opt).then(function (r) {
+      return r.json().catch(function () { return {}; }).then(function (j) { if (!r.ok) throw new Error(j.error || ('Request failed (' + r.status + ')')); return j; });
+    });
+  }
+  function normalize(s) {
+    s = (s || '').trim(); if (!s) return '';
+    if (!/^https?:\/\//i.test(s)) s = 'http://' + s;
+    // drop default ports so "localhost:80" is the same option as "localhost"
+    return s.replace(/\/+$/, '').replace(/^(http:\/\/[^\/]+):80$/i, '$1').replace(/^(https:\/\/[^\/]+):443$/i, '$1');
+  }
+  function human(n) { return n < 1024 ? n + ' B' : n < 1048576 ? (n / 1024).toFixed(1) + ' KB' : (n / 1048576).toFixed(1) + ' MB'; }
+
+  var localOrigin = location.origin;
+
+  // ---- this device ----
+  function loadDevice() {
+    return jf('/api/device', { cache: 'no-store' }).then(function (d) {
+      $('name').textContent = d.name;
+      document.title = d.name + ' – NorwinPrep';
+      $('nameInput').value = d.name;
+      $('meta').textContent = 'Local instance · ' + d.platform + ' · v' + d.version;
+      $('localAddr').textContent = d.address;
+      $('filesNote').textContent = d.filesDir ? 'Stored in: ' + d.filesDir : '';
+    }).catch(function () { $('meta').textContent = 'Local instance unavailable'; });
+  }
+  $('renameForm').addEventListener('submit', function (e) {
+    e.preventDefault(); say('');
+    jf('/api/device', { method: 'PUT', headers: Object.assign({ 'Content-Type': 'application/json' }, H), body: JSON.stringify({ name: $('nameInput').value }) })
+      .then(loadDevice).catch(function (err) { say(err.message); });
+  });
+
+  // ---- local files ----
+  function loadFiles() {
+    jf('/api/files', { cache: 'no-store' }).then(function (list) {
+      var ul = $('files'); ul.textContent = '';
+      if (!list.length) { var li = document.createElement('li'); li.textContent = 'No files yet.'; ul.appendChild(li); }
+      list.forEach(function (f) {
+        var li = document.createElement('li'), a = document.createElement('a'), sz = document.createElement('span'), del = document.createElement('button');
+        a.href = '/files/' + encodeURIComponent(f.name); a.textContent = f.name;
+        sz.className = 'size'; sz.textContent = human(f.size);
+        del.className = 'ghost'; del.textContent = 'Delete';
+        del.onclick = function () { fetch(a.href, { method: 'DELETE', headers: H }).then(loadFiles); };
+        li.appendChild(a); li.appendChild(sz); li.appendChild(del); ul.appendChild(li);
+      });
+    });
+  }
+  $('upload').addEventListener('click', function () {
+    var files = Array.prototype.slice.call($('file').files); say('');
+    if (!files.length) return say('Choose one or more files first.');
+    files.reduce(function (p, f) {
+      return p.then(function () {
+        return fetch('/files/' + encodeURIComponent(f.name), { method: 'PUT', headers: H, body: f })
+          .then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) { if (!r.ok) throw new Error(j.error || ('Upload failed (' + r.status + ')')); }); });
+      });
+    }, Promise.resolve()).then(function () { $('file').value = ''; loadFiles(); }).catch(function (err) { say(err.message + ' \u2014 file names may use letters, numbers, spaces and . _ - ( )'); loadFiles(); });
+  });
+
+  // ---- connection options ----
+  var BUILTIN = [
+    { id: 'local', label: 'This app (local instance)', url: localOrigin, desc: 'Runs inside this app. Always available, no Pi needed.' },
+    { id: 'localhost', label: 'Localhost', url: 'http://localhost', desc: 'NorwinPrep running on this same computer (for example, this app installed on the Pi itself).' },
+    { id: 'hotspot', label: 'NorwinPrep hotspot', url: 'http://10.42.0.1', desc: 'A Pi, when you are joined to its Wi-Fi hotspot.' },
+    { id: 'mdns', label: 'norwinprep.local', url: 'http://norwinprep.local', desc: 'A Pi on your network, found by name.' }
+  ];
+  function customList() { try { return JSON.parse(store('norwinprep.custom') || '[]'); } catch (e) { return []; } }
+  function saveCustom(l) { store('norwinprep.custom', JSON.stringify(l.slice(0, 6))); }
+  function allOptions() {
+    var seen = {}, out = [];
+    BUILTIN.concat(customList().map(function (u) { return { id: 'c:' + u, label: u, url: u, desc: 'Custom address', custom: true }; }))
+      .forEach(function (o) { if (!seen[o.url]) { seen[o.url] = 1; out.push(o); } });
+    return out;
+  }
+
+  // verified: it answered /api/device like a NorwinPrep. up-only: something answers there, but we can't tell what.
+  function probe(url) {
+    function t(ms) { var c = new AbortController(); setTimeout(function () { c.abort(); }, ms); return c.signal; }
+    return fetch(url + '/api/device', { cache: 'no-store', signal: t(2500) })
+      .then(function (r) { if (!r.ok) throw 0; return r.json(); })
+      .then(function (j) {
+        if (!j || typeof j.name !== 'string' || typeof j.version !== 'string') throw 0;
+        return { up: true, verified: true, name: j.name.slice(0, 60), version: j.version.slice(0, 20) };
+      })
+      .catch(function () {
+        return fetch(url + '/', { mode: 'no-cors', cache: 'no-store', signal: t(2500) })
+          .then(function () { return { up: true, verified: false }; }).catch(function () { return { up: false }; });
+      });
+  }
+
+  var defaultUrl = function () { return store('norwinprep.default'); };
+  var results = {};
+  function render() {
+    var box = $('options'); box.textContent = '';
+    allOptions().forEach(function (o) {
+      var r = results[o.url], isHere = o.url === localOrigin, def = defaultUrl() === o.url;
+      var card = document.createElement('div'); card.className = 'card row';
+      var dot = document.createElement('span'); dot.className = 'dot ' + (isHere ? 'on' : r ? (r.up ? (r.verified ? 'on' : 'warn') : 'off') : '');
+      var mid = document.createElement('div'); mid.className = 'grow';
+      var title = document.createElement('div'); title.className = 'title';
+      title.textContent = (r && r.verified && r.name && !isHere ? r.name + ' — ' : '') + o.label;
+      if (def) { var b = document.createElement('span'); b.className = 'badge'; b.textContent = 'default'; title.appendChild(b); }
+      var desc = document.createElement('div'); desc.className = 'desc';
+      desc.textContent = isHere ? o.desc + ' (you are here)' : (o.custom ? 'Custom · ' : '') + (r ? (r.up ? (r.verified ? 'Online' : 'Answers, but not identified as NorwinPrep') : 'Not reachable') + ' · ' : 'Checking… · ') + o.url;
+      mid.appendChild(title); mid.appendChild(desc);
+      card.appendChild(dot); card.appendChild(mid);
+      if (!isHere) {
+        var open = document.createElement('a'); open.className = 'btn'; open.textContent = 'Open'; open.href = o.url + '/';
+        open.onclick = function () { say(''); };
+        card.appendChild(open);
+      }
+      var star = document.createElement('button'); star.className = 'ghost';
+      star.textContent = def ? 'Clear default' : 'Make default';
+      star.onclick = function () { store('norwinprep.default', def ? null : o.url); render(); };
+      card.appendChild(star);
+      if (o.custom) {
+        var rm = document.createElement('button'); rm.className = 'ghost'; rm.textContent = 'Remove';
+        rm.onclick = function () { saveCustom(customList().filter(function (u) { return u !== o.url; })); if (def) store('norwinprep.default', null); render(); };
+        card.appendChild(rm);
+      }
+      box.appendChild(card);
+    });
+  }
+  function scan() {
+    results = {}; render();
+    return Promise.all(allOptions().filter(function (o) { return o.url !== localOrigin; }).map(function (o) {
+      return probe(o.url).then(function (r) { results[o.url] = r; render(); });
+    }));
+  }
+  $('custom').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var u = normalize($('addr').value); if (!u) return;
+    var l = customList().filter(function (x) { return x !== u; }); l.unshift(u); saveCustom(l);
+    $('addr').value = ''; scan();
+  });
+
+  // ---- auto-open the default (cancelable, so you can never get locked out) ----
+  function autoOpen() {
+    var d = defaultUrl();
+    if (!d || params.has('stay') || params.has('unreachable') || d === localOrigin) return;
+    probe(d).then(function (r) {
+      if (!r.up) return;
+      var left = 3, timer;
+      $('banner').style.display = 'flex';
+      function txt() { $('bannerText').textContent = 'Opening ' + d + ' in ' + left + 's…'; }
+      txt();
+      timer = setInterval(function () { left--; if (left <= 0) { clearInterval(timer); location.href = d + '/'; } else txt(); }, 1000);
+      $('bannerCancel').onclick = function () { clearInterval(timer); $('banner').style.display = 'none'; };
+    });
+  }
+
+  if (params.get('unreachable')) say('Could not reach ' + params.get('unreachable') + '. Pick another option below.');
+  loadDevice(); loadFiles(); render();
+  scan().then(function () { document.body.setAttribute('data-scanned', '1'); });
+  autoOpen();
+  document.body.setAttribute('data-ready', '1');
+})();
+</script>
+</body>
+</html>

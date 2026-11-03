@@ -130,6 +130,11 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: 8.10.2
+      - name: Test the Android local server (plain JVM, no SDK needed)
+        run: |
+          mkdir -p /tmp/jt
+          javac -d /tmp/jt app/android/app/src/main/java/com/norwinlabs/norwinprep/LocalServer.java app/android/app/src/test/java/com/norwinlabs/norwinprep/LocalServerTest.java
+          java -cp /tmp/jt com.norwinlabs.norwinprep.LocalServerTest
       - name: Build signed release APK
         env:
           # optional repository secrets; without them the checked-in keystore (app/android/norwinprep.keystore) is used
@@ -150,6 +155,7 @@ jobs:
           "$BT/apksigner" verify --verbose "$APK" | head -5
           "$BT/aapt2" dump badging "$APK" | grep -E "^package: name='com.norwinlabs.norwinprep' .*versionName='$(cat VERSION)'"
           [ "$(stat -c%s "$APK")" -gt 100000 ] || { echo "APK suspiciously small"; exit 1; }
+          unzip -l "$APK" | grep -q "assets/site/index.html" || { echo "APK is missing assets/site/index.html"; exit 1; }
           "$BT/aapt2" dump badging "$APK" | grep -E "sdkVersion|uses-permission" | head
       - uses: actions/upload-artifact@v4
         with:

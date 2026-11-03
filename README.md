@@ -36,9 +36,24 @@ Uninstall with `sudo /opt/norwinprep/scripts/uninstall.sh` (add `--purge` to del
 
 ## Client apps (Android, Windows, Linux, Raspberry Pi)
 
-Optional apps that find the device on its hotspot (`10.42.0.1` / `norwinprep.local`) and open the portal, maps and library
-full-screen. You don't need them (any browser works), but on Android the app also keeps traffic on the hotspot Wi-Fi when the
-phone would otherwise prefer mobile data.
+Each app runs its **own local NorwinPrep instance** on `127.0.0.1:8787`, so you can always get in, even with no Pi nearby.
+The app opens into a home page that shows the **device name** and lets you pick what to connect to:
+
+| Option | Address | Use it when |
+|---|---|---|
+| This app (local instance) | `http://127.0.0.1:8787` | always available: device name, plus a small file library you can upload to |
+| **Localhost** | `http://localhost` | the app is installed on the same machine as NorwinPrep (e.g. on the Pi itself) |
+| NorwinPrep hotspot | `http://10.42.0.1` | you've joined a Pi's Wi-Fi hotspot |
+| `norwinprep.local` | `http://norwinprep.local` | a Pi on your network |
+| Custom | anything you type | any other address; saved for next time |
+
+Each option shows whether it is online and the device name it reports. Anything that merely answers but doesn't identify itself
+as NorwinPrep is flagged as such. **Make default** opens an option automatically on launch after a 3-second countdown you can cancel;
+**Home** (Ctrl+H on desktop, Back on Android) always returns to the options.
+
+The device name is set from the home page (local instance) or `DEVICE_NAME` in `/etc/norwinprep.conf` (Pi), and both are served as JSON at
+`/api/device`. The local server only listens on loopback and rejects requests from other sites; see `app/desktop/local-server.js`
+(desktop) and `app/android/.../LocalServer.java` (Android, unit-tested in CI).
 
 Every push to `main` builds all of them in GitHub Actions and publishes them as a **GitHub release** (`vX.Y.Z-build.N`, newest 10 kept;
 a clean `vX.Y.Z` release is also created whenever `VERSION` changes):

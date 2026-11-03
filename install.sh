@@ -51,6 +51,14 @@ install -m 755 "$SRC/uninstall.sh" /opt/norwinprep/scripts/uninstall.sh
 cp -r "$SRC"/web/. /opt/norwinprep/web/
 install -m 644 "$SRC/VERSION" /opt/norwinprep/VERSION
 
+# Device info served at /api/device (read by the NorwinPrep apps)
+if ! [[ "${DEVICE_NAME:-NorwinPrep}" =~ ^[A-Za-z0-9\ ._()-]{1,40}$ ]]; then
+  echo "WARN: DEVICE_NAME in /etc/norwinprep.conf has unsupported characters; using 'NorwinPrep'"; DEVICE_NAME="NorwinPrep"
+fi
+install -d /opt/norwinprep/web/api
+jq -n --arg name "${DEVICE_NAME:-NorwinPrep}" --arg ver "$(cat "$SRC/VERSION")" --arg host "${HOSTNAME_NEW:-norwinprep}" --arg ssid "${SSID:-NorwinPrep}" \
+  '{name:$name, mode:"pi", version:$ver, hostname:$host, ssid:$ssid, address:"http://10.42.0.1"}' > /opt/norwinprep/web/api/device.json
+
 install -d "$CONTENT_DIR"/{zim,library,maps,apps}
 id -u norwinprep >/dev/null 2>&1 || useradd -r -s /usr/sbin/nologin norwinprep
 chown -R norwinprep: "$CONTENT_DIR"

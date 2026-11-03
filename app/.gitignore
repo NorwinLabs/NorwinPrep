@@ -1,7 +1,9 @@
 node_modules/
 dist/
-/desktop/connect.html
+dist-test/
+/desktop/site/
 /desktop/icon.png
+/desktop/connect.html
 .gradle/
 android/**/build/
 local.properties

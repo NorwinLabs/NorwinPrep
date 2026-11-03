@@ -1,6 +1,7 @@
-// Copies shared assets (connect page, icon) next to main.js so electron-builder can package them.
+// Copies shared assets (home page, icon) next to main.js so electron-builder can package them.
 const fs = require('fs'), path = require('path');
-const root = path.join(__dirname, '..');
-fs.copyFileSync(path.join(root, '..', 'shared', 'connect.html'), path.join(root, 'connect.html'));
-fs.copyFileSync(path.join(root, '..', 'shared', 'icon.png'), path.join(root, 'icon.png'));
+const root = path.join(__dirname, '..'), shared = path.join(root, '..', 'shared');
+fs.rmSync(path.join(root, 'site'), { recursive: true, force: true });
+fs.cpSync(path.join(shared, 'site'), path.join(root, 'site'), { recursive: true });
+fs.copyFileSync(path.join(shared, 'icon.png'), path.join(root, 'icon.png'));
 console.log('assets prepared');
