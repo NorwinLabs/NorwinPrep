@@ -1,11 +1,16 @@
-name: CI
+name: CI and release
 on:
   push:
     branches: [main]
   pull_request:
+  workflow_dispatch:
 
 permissions:
   contents: write
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   check:
@@ -13,8 +18,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Syntax-check scripts
-        run: |
-          for f in install.sh get.sh uninstall.sh scripts/*.sh; do bash -n "$f"; done
+        run: for f in install.sh get.sh uninstall.sh scripts/*.sh; do bash -n "$f"; done
       - name: ShellCheck (errors only)
         run: |
           sudo apt-get install -y shellcheck
@@ -27,16 +31,161 @@ jobs:
           sudo mkdir -p /opt/norwinprep/web /srv/norwinprep/content/{library,maps,apps}
           sudo nginx -t
 
-  release:
+  # ---------- Linux desktop app: x64 + Raspberry Pi (arm64 = Pi OS 64-bit, armv7l = Pi OS 32-bit) ----------
+  linux:
     needs: check
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: app/desktop
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: app/desktop/package-lock.json
+      - run: npm ci
+      - run: npm run prepare-assets
+      - name: Smoke test (source)
+        run: xvfb-run -a ./node_modules/electron/dist/electron . --no-sandbox --selftest
+      - name: Build AppImage + deb for x64, arm64, armv7l
+        run: npx electron-builder --linux deb AppImage --x64 --arm64 --armv7l -c.extraMetadata.version="$(cat ../../VERSION)" --publish never
+      - name: Verify packages and architectures
+        run: |
+          set -e
+          ls -lh dist
+          [ "$(ls dist/*.AppImage | wc -l)" -eq 3 ] || { echo "expected 3 AppImages"; exit 1; }
+          [ "$(ls dist/*.deb | wc -l)" -eq 3 ] || { echo "expected 3 debs"; exit 1; }
+          for f in dist/*.AppImage dist/*.deb; do [ "$(stat -c%s "$f")" -gt 30000000 ] || { echo "$f is suspiciously small"; exit 1; }; done
+          [[ "$(file dist/linux-arm64-unpacked/norwinprep)" == *"ARM aarch64"* ]] || { echo "arm64 binary is not aarch64"; exit 1; }
+          [[ "$(file dist/linux-armv7l-unpacked/norwinprep)" == *"ARM, EABI5"* ]] || { echo "armv7l binary is not 32-bit ARM"; exit 1; }
+          [[ "$(file dist/linux-unpacked/norwinprep)" == *"x86-64"* ]] || { echo "x64 binary is not x86-64"; exit 1; }
+          archs="$(for f in dist/*.deb; do dpkg-deb -f "$f" Architecture; done | sort | tr '\n' ' ')"
+          [ "$archs" = "amd64 arm64 armhf " ] || { echo "unexpected deb architectures: $archs"; exit 1; }
+      - name: Smoke test (packaged x64 build)
+        run: xvfb-run -a dist/linux-unpacked/norwinprep --no-sandbox --selftest
+      - uses: actions/upload-artifact@v4
+        with:
+          name: app-linux
+          path: |
+            app/desktop/dist/*.AppImage
+            app/desktop/dist/*.deb
+          if-no-files-found: error
+
+  # ---------- Windows ----------
+  windows:
+    needs: check
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: bash
+        working-directory: app/desktop
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: app/desktop/package-lock.json
+      - run: npm ci
+      - run: npm run prepare-assets
+      - name: Build installer + portable exe
+        run: npx electron-builder --win nsis portable --x64 -c.extraMetadata.version="$(cat ../../VERSION)" --publish never
+      - name: Verify
+        run: |
+          set -e
+          ls -lh dist
+          [ "$(ls dist/*.exe | wc -l)" -eq 2 ] || { echo "expected 2 exe files (installer + portable)"; exit 1; }
+          for f in dist/*.exe; do [ "$(stat -c%s "$f")" -gt 30000000 ] || { echo "$f is suspiciously small"; exit 1; }; done
+      - name: Smoke test (packaged app)
+        continue-on-error: true   # GUI start-up on hosted Windows runners can be flaky; build verification above is the gate
+        run: timeout 60 dist/win-unpacked/NorwinPrep.exe --selftest
+      - uses: actions/upload-artifact@v4
+        with:
+          name: app-windows
+          path: app/desktop/dist/*.exe
+          if-no-files-found: error
+
+  # ---------- Android ----------
+  android:
+    needs: check
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Publish release when VERSION has no tag yet
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - uses: android-actions/setup-android@v3
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: 8.10.2
+      - name: Build signed release APK
         env:
-          GH_TOKEN: ${{ github.token }}
+          # optional repository secrets; without them the checked-in keystore (app/android/norwinprep.keystore) is used
+          ANDROID_KEYSTORE_PATH: ${{ secrets.ANDROID_KEYSTORE_PATH }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: |
-          v="v$(cat VERSION)"
-          if gh release view "$v" >/dev/null 2>&1; then echo "$v already released"; exit 0; fi
-          gh release create "$v" --target "$GITHUB_SHA" --title "NorwinPrep $v" --generate-notes
+          V="$(cat VERSION)"
+          gradle -p app/android assembleRelease -PappVersionName="$V" -PappVersionCode="${{ github.run_number }}" --no-daemon --stacktrace
+          mkdir -p out
+          cp app/android/app/build/outputs/apk/release/app-release.apk "out/NorwinPrep-$V-android.apk"
+      - name: Verify APK (signature, package, version)
+        run: |
+          set -e
+          BT="$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)"
+          APK="out/NorwinPrep-$(cat VERSION)-android.apk"
+          "$BT/apksigner" verify --verbose "$APK" | head -5
+          "$BT/aapt2" dump badging "$APK" | grep -E "^package: name='com.norwinlabs.norwinprep' .*versionName='$(cat VERSION)'"
+          [ "$(stat -c%s "$APK")" -gt 100000 ] || { echo "APK suspiciously small"; exit 1; }
+          "$BT/aapt2" dump badging "$APK" | grep -E "sdkVersion|uses-permission" | head
+      - uses: actions/upload-artifact@v4
+        with:
+          name: app-android
+          path: out/*.apk
+          if-no-files-found: error
+
+  # ---------- Release on every push to main ----------
+  release:
+    needs: [linux, windows, android]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          path: release
+          merge-multiple: true
+      - name: Check all expected files are present
+        run: |
+          set -e
+          cd release
+          ls -lh
+          [ "$(ls *.apk | wc -l)" -eq 1 ]
+          [ "$(ls *.exe | wc -l)" -eq 2 ]
+          [ "$(ls *.AppImage | wc -l)" -eq 3 ]
+          [ "$(ls *.deb | wc -l)" -eq 3 ]
+          sha256sum * > SHA256SUMS
+      - name: Publish build release (every push)
+        run: |
+          V="$(cat VERSION)"
+          TAG="v$V-build.${{ github.run_number }}"
+          gh release create "$TAG" release/* --target "$GITHUB_SHA" --prerelease \
+            --title "NorwinPrep $V (build ${{ github.run_number }})" \
+            --notes "Automated build of ${GITHUB_SHA:0:7} from main. Android APK, Windows installer/portable EXE, and Linux AppImage/deb for x64, Raspberry Pi arm64 (64-bit Pi OS) and armv7l (32-bit Pi OS)."
+      - name: Publish stable release (when VERSION is new)
+        run: |
+          V="$(cat VERSION)"
+          if gh release view "v$V" >/dev/null 2>&1; then echo "v$V already released"; exit 0; fi
+          gh release create "v$V" release/* --target "$GITHUB_SHA" --latest \
+            --title "NorwinPrep v$V" --generate-notes
+      - name: Prune old build releases (keep newest 10)
+        run: |
+          gh release list --limit 200 --json tagName,createdAt \
+            --jq '[.[] | select(.tagName | test("-build\\."))] | sort_by(.createdAt) | reverse | .[10:] | .[].tagName' \
+            | xargs -r -n1 gh release delete --cleanup-tag --yes

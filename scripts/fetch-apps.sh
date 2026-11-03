@@ -16,5 +16,13 @@ grab kiwix-desktop 'kiwix-desktop_x86_64_[0-9.]+\.appimage'
 grab kiwix-macos   'kiwix-macos_[0-9.]+\.dmg'
 grab kiwix-tools   'kiwix-tools_linux-aarch64-[0-9.]+\.tar\.gz'
 grab kiwix-tools   'kiwix-tools_linux-x86_64-[0-9.]+\.tar\.gz'
+# NorwinPrep client apps (APK / Windows / Linux incl. Raspberry Pi) from the latest stable GitHub release
+slug="$(printf '%s' "${UPDATE_REPO:-https://github.com/NorwinLabs/NorwinPrepDisk.git}" | sed -E 's|.*github.com[/:]||; s|\.git$||')"
+echo "==> NorwinPrep client apps from $slug"
+curl -fsSL "https://api.github.com/repos/$slug/releases/latest" \
+  | jq -r '.assets[]? | select(.name | test("\\.(apk|exe|AppImage|deb)$")) | "\(.name) \(.browser_download_url)"' \
+  | while read -r name url; do
+      echo "    $name"; curl -fL -C - "$url" -o "$D/$name" || echo "failed: $name"
+    done || echo "skip: no stable release with apps found yet"
 chown -R norwinprep: "$D"
 echo "Done. Apps at http://norwinprep.local/apps/"

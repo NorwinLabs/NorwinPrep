@@ -1,0 +1,59 @@
+plugins {
+    id 'com.android.application'
+}
+
+// CI passes -PappVersionName / -PappVersionCode
+def vName = (findProperty('appVersionName') ?: '0.0.0').toString()
+def vCode = (findProperty('appVersionCode') ?: '1').toString().toInteger()
+
+// Signing: use secrets when CI provides them; otherwise the checked-in keystore, so every build is
+// signed with the SAME key and phones can install new releases over old ones.
+def ksPath = System.getenv('ANDROID_KEYSTORE_PATH') ?: file('../norwinprep.keystore').absolutePath
+def ksPass = System.getenv('ANDROID_KEYSTORE_PASSWORD') ?: 'norwinprep'
+def ksAlias = System.getenv('ANDROID_KEY_ALIAS') ?: 'norwinprep'
+def keyPass = System.getenv('ANDROID_KEY_PASSWORD') ?: 'norwinprep'
+
+android {
+    namespace 'com.norwinlabs.norwinprep'
+    compileSdk 34
+
+    defaultConfig {
+        applicationId 'com.norwinlabs.norwinprep'
+        minSdk 24
+        targetSdk 34
+        versionCode vCode
+        versionName vName
+    }
+
+    signingConfigs {
+        release {
+            storeFile file(ksPath)
+            storePassword ksPass
+            keyAlias ksAlias
+            keyPassword keyPass
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            signingConfig signingConfigs.release
+        }
+    }
+
+    // the connect page is shared with the desktop app
+    sourceSets {
+        main {
+            assets.srcDirs = ['src/main/assets', '../../shared']
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    lint {
+        abortOnError false
+    }
+}

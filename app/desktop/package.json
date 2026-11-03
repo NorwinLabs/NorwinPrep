@@ -1,0 +1,60 @@
+{
+  "name": "norwinprep",
+  "productName": "NorwinPrep",
+  "version": "0.0.0",
+  "description": "Client app for the NorwinPrep offline survival device",
+  "main": "main.js",
+  "author": "NorwinLabs <noreply@users.noreply.github.com>",
+  "license": "UNLICENSED",
+  "private": true,
+  "scripts": {
+    "prepare-assets": "node scripts/prepare-assets.js",
+    "start": "npm run prepare-assets && electron .",
+    "selftest": "npm run prepare-assets && electron . --no-sandbox --selftest"
+  },
+  "devDependencies": {
+    "electron": "^33.2.1",
+    "electron-builder": "^25.1.8"
+  },
+  "build": {
+    "appId": "com.norwinlabs.norwinprep",
+    "productName": "NorwinPrep",
+    "files": [
+      "main.js",
+      "connect.html",
+      "icon.png"
+    ],
+    "artifactName": "NorwinPrep-${version}-${os}-${arch}.${ext}",
+    "directories": {
+      "output": "dist"
+    },
+    "linux": {
+      "target": [
+        "AppImage",
+        "deb"
+      ],
+      "executableName": "norwinprep",
+      "category": "Utility",
+      "icon": "icon.png",
+      "maintainer": "NorwinLabs <noreply@users.noreply.github.com>",
+      "synopsis": "Client for the NorwinPrep offline survival device",
+      "description": "Finds your NorwinPrep device on its Wi-Fi hotspot and opens its library, maps and tools. Run with --kiosk for full screen."
+    },
+    "win": {
+      "target": [
+        "nsis",
+        "portable"
+      ],
+      "icon": "icon.png"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    },
+    "portable": {
+      "artifactName": "NorwinPrep-${version}-portable-${arch}.${ext}"
+    },
+    "publish": null
+  },
+  "homepage": "https://github.com/NorwinLabs/NorwinPrepDisk"
+}

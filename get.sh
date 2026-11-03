@@ -11,7 +11,7 @@ command -v git >/dev/null || { apt-get update && apt-get install -y git; }
 mkdir -p /var/lib/norwinprep
 if [ -d "$DEST/.git" ]; then git -C "$DEST" fetch -q --tags --force origin
 else git clone -q "$REPO" "$DEST"; fi
-REF="${NORWINPREP_REF:-$(git -C "$DEST" tag -l 'v*' --sort=-v:refname | head -1)}"
+REF="${NORWINPREP_REF:-$(git -C "$DEST" tag -l 'v[0-9]*' | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | sort -V | tail -1 || true)}"
 [ -n "$REF" ] || REF=origin/HEAD
 git -C "$DEST" checkout -q --force --detach "$REF"
 git -C "$DEST" rev-parse "$REF^{commit}" > /var/lib/norwinprep/installed-rev

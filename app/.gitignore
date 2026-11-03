@@ -1,0 +1,7 @@
+node_modules/
+dist/
+/desktop/connect.html
+/desktop/icon.png
+.gradle/
+android/**/build/
+local.properties

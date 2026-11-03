@@ -32,7 +32,7 @@ if [ "${AUTO_UPDATE_SOFTWARE:-1}" = 1 ]; then
   if [ -d "$SRC/.git" ]; then git_ -C "$SRC" fetch -q --tags --force origin
   else git_ clone -q "$REPO" "$SRC"; fi
   if [ "$CHANNEL" = edge ]; then target="origin/HEAD"
-  else target="$(git -C "$SRC" tag -l 'v*' --sort=-v:refname | head -1)"; fi
+  else target="$(git -C "$SRC" tag -l 'v[0-9]*' | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | sort -V | tail -1 || true)"; fi
   if [ -n "$target" ]; then
     rev="$(git -C "$SRC" rev-parse "$target^{commit}")"
     if [ "$rev" != "$(cat "$STATE/installed-rev" 2>/dev/null || true)" ]; then

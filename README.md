@@ -34,6 +34,32 @@ disconnect you) and tells you how to start it later with `sudo /opt/norwinprep/s
 Change the Wi-Fi name/password in `/etc/norwinprep.conf` (defaults: `NorwinPrep` / `prepared123`), then rerun `setup-hotspot.sh`.
 Uninstall with `sudo /opt/norwinprep/scripts/uninstall.sh` (add `--purge` to delete downloaded content too).
 
+## Client apps (Android, Windows, Linux, Raspberry Pi)
+
+Optional apps that find the device on its hotspot (`10.42.0.1` / `norwinprep.local`) and open the portal, maps and library
+full-screen. You don't need them (any browser works), but on Android the app also keeps traffic on the hotspot Wi-Fi when the
+phone would otherwise prefer mobile data.
+
+Every push to `main` builds all of them in GitHub Actions and publishes them as a **GitHub release** (`vX.Y.Z-build.N`, newest 10 kept;
+a clean `vX.Y.Z` release is also created whenever `VERSION` changes):
+
+| Platform | File |
+|---|---|
+| Android 7+ | `NorwinPrep-<ver>-android.apk` (sideload; allow "install unknown apps") |
+| Windows 10/11 (64-bit) | `NorwinPrep-<ver>-win-x64.exe` installer, or `NorwinPrep-<ver>-portable-x64.exe` |
+| Raspberry Pi OS 64-bit | `NorwinPrep-<ver>-linux-arm64.deb` or `.AppImage` |
+| Raspberry Pi OS 32-bit | `NorwinPrep-<ver>-linux-armv7l.deb` or `.AppImage` |
+| Linux PC (x64) | `NorwinPrep-<ver>-linux-amd64.deb` or `-linux-x86_64.AppImage` |
+
+On a Pi: `sudo apt install ./NorwinPrep-<ver>-linux-arm64.deb`, then run `norwinprep` (add `--kiosk` for full screen).
+The device itself can host these for people who join its hotspot: `sudo /opt/norwinprep/scripts/fetch-apps.sh` downloads them,
+plus the Kiwix apps, into the portal's **Get the apps** page.
+
+Notes: the Windows build and APK are not code-signed by a public CA. Windows SmartScreen will warn ("More info" > "Run anyway"), and
+the APK is signed with the project key checked in at `app/android/norwinprep.keystore` so updates install over older versions.
+Fork this repo? Set the secrets `ANDROID_KEYSTORE_PATH`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD` to sign with your own key.
+Source: `app/desktop` (Electron), `app/android` (native WebView), `app/shared` (connect page).
+
 ## Updates
 
 **On the device (when online, e.g. Ethernet plugged in):** `norwinprep-update.timer` runs 10 min after boot and daily at ~03:30.
@@ -46,8 +72,8 @@ Run it by hand with `sudo /opt/norwinprep/scripts/update.sh`; turn parts off wit
 Your settings are preserved across updates. The hotspot works over Wi-Fi, so give the Pi internet by Ethernet (or a USB Wi-Fi dongle).
 If this repo is private, set `UPDATE_TOKEN` to a read-only GitHub token.
 
-**Releases:** CI checks the scripts on every push to `main`. Bump `VERSION` and merge to `main` to publish a `vX.Y.Z` GitHub
-release; devices on the `stable` channel then update themselves.
+**Releases:** CI checks the scripts and builds the apps on every push to `main`. Bump `VERSION` and merge to `main` to publish a clean
+`vX.Y.Z` release; devices on the `stable` channel then update themselves (the per-push `-build.N` releases are ignored by devices).
 
 ## Content
 

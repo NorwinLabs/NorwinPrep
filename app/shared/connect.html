@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>NorwinPrep</title>
+<style>
+  :root{--bg:#10140f;--fg:#e8eddf;--card:#1c231a;--accent:#9acd32;--mut:#8a9684}
+  *{box-sizing:border-box}
+  body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;background:var(--bg);color:var(--fg);font:16px/1.5 system-ui,sans-serif}
+  main{width:min(92vw,440px);background:var(--card);border:1px solid #2b3628;border-radius:14px;padding:1.5rem}
+  h1{margin:0 0 .25rem;font-size:1.6rem;color:var(--accent)}
+  p{margin:.25rem 0 1rem;color:var(--mut)}
+  #status{min-height:1.5em;color:var(--fg)}
+  form{display:flex;gap:.5rem;margin-top:1rem}
+  input{flex:1;min-width:0;padding:.6rem .7rem;border-radius:8px;border:1px solid #3a4a35;background:#0d110c;color:var(--fg);font:inherit}
+  button{padding:.6rem 1rem;border-radius:8px;border:0;background:var(--accent);color:#10140f;font:inherit;font-weight:600;cursor:pointer}
+  .hint{font-size:.85rem;color:var(--mut);margin-top:1rem}
+</style>
+</head>
+<body>
+<main>
+  <h1>NorwinPrep</h1>
+  <p>Connect to your offline NorwinPrep device.</p>
+  <div id="status" role="status">Looking for your NorwinPrep&hellip;</div>
+  <form id="f">
+    <input id="addr" placeholder="Address, e.g. 10.42.0.1" autocapitalize="off" autocomplete="off" spellcheck="false">
+    <button type="submit">Connect</button>
+  </form>
+  <div class="hint">First join the device's Wi-Fi hotspot (default name <b>NorwinPrep</b>). The app tries
+  <b>10.42.0.1</b> and <b>norwinprep.local</b> automatically.</div>
+</main>
+<script>
+(function () {
+  var KEY = 'norwinprep.server';
+  var params = new URLSearchParams(location.search);
+  var statusEl = document.getElementById('status');
+  var addr = document.getElementById('addr');
+  var DEFAULTS = ['http://10.42.0.1', 'http://norwinprep.local'];
+
+  function store(k, v) { try { if (v === undefined) return localStorage.getItem(k); localStorage.setItem(k, v); } catch (e) { return null; } }
+  function normalize(s) {
+    s = (s || '').trim();
+    if (!s) return '';
+    if (!/^https?:\/\//i.test(s)) s = 'http://' + s;
+    return s.replace(/\/+$/, '');
+  }
+  function probe(url) {
+    var ctl = new AbortController();
+    var t = setTimeout(function () { ctl.abort(); }, 2500);
+    return fetch(url + '/', { mode: 'no-cors', cache: 'no-store', signal: ctl.signal })
+      .then(function () { clearTimeout(t); return true; })
+      .catch(function () { clearTimeout(t); return false; });
+  }
+  function go(url) { store(KEY, url); statusEl.textContent = 'Connected to ' + url; location.replace(url + '/'); }
+
+  // search(): try saved + default addresses. search(url, true): try only the address the user typed.
+  async function search(extra, only) {
+    var list = [];
+    (only ? [extra] : [extra, store(KEY)].concat(DEFAULTS)).forEach(function (u) { u = normalize(u); if (u && list.indexOf(u) < 0) list.push(u); });
+    for (var i = 0; i < list.length; i++) {
+      statusEl.textContent = 'Trying ' + list[i] + '…';
+      if (await probe(list[i])) { go(list[i]); return true; }
+    }
+    statusEl.textContent = only ? 'Could not reach ' + list[0] + '. Check the address and that you are on its Wi-Fi.' : 'Could not reach NorwinPrep. Join its Wi-Fi hotspot, or enter its address.';
+    return false;
+  }
+
+  document.getElementById('f').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var u = normalize(addr.value);
+    if (u) search(u, true);
+  });
+  addr.value = store(KEY) || '';
+  document.body.setAttribute('data-ready', '1');
+  if (params.has('selftest')) { statusEl.textContent = 'selftest'; return; }
+  if (!params.has('manual')) search();
+  else statusEl.textContent = 'Enter the address of your NorwinPrep device.';
+})();
+</script>
+</body>
+</html>
