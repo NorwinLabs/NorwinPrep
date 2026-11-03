@@ -30,6 +30,13 @@
   li{display:flex;gap:.6rem;align-items:center;padding:.3rem 0;border-bottom:1px solid var(--line)}
   li a{color:var(--accent);overflow-wrap:anywhere}
   .size{color:var(--mut);font-size:.8rem;margin-left:auto;white-space:nowrap}
+  main{padding-bottom:4.5rem}
+  .ver{position:fixed;right:.7rem;bottom:.6rem;z-index:5;background:var(--card);color:var(--mut);border:1px solid var(--line);border-radius:999px;padding:.25rem .8rem;font-size:.8rem;font-weight:500}
+  .ver:hover{color:var(--fg);border-color:var(--accent)}
+  .ver.new{color:var(--accent);border-color:var(--accent)}
+  #upd{position:fixed;right:.7rem;bottom:3rem;z-index:6;width:min(92vw,350px);display:none;box-shadow:0 8px 28px #000b;margin:0}
+  .bar{height:6px;background:#0d110c;border-radius:3px;overflow:hidden;margin-top:.5rem}
+  .bar>i{display:block;height:100%;width:0;background:var(--accent);transition:width .3s}
 </style>
 </head>
 <body>
@@ -70,6 +77,16 @@
     <p class="desc" id="filesNote" style="margin:0"></p>
   </div>
 </main>
+<button id="ver" class="ver" type="button" title="Check for updates" aria-haspopup="dialog">v&hellip;</button>
+<div id="upd" class="card" role="dialog" aria-live="polite" aria-label="App update">
+  <div id="updTitle" class="title">Checking for updates&hellip;</div>
+  <div id="updMsg" class="desc"></div>
+  <div class="bar" id="updBar" style="display:none"><i id="updFill"></i></div>
+  <div class="row" style="margin-top:.6rem">
+    <a id="updLink" class="btn" style="display:none" target="_blank" rel="noopener">Release page</a>
+    <button id="updClose" class="ghost" type="button">Close</button>
+  </div>
+</div>
 <script>
 (function () {
   var $ = function (id) { return document.getElementById(id); };
@@ -92,6 +109,74 @@
 
   var localOrigin = location.origin;
 
+  // ---- version button + app updates ----
+  var dev = null, updBusy = false, pollTimer = null, updateTag = '';
+  function vparts(v) { return String(v || '').replace(/^v/, '').split('.').map(function (n) { return parseInt(n, 10) || 0; }); }
+  function isNewer(a, b) {
+    var x = vparts(a), y = vparts(b);
+    for (var i = 0; i < 3; i++) { if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0); }
+    return false;
+  }
+  // choose the release file that matches how THIS copy of the app is installed
+  function pickAsset(names, d) {
+    var re = null;
+    if (d.platform === 'android') re = /-android\.apk$/;
+    else if (d.platform === 'windows') re = d.packaging === 'portable' ? /-portable-x64\.exe$/ : /-win-x64\.exe$/;
+    else if (d.platform === 'linux') {
+      if (d.packaging === 'deb') { var da = { x64: 'amd64', arm64: 'arm64', armv7l: 'armv7l' }[d.arch]; if (da) re = new RegExp('-linux-' + da + '\\.deb$'); }
+      else { var aa = { x64: 'x86_64', arm64: 'arm64', armv7l: 'armv7l' }[d.arch]; if (aa) re = new RegExp('-linux-' + aa + '\\.AppImage$'); }
+    }
+    if (!re) return null;
+    for (var i = 0; i < names.length; i++) if (re.test(names[i])) return names[i];
+    return null;
+  }
+  function setVer() {
+    var b = $('ver'); if (!dev) return;
+    b.textContent = 'v' + dev.version + (updateTag ? ' \u00b7 update available' : '');
+    b.classList.toggle('new', !!updateTag);
+    b.title = updateTag ? 'Update to ' + updateTag + ' \u2014 click to install' : 'Check for updates';
+  }
+  function showUpd(title, msg, o) {
+    o = o || {};
+    $('upd').style.display = 'block';
+    $('updTitle').textContent = title; $('updMsg').textContent = msg || '';
+    $('updBar').style.display = o.bar === undefined ? 'none' : 'block';
+    $('updFill').style.width = (o.bar || 0) + '%';
+    var l = $('updLink'); l.style.display = o.link ? 'inline-block' : 'none'; if (o.link) l.href = o.link;
+  }
+  function poll() {
+    clearInterval(pollTimer);
+    pollTimer = setInterval(function () {
+      jf('/api/update/status', { cache: 'no-store' }).then(function (st) {
+        if (st.state === 'downloading' || st.state === 'verifying' || st.state === 'installing') showUpd('Updating to ' + st.tag, st.message, { bar: st.percent });
+        else {
+          clearInterval(pollTimer); updBusy = false;
+          if (st.state === 'done') showUpd('Update ready', st.message);
+          else if (st.state === 'needs-permission') showUpd('One more step', st.message);
+          else showUpd('Update failed', st.message || 'Unknown error');
+        }
+      }).catch(function () {   // the local server stops while the desktop app restarts
+        clearInterval(pollTimer); showUpd('Restarting\u2026', 'The app is restarting to finish the update.');
+      });
+    }, 700);
+  }
+  function checkRelease() { return jf('/api/update/check', { cache: 'no-store' }); }
+  function runUpdate() {
+    if (updBusy || !dev) return;
+    updBusy = true; showUpd('Checking for updates\u2026', 'Current version: v' + dev.version);
+    checkRelease().then(function (rel) {
+      if (!isNewer(rel.tag, dev.version)) { updateTag = ''; setVer(); updBusy = false; return showUpd('You are up to date', 'v' + dev.version + ' is the latest release.', { link: rel.url }); }
+      updateTag = rel.tag; setVer();
+      if (dev.packaging === 'dev') { updBusy = false; return showUpd(rel.tag + ' is available', 'Updating works for installed builds, not a development run.', { link: rel.url }); }
+      var asset = pickAsset(rel.assets, dev);
+      if (!asset) { updBusy = false; return showUpd(rel.tag + ' is available', 'No build for this device (' + dev.platform + ' ' + dev.arch + ') is attached to the release.', { link: rel.url }); }
+      showUpd('Updating to ' + rel.tag, 'Starting\u2026', { bar: 0 });
+      return jf('/api/update/install', { method: 'POST', headers: Object.assign({ 'Content-Type': 'application/json' }, H), body: JSON.stringify({ tag: rel.tag, asset: asset }) }).then(poll);
+    }).catch(function (e) { updBusy = false; showUpd('Could not update', e.message + ' Connect this device to the internet and try again.'); });
+  }
+  $('ver').addEventListener('click', function () { if ($('upd').style.display === 'block' && !updBusy) { $('upd').style.display = 'none'; } else runUpdate(); });
+  $('updClose').addEventListener('click', function () { $('upd').style.display = 'none'; });
+
   // ---- this device ----
   function loadDevice() {
     return jf('/api/device', { cache: 'no-store' }).then(function (d) {
@@ -100,6 +185,7 @@
       $('nameInput').value = d.name;
       $('meta').textContent = 'Local instance · ' + d.platform + ' · v' + d.version;
       $('localAddr').textContent = d.address;
+      dev = d; setVer();
       $('filesNote').textContent = d.filesDir ? 'Stored in: ' + d.filesDir : '';
     }).catch(function () { $('meta').textContent = 'Local instance unavailable'; });
   }
@@ -227,6 +313,12 @@
     });
   }
 
+  // quietly look for a newer release after start-up; a hash of #update opens the update panel straight away
+  setTimeout(function () {
+    if (!dev || dev.packaging === 'dev') return;
+    if (location.hash === '#update') return runUpdate();
+    checkRelease().then(function (rel) { if (isNewer(rel.tag, dev.version)) { updateTag = rel.tag; setVer(); } }).catch(function () {});
+  }, 1500);
   if (params.get('unreachable')) say('Could not reach ' + params.get('unreachable') + '. Pick another option below.');
   loadDevice(); loadFiles(); render();
   scan().then(function () { document.body.setAttribute('data-scanned', '1'); });

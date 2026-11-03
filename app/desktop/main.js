@@ -5,6 +5,8 @@ const fs = require('fs');
 const os = require('os');
 const http = require('http');
 const { create, NAME_RE } = require('./local-server');
+const updaterLib = require('./updater');
+const { spawn, execFile } = require('child_process');
 
 const SELFTEST = process.argv.includes('--selftest');
 const KIOSK = process.argv.includes('--kiosk');   // full-screen, for a Pi with a display
@@ -32,6 +34,38 @@ function saveName(n) {
   fs.writeFileSync(cfgFile(), JSON.stringify({ name: n }));
 }
 
+// Which kind of install is this? Decides how an update is applied.
+function detectPackaging() {
+  if (!app.isPackaged) return 'dev';
+  if (process.platform === 'win32') return process.env.PORTABLE_EXECUTABLE_FILE ? 'portable' : 'installer';
+  if (process.platform === 'linux') return process.env.APPIMAGE ? 'appimage' : (process.execPath.startsWith('/opt/NorwinPrep/') ? 'deb' : 'dev');
+  return 'dev';
+}
+const ARCH = process.arch === 'arm' ? 'armv7l' : process.arch;
+
+function makeUpdater() {
+  return updaterLib.create({
+    slug: 'NorwinLabs/NorwinPrepDisk',
+    // test hooks: point the updater at a fake GitHub (used by the self-test)
+    apiBase: process.env.NORWINPREP_API_BASE || 'https://api.github.com',
+    dlBase: process.env.NORWINPREP_DL_BASE || 'https://github.com',
+    platform: process.platform === 'win32' ? 'windows' : process.platform,
+    arch: ARCH, packaging: detectPackaging(),
+    appImagePath: process.env.APPIMAGE, portableDir: process.env.PORTABLE_EXECUTABLE_DIR,
+    execPath: process.execPath, relaunchArgs: process.argv.slice(1).filter((a) => a === '--kiosk' || a === '--no-sandbox'),
+    actions: {
+      // Free port 8787 before the new copy starts, so it comes up on the same address (keeps your saved options)
+      spawnDetached: (cmd, args) => {
+        try { server.stop(); } catch (e) { /* already stopped */ }
+        const c = spawn(cmd, args, { detached: true, stdio: 'ignore' });
+        c.on('error', () => {}); c.unref();
+      },
+      exec: (cmd, args) => new Promise((resolve, reject) => execFile(cmd, args, { timeout: 15 * 60 * 1000 }, (e) => (e ? reject(e) : resolve()))),
+      quit: () => setTimeout(() => app.quit(), 800)
+    }
+  });
+}
+
 async function startServer() {
   const filesDir = path.join(app.getPath('userData'), 'files');
   fs.mkdirSync(filesDir, { recursive: true });
@@ -39,7 +73,8 @@ async function startServer() {
   server = create({
     siteDir: path.join(__dirname, 'site'), filesDir,
     getName: () => name, setName: (n) => { name = n; saveName(n); },
-    version: app.getVersion(), platform: process.platform === 'win32' ? 'windows' : process.platform
+    version: app.getVersion(), platform: process.platform === 'win32' ? 'windows' : process.platform,
+    arch: ARCH, packaging: detectPackaging(), update: makeUpdater()
   });
   const port = await server.start(8787);   // falls back to a free port if 8787 is taken
   home = 'http://127.0.0.1:' + port + '/';
@@ -67,6 +102,7 @@ function createWindow(info) {
       { label: 'Reload', accelerator: 'CmdOrCtrl+R', click: () => win.webContents.reload() },
       { label: 'Toggle full screen', accelerator: 'F11', click: () => win.setFullScreen(!win.isFullScreen()) },
       { label: 'Open local files folder', click: () => shell.openPath(info.filesDir) },
+      { label: 'Check for updates\u2026', click: () => win.loadURL(home + '?stay=1#update') },
       { type: 'separator' },
       { role: 'quit' } ] }
   ]));
@@ -105,11 +141,24 @@ async function selftest(port) {
   check(r.code === 403, 'foreign Host header refused');
   r = await request(port, 'GET', '/..%2fpackage.json');
   check(r.code === 400 || r.code === 404, 'path traversal refused');
+  r = await request(port, 'GET', '/api/update/status');
+  check(r.code === 200 && JSON.parse(r.body).state === 'idle', 'update status idle');
+  r = await request(port, 'GET', '/api/update/check');
+  check(r.code === 502 && /Could not reach GitHub/.test(r.body), 'update check reports an unreachable GitHub cleanly');
+  r = await request(port, 'POST', '/api/update/install', { headers: { 'X-NorwinPrep': '1' }, body: JSON.stringify({ tag: 'v1', asset: 'x' }) });
+  check(r.code === 400, 'update install rejects a bad tag/asset');
+  r = await request(port, 'POST', '/api/update/install', { body: JSON.stringify({ tag: 'v0.6.1', asset: 'NorwinPrep-0.6.1-linux-arm64.deb' }) });
+  check(r.code === 403, 'update install without the app header refused');
+  r = await request(port, 'GET', '/api/device');
+  d = {}; try { d = JSON.parse(r.body); } catch (e) { /* below */ }
+  check(typeof d.arch === 'string' && d.arch.length > 0 && typeof d.packaging === 'string' && d.packaging.length > 0, 'device info reports arch and packaging');
   const ready = await win.webContents.executeJavaScript(
     "new Promise(function(res){var n=0;(function w(){if(document.body&&document.body.getAttribute('data-ready')==='1'||++n>100)res(document.title+'|'+(document.getElementById('name')||{}).textContent);else setTimeout(w,100)})()})");
   check(/NorwinPrep/.test(ready), 'window shows the local home page (' + ready + ')');
   return fails;
 }
+
+if (SELFTEST) process.env.NORWINPREP_API_BASE = 'http://127.0.0.1:1';   // never touch the real GitHub in tests
 
 app.whenReady().then(async () => {
   const info = await startServer();

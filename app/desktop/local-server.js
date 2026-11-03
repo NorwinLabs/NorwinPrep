@@ -24,7 +24,8 @@ function create(opts) {
 
   const deviceInfo = () => ({
     name: opts.getName(), mode: 'local', platform: opts.platform, version: opts.version,
-    address: 'http://127.0.0.1:' + port, filesDir: opts.filesDir
+    address: 'http://127.0.0.1:' + port, filesDir: opts.filesDir,
+    arch: opts.arch || '', packaging: opts.packaging || ''
   });
 
   const server = http.createServer((req, res) => {
@@ -62,6 +63,26 @@ function create(opts) {
         if (!NAME_RE.test(name)) return json(400, { error: 'Name must be 1-40 letters, numbers, spaces or . _ - ( )' });
         opts.setName(name);
         return json(200, deviceInfo());
+      });
+      return;
+    }
+
+    // ---- app updates (check GitHub, install the matching build) ----
+    if (p === '/api/update/check' && !writes) {
+      if (!opts.update) return json(404, { error: 'updates not available' });
+      opts.update.check().then((r) => json(200, r), (e) => json(502, { error: 'Could not reach GitHub.' }));
+      return;
+    }
+    if (p === '/api/update/status' && !writes) return json(200, opts.update ? opts.update.status() : { state: 'idle' });
+    if (p === '/api/update/install' && req.method === 'POST') {
+      if (!opts.update) return json(404, { error: 'updates not available' });
+      let body = '';
+      req.on('data', (c) => { body += c; if (body.length > 2048) req.destroy(); });
+      req.on('end', () => {
+        let b;
+        try { b = JSON.parse(body); } catch (e) { return json(400, { error: 'invalid JSON' }); }
+        try { return json(202, opts.update.install(String(b.tag || ''), String(b.asset || ''))); }
+        catch (e) { return json(e.code || 500, { error: e.message }); }
       });
       return;
     }

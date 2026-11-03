@@ -157,8 +157,19 @@ public class MainActivity extends Activity {
                     public String version() {
                         return ver;
                     }
+
+                    @Override
+                    public String arch() {
+                        return Build.SUPPORTED_ABIS.length > 0 ? Build.SUPPORTED_ABIS[0] : "";
+                    }
+
+                    @Override
+                    public String packaging() {
+                        return "apk";
+                    }
                 },
-                filesDir);
+                filesDir,
+                new AppUpdater(this));
         home = "http://127.0.0.1:" + server.start(PORT) + "/";
     }
 

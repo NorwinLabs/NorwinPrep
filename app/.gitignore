@@ -1,6 +1,6 @@
 node_modules/
 dist/
-dist-test/
+dist-test*/
 /desktop/site/
 /desktop/icon.png
 /desktop/connect.html

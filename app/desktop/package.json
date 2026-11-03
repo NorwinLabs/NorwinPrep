@@ -22,6 +22,7 @@
     "files": [
       "main.js",
       "local-server.js",
+      "updater.js",
       "site/**",
       "icon.png"
     ],

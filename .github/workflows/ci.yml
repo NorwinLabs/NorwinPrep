@@ -45,12 +45,16 @@ jobs:
           node-version: 22
           cache: npm
           cache-dependency-path: app/desktop/package-lock.json
+      - name: Compute app version (VERSION is MAJOR.MINOR; every push gets its own patch number)
+        run: echo "APP_VERSION=$(cat ../../VERSION).${{ github.run_number }}" >> "$GITHUB_ENV"
       - run: npm ci
       - run: npm run prepare-assets
+      - name: Unit tests (updater)
+        run: node test/updater.test.js
       - name: Smoke test (source)
         run: xvfb-run -a ./node_modules/electron/dist/electron . --no-sandbox --selftest
       - name: Build AppImage + deb for x64, arm64, armv7l
-        run: npx electron-builder --linux deb AppImage --x64 --arm64 --armv7l -c.extraMetadata.version="$(cat ../../VERSION)" --publish never
+        run: npx electron-builder --linux deb AppImage --x64 --arm64 --armv7l -c.extraMetadata.version="$APP_VERSION" --publish never
       - name: Verify packages and architectures
         run: |
           set -e
@@ -88,10 +92,12 @@ jobs:
           node-version: 22
           cache: npm
           cache-dependency-path: app/desktop/package-lock.json
+      - name: Compute app version
+        run: echo "APP_VERSION=$(cat ../../VERSION).${{ github.run_number }}" >> "$GITHUB_ENV"
       - run: npm ci
       - run: npm run prepare-assets
       - name: Build installer + portable exe
-        run: npx electron-builder --win nsis portable --x64 -c.extraMetadata.version="$(cat ../../VERSION)" --publish never
+        run: npx electron-builder --win nsis portable --x64 -c.extraMetadata.version="$APP_VERSION" --publish never
       - name: Verify
         run: |
           set -e
@@ -130,11 +136,15 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: 8.10.2
-      - name: Test the Android local server (plain JVM, no SDK needed)
+      - name: Compute app version
+        run: echo "APP_VERSION=$(cat VERSION).${{ github.run_number }}" >> "$GITHUB_ENV"
+      - name: Test the Android local server and update client (plain JVM, no SDK needed)
         run: |
           mkdir -p /tmp/jt
-          javac -d /tmp/jt app/android/app/src/main/java/com/norwinlabs/norwinprep/LocalServer.java app/android/app/src/test/java/com/norwinlabs/norwinprep/LocalServerTest.java
+          M=app/android/app/src/main/java/com/norwinlabs/norwinprep; T=app/android/app/src/test/java/com/norwinlabs/norwinprep
+          javac -d /tmp/jt $M/LocalServer.java $M/ReleaseClient.java $T/LocalServerTest.java $T/ReleaseClientTest.java
           java -cp /tmp/jt com.norwinlabs.norwinprep.LocalServerTest
+          java -cp /tmp/jt com.norwinlabs.norwinprep.ReleaseClientTest
       - name: Build signed release APK
         env:
           # optional repository secrets; without them the checked-in keystore (app/android/norwinprep.keystore) is used
@@ -143,7 +153,7 @@ jobs:
           ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: |
-          V="$(cat VERSION)"
+          V="$APP_VERSION"
           gradle -p app/android assembleRelease -PappVersionName="$V" -PappVersionCode="${{ github.run_number }}" --no-daemon --stacktrace
           mkdir -p out
           cp app/android/app/build/outputs/apk/release/app-release.apk "out/NorwinPrep-$V-android.apk"
@@ -151,11 +161,14 @@ jobs:
         run: |
           set -e
           BT="$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)"
-          APK="out/NorwinPrep-$(cat VERSION)-android.apk"
+          APK="out/NorwinPrep-$APP_VERSION-android.apk"
           "$BT/apksigner" verify --verbose "$APK" | head -5
-          "$BT/aapt2" dump badging "$APK" | grep -E "^package: name='com.norwinlabs.norwinprep' .*versionName='$(cat VERSION)'"
-          [ "$(stat -c%s "$APK")" -gt 100000 ] || { echo "APK suspiciously small"; exit 1; }
+          "$BT/aapt2" dump badging "$APK" | grep -E "^package: name='com.norwinlabs.norwinprep' .*versionName='$APP_VERSION'"
+          # a WebView app with no native libraries is small (tens of KB), so check content, not just size
+          [ "$(stat -c%s "$APK")" -gt 10000 ] || { echo "APK suspiciously small"; exit 1; }
+          unzip -l "$APK" | grep -q "classes.dex" || { echo "APK has no code"; exit 1; }
           unzip -l "$APK" | grep -q "assets/site/index.html" || { echo "APK is missing assets/site/index.html"; exit 1; }
+          "$BT/aapt2" dump permissions "$APK" | grep -q "REQUEST_INSTALL_PACKAGES" || { echo "APK is missing the install permission (needed for in-app updates)"; exit 1; }
           "$BT/aapt2" dump badging "$APK" | grep -E "sdkVersion|uses-permission" | head
       - uses: actions/upload-artifact@v4
         with:
@@ -164,15 +177,22 @@ jobs:
           if-no-files-found: error
 
   # ---------- Release on every push to main ----------
+  # Every push publishes one normal release v<MAJOR.MINOR>.<run number> (VERSION holds MAJOR.MINOR).
+  # The apps' in-app updater and the Pi's updater both follow the newest release.
   release:
     needs: [linux, windows, android]
     # Linux and Windows are required; Android failing is reported but doesn't block the other platforms
     if: ${{ !cancelled() && github.ref == 'refs/heads/main' && github.event_name == 'push' && needs.linux.result == 'success' && needs.windows.result == 'success' }}
     runs-on: ubuntu-latest
+    concurrency:
+      group: release
+      cancel-in-progress: false
     env:
       GH_TOKEN: ${{ github.token }}
     steps:
       - uses: actions/checkout@v4
+      - name: Compute app version
+        run: echo "APP_VERSION=$(cat VERSION).${{ github.run_number }}" >> "$GITHUB_ENV"
       - uses: actions/download-artifact@v4
         with:
           path: release
@@ -187,21 +207,12 @@ jobs:
           [ "$(ls *.AppImage | wc -l)" -eq 3 ]
           [ "$(ls *.deb | wc -l)" -eq 3 ]
           sha256sum * > SHA256SUMS
-      - name: Publish build release (every push)
+      - name: Publish release
         run: |
-          V="$(cat VERSION)"
-          TAG="v$V-build.${{ github.run_number }}"
-          gh release create "$TAG" release/* --target "$GITHUB_SHA" --prerelease \
-            --title "NorwinPrep $V (build ${{ github.run_number }})" \
-            --notes "Automated build of ${GITHUB_SHA:0:7} from main. Android APK, Windows installer/portable EXE, and Linux AppImage/deb for x64, Raspberry Pi arm64 (64-bit Pi OS) and armv7l (32-bit Pi OS)."
-      - name: Publish stable release (when VERSION is new)
+          TAG="v$APP_VERSION"
+          gh release create "$TAG" release/* --target "$GITHUB_SHA" --latest --title "NorwinPrep $TAG" --generate-notes
+      - name: Prune old releases (keep newest 25)
         run: |
-          V="$(cat VERSION)"
-          if gh release view "v$V" >/dev/null 2>&1; then echo "v$V already released"; exit 0; fi
-          gh release create "v$V" release/* --target "$GITHUB_SHA" --latest \
-            --title "NorwinPrep v$V" --generate-notes
-      - name: Prune old build releases (keep newest 10)
-        run: |
-          gh release list --limit 200 --json tagName,createdAt \
-            --jq '[.[] | select(.tagName | test("-build\\."))] | sort_by(.createdAt) | reverse | .[10:] | .[].tagName' \
+          gh release list --limit 300 --json tagName,createdAt \
+            --jq '[.[] | select(.tagName | test("^v[0-9]+\\.[0-9]+\\.[0-9]+(-build\\.[0-9]+)?$"))] | sort_by(.createdAt) | reverse | .[25:] | .[].tagName' \
             | xargs -r -n1 gh release delete --cleanup-tag --yes

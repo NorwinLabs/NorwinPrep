@@ -57,3 +57,8 @@ android {
         abortOnError false
     }
 }
+
+dependencies {
+    // FileProvider: shares the downloaded update APK with the system package installer
+    implementation 'androidx.core:core:1.13.1'
+}

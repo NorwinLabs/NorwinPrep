@@ -38,6 +38,16 @@ public class LocalServer {
         void setName(String name);
         String platform();
         String version();
+        default String arch() { return ""; }
+        default String packaging() { return ""; }
+    }
+
+    /** App updates: check the latest release, download + install a file from it. */
+    public interface Updater {
+        String checkJson() throws IOException;
+        /** Starts the update in the background. Throws IllegalStateException if one is already running. */
+        void install(String tag, String asset) throws IOException;
+        String statusJson();
     }
 
     static final Pattern NAME_RE = Pattern.compile("^[A-Za-z0-9 ._()\\-]{1,40}$");
@@ -47,14 +57,20 @@ public class LocalServer {
     private final Source site;
     private final Device device;
     private final File filesDir;
+    private final Updater updater;
     private ServerSocket socket;
     private ExecutorService pool;
     private volatile int port;
 
     public LocalServer(Source site, Device device, File filesDir) {
+        this(site, device, filesDir, null);
+    }
+
+    public LocalServer(Source site, Device device, File filesDir, Updater updater) {
         this.site = site;
         this.device = device;
         this.filesDir = filesDir;
+        this.updater = updater;
     }
 
     public int port() {
@@ -217,6 +233,47 @@ public class LocalServer {
             return;
         }
 
+        if (path.equals("/api/update/check") && !writes) {
+            if (updater == null) {
+                respond(out, 404, "application/json; charset=utf-8", "{\"error\":\"updates not available\"}", head);
+            } else {
+                try {
+                    respond(out, 200, "application/json; charset=utf-8", updater.checkJson(), head);
+                } catch (IOException e) {
+                    respond(out, 502, "application/json; charset=utf-8", "{\"error\":\"Could not reach GitHub.\"}", head);
+                }
+            }
+            return;
+        }
+        if (path.equals("/api/update/status") && !writes) {
+            respond(out, 200, "application/json; charset=utf-8", updater == null ? "{\"state\":\"idle\"}" : updater.statusJson(), head);
+            return;
+        }
+        if (path.equals("/api/update/install") && req.method.equals("POST")) {
+            if (updater == null) {
+                respond(out, 404, "application/json; charset=utf-8", "{\"error\":\"updates not available\"}", head);
+                return;
+            }
+            String body = new String(readBody(req, 2048), StandardCharsets.UTF_8);
+            java.util.regex.Matcher tm = Pattern.compile("\"tag\"\\s*:\\s*\"([^\"]*)\"").matcher(body);
+            java.util.regex.Matcher am = Pattern.compile("\"asset\"\\s*:\\s*\"([^\"]*)\"").matcher(body);
+            String tag = tm.find() ? tm.group(1) : "";
+            String asset = am.find() ? am.group(1) : "";
+            if (!ReleaseClient.TAG_RE.matcher(tag).matches() || !ReleaseClient.ASSET_RE.matcher(asset).matches()) {
+                respond(out, 400, "application/json; charset=utf-8", "{\"error\":\"bad tag or asset\"}", head);
+                return;
+            }
+            try {
+                updater.install(tag, asset);
+                respond(out, 202, "application/json; charset=utf-8", updater.statusJson(), head);
+            } catch (IllegalStateException busy) {
+                respond(out, 409, "application/json; charset=utf-8", "{\"error\":" + jsonStr(String.valueOf(busy.getMessage())) + "}", head);
+            } catch (IOException e) {
+                respond(out, 500, "application/json; charset=utf-8", "{\"error\":" + jsonStr(String.valueOf(e.getMessage())) + "}", head);
+            }
+            return;
+        }
+
         if (path.equals("/api/files") && !writes) {
             StringBuilder sb = new StringBuilder("[");
             File[] list = listFiles();
@@ -334,7 +391,8 @@ public class LocalServer {
 
     private String deviceJson() {
         return "{\"name\":" + jsonStr(device.name()) + ",\"mode\":\"local\",\"platform\":" + jsonStr(device.platform())
-                + ",\"version\":" + jsonStr(device.version()) + ",\"address\":\"http://127.0.0.1:" + port
+                + ",\"version\":" + jsonStr(device.version()) + ",\"arch\":" + jsonStr(device.arch())
+                + ",\"packaging\":" + jsonStr(device.packaging()) + ",\"address\":\"http://127.0.0.1:" + port
                 + "\",\"filesDir\":" + jsonStr(filesDir.getAbsolutePath()) + "}";
     }
 
@@ -375,6 +433,9 @@ public class LocalServer {
 
     static {
         STATUS.put(200, "OK");
+        STATUS.put(202, "Accepted");
+        STATUS.put(409, "Conflict");
+        STATUS.put(502, "Bad Gateway");
         STATUS.put(400, "Bad Request");
         STATUS.put(403, "Forbidden");
         STATUS.put(404, "Not Found");

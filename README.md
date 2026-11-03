@@ -51,12 +51,31 @@ Each option shows whether it is online and the device name it reports. Anything 
 as NorwinPrep is flagged as such. **Make default** opens an option automatically on launch after a 3-second countdown you can cancel;
 **Home** (Ctrl+H on desktop, Back on Android) always returns to the options.
 
+### Version button and in-app updates
+
+The **version number in the bottom-right corner** (for example `v0.6.14`) is clickable. It turns green and says "update available" when a newer
+release exists. Click it to check GitHub's latest release and update automatically:
+
+| Platform | What happens on click |
+|---|---|
+| Linux AppImage (incl. Raspberry Pi) | downloads the new AppImage, verifies it, replaces the file, restarts |
+| Linux `.deb` (installed in `/opt`) | downloads, installs with `pkexec apt-get install` (asks for your password), restarts |
+| Windows installer | downloads and runs the installer silently, then restarts |
+| Windows portable | saves the new portable exe next to the old one and starts it |
+| Android | downloads and verifies the APK, then opens Android's installer (you tap Install; the first time you must allow "install unknown apps" for NorwinPrep) |
+
+Every download is checked against the release's `SHA256SUMS` before anything is installed; a mismatch is discarded. The app only ever fetches
+`NorwinLabs/NorwinPrepDisk` release files with a plain `vX.Y.Z` tag. Desktop has **Check for updates** in its menu too. The Android app
+checks through whichever network has internet, so it still works while joined to a Pi's hotspot (which has none).
+
+**Versions:** `VERSION` holds `MAJOR.MINOR`. Every push to `main` publishes one release `vMAJOR.MINOR.<run number>` (for example `v0.6.14`), so each
+push is one step the update button can take. Bump `VERSION` for a bigger release. Old releases beyond the newest 25 are pruned.
+
 The device name is set from the home page (local instance) or `DEVICE_NAME` in `/etc/norwinprep.conf` (Pi), and both are served as JSON at
 `/api/device`. The local server only listens on loopback and rejects requests from other sites; see `app/desktop/local-server.js`
 (desktop) and `app/android/.../LocalServer.java` (Android, unit-tested in CI).
 
-Every push to `main` builds all of them in GitHub Actions and publishes them as a **GitHub release** (`vX.Y.Z-build.N`, newest 10 kept;
-a clean `vX.Y.Z` release is also created whenever `VERSION` changes):
+Every push to `main` builds all of them in GitHub Actions and publishes them as a **GitHub release** (`vMAJOR.MINOR.<run number>`, newest 25 kept):
 
 | Platform | File |
 |---|---|
@@ -87,8 +106,8 @@ Run it by hand with `sudo /opt/norwinprep/scripts/update.sh`; turn parts off wit
 Your settings are preserved across updates. The hotspot works over Wi-Fi, so give the Pi internet by Ethernet (or a USB Wi-Fi dongle).
 If this repo is private, set `UPDATE_TOKEN` to a read-only GitHub token.
 
-**Releases:** CI checks the scripts and builds the apps on every push to `main`. Bump `VERSION` and merge to `main` to publish a clean
-`vX.Y.Z` release; devices on the `stable` channel then update themselves (the per-push `-build.N` releases are ignored by devices).
+**Releases:** CI checks the scripts and builds the apps on every push to `main` and publishes `vMAJOR.MINOR.<run number>`. Devices on the
+`stable` channel follow the newest release, so a Pi updates itself shortly after a push passes CI. Use `UPDATE_CHANNEL="edge"` to track `main` directly.
 
 ## Content
 
