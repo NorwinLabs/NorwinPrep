@@ -1,10 +1,10 @@
 # NorwinPrep
 
-A self-contained offline-knowledge Raspberry Pi, modelled on PrepperDisk. Power it on and it
+A self-contained offline-knowledge Raspberry Pi, modelled on PrepperDisk. Once installed, it
 broadcasts its own Wi-Fi hotspot (`NorwinPrep`); connect any phone/laptop, a captive portal opens,
 and you can browse offline Wikipedia, medical/water/repair guides and your own PDFs, no internet needed.
 
-## What boots automatically
+## What it sets up (all start automatically on boot)
 - Wi-Fi access point (NetworkManager, `10.42.0.1`) with wildcard DNS so the portal pops up
 - nginx landing page at `http://10.42.0.1` / `http://norwinprep.local`
 - `kiwix-serve` for every `.zim` in `/srv/norwinprep/content/zim` (served at `/wiki/`)
@@ -12,20 +12,29 @@ and you can browse offline Wikipedia, medical/water/repair guides and your own P
 - `/apps/` Kiwix reader installers for connected devices
 - `/library/` file browser for PDFs, manuals, etc. in `/srv/norwinprep/content/library`
 
-## Option A: install on Raspberry Pi OS Lite (Bookworm)
+## Install
+
+Requires a Raspberry Pi (3, 4 or 5; 2GB+ RAM recommended) running **Raspberry Pi OS Bookworm or newer** (Lite is fine), with
+internet for the install. The Wi-Fi hotspot uses `wlan0`, so install over **Ethernet** if you can.
+
 ```bash
-git clone <this repo> && cd NorwinPrepDisk
-sudo ./install.sh
-sudo /opt/norwinprep/scripts/fetch-content.sh small   # or medium / large (needs internet)
+curl -fsSL https://raw.githubusercontent.com/NorwinLabs/NorwinPrepDisk/main/get.sh | sudo bash
 ```
-Edit `/etc/norwinprep.conf` (SSID, password), then `sudo /opt/norwinprep/scripts/setup-hotspot.sh`.
 
-## Option B: build a flashable image
-`image/build-image.sh` (needs Docker) or run the "Build NorwinPrepOS image" GitHub workflow.
-Flash the resulting image with Raspberry Pi Imager; it auto-launches everything on first boot.
-Change the default login (`norwin` / `changeme-now`) and Wi-Fi password in `image/config` and `norwinprep.conf` first.
+or from a clone:
 
-## Updates & automatic builds
+```bash
+git clone https://github.com/NorwinLabs/NorwinPrepDisk.git && cd NorwinPrepDisk && sudo ./install.sh
+```
+
+Options (append after `-s --` for the one-liner): `--content survival|small|medium|large|none` (default `survival`, a compact
+set of a few GB), `--no-hotspot`. If the Pi is currently online through Wi-Fi, the installer skips starting the hotspot (it would
+disconnect you) and tells you how to start it later with `sudo /opt/norwinprep/scripts/setup-hotspot.sh`.
+
+Change the Wi-Fi name/password in `/etc/norwinprep.conf` (defaults: `NorwinPrep` / `prepared123`), then rerun `setup-hotspot.sh`.
+Uninstall with `sudo /opt/norwinprep/scripts/uninstall.sh` (add `--purge` to delete downloaded content too).
+
+## Updates
 
 **On the device (when online, e.g. Ethernet plugged in):** `norwinprep-update.timer` runs 10 min after boot and daily at ~03:30.
 It does nothing if there is no internet. When online it:
@@ -37,14 +46,8 @@ Run it by hand with `sudo /opt/norwinprep/scripts/update.sh`; turn parts off wit
 Your settings are preserved across updates. The hotspot works over Wi-Fi, so give the Pi internet by Ethernet (or a USB Wi-Fi dongle).
 If this repo is private, set `UPDATE_TOKEN` to a read-only GitHub token.
 
-**In GitHub Actions:** every push to `main`, every Monday, and on demand, the workflow lints the scripts and builds the image
-(download from the run's Artifacts). When `VERSION` is bumped on `main` and that `vX.Y.Z` release doesn't exist yet, it
-publishes a GitHub Release with the image; devices on the `stable` channel then pick up the new software. To ship a release:
-bump `VERSION`, merge to `main`.
-
-**Built into the image:** the `survival` tier (zimgit medicine/water/post-disaster/food, WikEM, survival/outdoors/health Q&A,
-Appropedia, top Wikipedia articles; any single file over `SURVIVAL_MAX_MB`=600 is skipped to keep the image small). The image
-build fails if no content could be downloaded.
+**Releases:** CI checks the scripts on every push to `main`. Bump `VERSION` and merge to `main` to publish a `vX.Y.Z` GitHub
+release; devices on the `stable` channel then update themselves.
 
 ## Content
 

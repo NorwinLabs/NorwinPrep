@@ -1,0 +1,42 @@
+name: CI
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: write
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Syntax-check scripts
+        run: |
+          for f in install.sh get.sh uninstall.sh scripts/*.sh; do bash -n "$f"; done
+      - name: ShellCheck (errors only)
+        run: |
+          sudo apt-get install -y shellcheck
+          shellcheck -S error install.sh get.sh uninstall.sh scripts/*.sh
+      - name: nginx config test
+        run: |
+          sudo apt-get install -y nginx
+          sudo cp system/nginx/norwinprep.conf /etc/nginx/conf.d/norwinprep.conf
+          sudo rm -f /etc/nginx/sites-enabled/default
+          sudo mkdir -p /opt/norwinprep/web /srv/norwinprep/content/{library,maps,apps}
+          sudo nginx -t
+
+  release:
+    needs: check
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Publish release when VERSION has no tag yet
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          v="v$(cat VERSION)"
+          if gh release view "$v" >/dev/null 2>&1; then echo "$v already released"; exit 0; fi
+          gh release create "$v" --target "$GITHUB_SHA" --title "NorwinPrep $v" --generate-notes
