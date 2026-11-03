@@ -26,6 +26,8 @@ UA = {"User-Agent": "NorwinPrep-modules"}
 ID_RE = re.compile(r"^[a-z0-9][a-z0-9-]{1,40}$")
 SLUG_RE = re.compile(r"^[A-Za-z0-9._-]+$")
 PIN_RE = re.compile(r"^[0-9]{4,12}$")
+# The NorwinPrep apps serve their screen from a loopback address and call this API from there
+LOOPBACK_ORIGIN = re.compile(r"^http://(127\.0\.0\.1|localhost):\d{2,5}$")
 TAG_RE = re.compile(r"^v\d+\.\d+\.\d+$")
 ASSET_RE = re.compile(r"^NorwinPrep-[A-Za-z0-9._-]+\.(apk|exe|AppImage|deb)$")
 
@@ -551,9 +553,37 @@ def make_handler(mgr):
             peer = self.client_address[0]
             return (self.headers.get("X-Real-IP") or peer) if peer in ("127.0.0.1", "::1") else peer
 
+        def origin_ok(self):
+            """Browsers send Origin on cross-site requests. Accept our own pages and the apps' loopback pages only."""
+            o = self.headers.get("Origin")
+            if not o:
+                return True
+            if LOOPBACK_ORIGIN.match(o):
+                return True
+            host = (self.headers.get("Host") or "").split(":")[0]
+            return urllib.parse.urlparse(o).hostname == host and bool(host)
+
+        def cors(self):
+            o = self.headers.get("Origin")
+            if o and LOOPBACK_ORIGIN.match(o):
+                self.send_header("Access-Control-Allow-Origin", o)
+                self.send_header("Vary", "Origin")
+
+        def do_OPTIONS(self):              # CORS preflight from the apps
+            o = self.headers.get("Origin")
+            self.send_response(204 if (o and LOOPBACK_ORIGIN.match(o)) else 403)
+            if o and LOOPBACK_ORIGIN.match(o):
+                self.cors()
+                self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+                self.send_header("Access-Control-Allow-Headers", "Content-Type, X-NorwinPrep, X-NorwinPrep-PIN")
+                self.send_header("Access-Control-Max-Age", "600")
+            self.send_header("Content-Length", "0")
+            self.end_headers()
+
         def send_json(self, code, obj):
             body = json.dumps(obj).encode()
             self.send_response(code)
+            self.cors()
             self.send_header("Content-Type", "application/json; charset=utf-8")
             self.send_header("Content-Length", str(len(body)))
             self.send_header("Cache-Control", "no-store")
@@ -585,7 +615,9 @@ def make_handler(mgr):
                     if route == "/info":
                         return self.send_json(200, mgr.info((q.get("id") or [""])[0]))
                     raise ApiError(404, "Not found")
-                # writes: need the custom header (blocks cross-site forms), and most need the PIN
+                # writes: need the custom header (blocks cross-site forms), a trusted Origin, and most need the PIN
+                if not self.origin_ok():
+                    raise ApiError(403, "Forbidden")
                 if self.headers.get("X-NorwinPrep") != "1" and "X-NorwinPrep-PIN" not in self.headers:
                     raise ApiError(403, "Forbidden")
                 data = self.body()

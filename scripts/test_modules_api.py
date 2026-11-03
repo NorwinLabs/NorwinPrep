@@ -6,7 +6,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 HERE = os.path.dirname(os.path.abspath(__file__))
 spec = importlib.util.spec_from_file_location("modules_api", os.path.join(HERE, "modules-api.py"))
 api = importlib.util.module_from_spec(spec); spec.loader.exec_module(api)
-CATALOG = os.path.join(HERE, "..", "modules", "catalog.json")
+CATALOG = os.path.join(HERE, "..", "app", "shared", "site", "catalog.json")
 sha = lambda b: hashlib.sha256(b).hexdigest()
 PIN = "123456"
 
@@ -246,6 +246,36 @@ class MapsAndAppsTests(Base):
         self.assertFalse(self.mod("app-android")["updateAvailable"])
     def test_app_info(self):
         s, i = self.get("/api/modules/info?id=app-windows"); self.assertEqual(s, 200); self.assertEqual(i["bytes"], len(EXE) + len(PORT_EXE)); self.assertEqual(i["version"], "0.6.9")
+
+
+class CorsTests(Base):
+    """The apps serve their screen from http://127.0.0.1:<port> and call this API from there."""
+    def raw(self, method, path, headers=None, body=None):
+        c = http.client.HTTPConnection("127.0.0.1", self.port, timeout=10)
+        c.request(method, path, body, headers or {}); r = c.getresponse(); data = r.read(); h = {k.lower(): v for k, v in r.getheaders()}; c.close()
+        return r.status, h, data
+    def test_preflight_allowed_for_app_origin(self):
+        s, h, _ = self.raw("OPTIONS", "/api/modules/install", {"Origin": "http://127.0.0.1:8787", "Access-Control-Request-Method": "POST"})
+        self.assertEqual(s, 204); self.assertEqual(h["access-control-allow-origin"], "http://127.0.0.1:8787")
+        self.assertIn("x-norwinprep-pin", h["access-control-allow-headers"].lower()); self.assertIn("POST", h["access-control-allow-methods"])
+        s, h, _ = self.raw("OPTIONS", "/api/modules/install", {"Origin": "http://localhost:51234"}); self.assertEqual(s, 204)
+    def test_preflight_refused_for_other_sites(self):
+        for o in ["https://evil.example", "http://evil.example", "http://127.0.0.1.evil.example:8787", "http://localhost.evil.example:80", "null", "http://127.0.0.1"]:
+            s, h, _ = self.raw("OPTIONS", "/api/modules/install", {"Origin": o}); self.assertEqual(s, 403, o); self.assertNotIn("access-control-allow-origin", h, o)
+    def test_reads_expose_cors_only_to_app_origin(self):
+        s, h, _ = self.raw("GET", "/api/modules/catalog", {"Origin": "http://127.0.0.1:8787"}); self.assertEqual((s, h.get("access-control-allow-origin")), (200, "http://127.0.0.1:8787"))
+        s, h, _ = self.raw("GET", "/api/modules/catalog", {"Origin": "https://evil.example"}); self.assertEqual(s, 200); self.assertNotIn("access-control-allow-origin", h, "other sites can't read the response")
+    def test_forged_write_from_other_site_refused_even_with_pin(self):
+        hdr = {"X-NorwinPrep": "1", "X-NorwinPrep-PIN": PIN, "Content-Type": "application/json"}
+        s, _, d = self.raw("POST", "/api/modules/install", dict(hdr, Origin="https://evil.example"), b'{"id":"water"}'); self.assertEqual(s, 403)
+        s, _, _ = self.raw("POST", "/api/modules/remove", dict(hdr, Origin="http://127.0.0.1.evil.example:80"), b'{"id":"water"}'); self.assertEqual(s, 403)
+        self.assertFalse("job" in self.mod("water"), "nothing was started")
+    def test_write_from_app_origin_and_own_page_works(self):
+        hdr = {"X-NorwinPrep": "1", "X-NorwinPrep-PIN": PIN, "Content-Type": "application/json"}
+        s, h, _ = self.raw("POST", "/api/modules/pin", dict(hdr, Origin="http://127.0.0.1:8787"), b"{}"); self.assertEqual((s, h.get("access-control-allow-origin")), (200, "http://127.0.0.1:8787"))
+        s, _, _ = self.raw("POST", "/api/modules/pin", dict(hdr, Origin="http://norwinprep.local", Host="norwinprep.local"), b"{}"); self.assertEqual(s, 200, "the Pi's own page (same host) works")
+        s, _, _ = self.raw("POST", "/api/modules/pin", dict(hdr, Origin="http://10.42.0.1", Host="10.42.0.1"), b"{}"); self.assertEqual(s, 200)
+        s, _, _ = self.raw("POST", "/api/modules/pin", dict(hdr, Origin="http://10.42.0.1", Host="norwinprep.local"), b"{}"); self.assertEqual(s, 403, "an origin that is not this host is refused")
 
 
 if __name__ == "__main__":

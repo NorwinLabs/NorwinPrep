@@ -51,30 +51,30 @@ Before anything downloads you see the exact file, version, download size and fre
 (SHA-256) before they replace anything, and queue one at a time. Needs the device to be online (e.g. Ethernet).
 
 **Admin PIN:** looking is open, but installing or removing needs the PIN shown at the end of the install (reset: `sudo /opt/norwinprep/scripts/set-admin-pin.sh`).
-Wrong guesses are rate-limited. The catalog is `modules/catalog.json`; each entry is one of three fixed install kinds (`zim`, `maps`, `app`), so adding a
+Wrong guesses are rate-limited. The catalog is `app/shared/site/catalog.json` (the apps ship the same file for offline browsing); each entry is one of three fixed install kinds (`zim`, `maps`, `app`), so adding a
 module is a JSON edit and the service never runs commands from the catalog. The service is `norwinprep-modules` (Python, runs as the unprivileged
 `norwinprep` user; its only sudo right is restarting the library service).
 
 ## Client apps (Android, Windows, Linux, Raspberry Pi)
 
-Each app runs its **own local NorwinPrep instance** on `127.0.0.1:8787`, so you can always get in, even with no Pi nearby.
-The app opens into a home page that shows the **device name** and lets you pick what to connect to:
+Each app runs its **own local NorwinPrep instance** on `127.0.0.1:8787` and **opens straight to the Module Store**, so there is always a screen to
+land on, even with no Pi nearby. The store page is the same file the Pi serves at `/modules/`.
 
-| Option | Address | Use it when |
+Tap the **connections icon** (the Wi-Fi symbol in the top bar; its dot is green when the connected device is online, amber if something answers but
+isn't recognised as NorwinPrep, red if unreachable) to see **which network mode the app is using** and to switch:
+
+| Mode | Address | Use it when |
 |---|---|---|
-| This app (local instance) | `http://127.0.0.1:8787` | always available: device name, plus a small file library you can upload to |
+| This app only | none | browse the catalog with no device (install buttons say "Connect to install") |
 | **Localhost** | `http://localhost` | the app is installed on the same machine as NorwinPrep (e.g. on the Pi itself) |
 | NorwinPrep hotspot | `http://10.42.0.1` | you've joined a Pi's Wi-Fi hotspot |
 | `norwinprep.local` | `http://norwinprep.local` | a Pi on your network |
 | Custom | anything you type | any other address; saved for next time |
 
-**Open the Module Store at launch:** on a verified NorwinPrep device that offers it, tick **Open Modules on launch**. From then on the app opens straight to
-that device's Module Store (after the same cancelable 3-second countdown; if the device is offline you simply stay on this list).
-**Make default** opens the device's portal instead. Press **Back** (Android) or **Ctrl+H** (desktop) any time to return to this list.
-
-Each option shows whether it is online and the device name it reports. Anything that merely answers but doesn't identify itself
-as NorwinPrep is flagged as such. **Make default** opens an option automatically on launch after a 3-second countdown you can cancel;
-**Home** (Ctrl+H on desktop, Back on Android) always returns to the options.
+At first launch the app connects by itself to the first device it finds that offers the Module Store (the panel says "found automatically"). Once you pick
+a mode yourself, the app remembers it. Installs, updates and removals happen **on the connected device** (with its admin PIN, remembered per device). If the
+device can't be reached you still see the catalog, with a red bar and a button back to the picker. The picker also links to the device's own portal and to
+**This device**, a small page for the app's device name and local files. **Back** (Android) or **Ctrl+H** (desktop) returns to the Module Store.
 
 ### Version button and in-app updates
 
@@ -96,7 +96,7 @@ checks through whichever network has internet, so it still works while joined to
 **Versions:** `VERSION` holds `MAJOR.MINOR`. Every push to `main` publishes one release `vMAJOR.MINOR.<run number>` (for example `v0.6.14`), so each
 push is one step the update button can take. Bump `VERSION` for a bigger release. Old releases beyond the newest 25 are pruned.
 
-The device name is set from the home page (local instance) or `DEVICE_NAME` in `/etc/norwinprep.conf` (Pi), and both are served as JSON at
+The device name is set on the **This device** page (local instance) or `DEVICE_NAME` in `/etc/norwinprep.conf` (Pi), and both are served as JSON at
 `/api/device`. The local server only listens on loopback and rejects requests from other sites; see `app/desktop/local-server.js`
 (desktop) and `app/android/.../LocalServer.java` (Android, unit-tested in CI).
 

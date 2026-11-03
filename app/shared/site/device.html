@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>This device &ndash; NorwinPrep</title>
+<style>
+  :root{--bg:#0d0f14;--panel:#12151c;--line:#272b36;--line2:#363c4b;--text:#e9ebf1;--mut:#8b92a3;--blue:#4aa3ff;--red:#ff5a6e;
+    --mono:ui-monospace,"SF Mono",SFMono-Regular,Menlo,Consolas,monospace}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);font:15px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+  header{height:44px;display:flex;align-items:center;border-bottom:1px solid var(--line);padding:0 16px;gap:14px}
+  header a{color:var(--text);text-decoration:none;font-family:var(--mono);font-size:11px;letter-spacing:.2em;text-transform:uppercase}
+  header span{color:var(--mut);font-family:var(--mono);font-size:11px;letter-spacing:.28em;text-transform:uppercase}
+  main{max-width:720px;margin:0 auto;padding:20px 16px 56px}
+  h1{font-size:22px;margin:.2rem 0}
+  h2{font-family:var(--mono);font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--mut);margin:26px 0 10px;font-weight:500}
+  .sub{margin:0;color:var(--mut);font-size:13px}
+  .box{border:1px solid var(--line);padding:14px 16px}
+  .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  input[type=text],input[type=file]{flex:1;min-width:0;height:34px;background:var(--panel);border:1px solid var(--line2);color:inherit;padding:0 10px;font:inherit;border-radius:0}
+  input[type=file]{padding:4px 8px;height:auto}
+  button{height:34px;padding:0 16px;border:1px solid #fff;background:#fff;color:#0d0f14;font-family:var(--mono);font-size:11px;letter-spacing:.18em;text-transform:uppercase;font-weight:700;cursor:pointer}
+  button.ghost{background:transparent;color:var(--text);border-color:var(--line2)}
+  button:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid var(--blue);outline-offset:1px}
+  ul{list-style:none;padding:0;margin:10px 0 0}
+  li{display:flex;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid var(--line)}
+  li a{color:var(--blue);overflow-wrap:anywhere}
+  .size{color:var(--mut);font-size:12px;margin-left:auto;white-space:nowrap}
+  #msg{color:var(--red);min-height:1.3em;font-size:13px;margin-top:8px}
+  .note{color:var(--mut);font-size:13px;margin-top:8px;overflow-wrap:anywhere}
+</style>
+</head>
+<body>
+<header><a href="/">&larr; Module Store</a><span>This device</span></header>
+<main>
+  <h1 id="name">&hellip;</h1>
+  <p class="sub" id="meta"></p>
+
+  <h2>Device name</h2>
+  <div class="box">
+    <form id="renameForm" class="row">
+      <input id="nameInput" type="text" maxlength="40" aria-label="Device name">
+      <button type="submit">Rename</button>
+    </form>
+    <div class="note">Shared with anything that connects to this app's local instance (<span id="addr"></span>).</div>
+  </div>
+
+  <h2>Local files</h2>
+  <div class="box">
+    <div class="row"><input id="file" type="file" multiple><button id="upload" type="button">Upload</button></div>
+    <ul id="files"></ul>
+    <div class="note" id="filesNote"></div>
+  </div>
+  <div id="msg" role="status"></div>
+</main>
+<script>
+(function () {
+  'use strict';
+  var $ = function (id) { return document.getElementById(id); };
+  var H = { 'X-NorwinPrep': '1' };
+  function say(t) { $('msg').textContent = t || ''; }
+  function jf(url, opt) {
+    return fetch(url, opt).then(function (r) {
+      return r.json().catch(function () { return {}; }).then(function (j) { if (!r.ok) throw new Error(j.error || ('Request failed (' + r.status + ')')); return j; });
+    });
+  }
+  function human(n) { return n < 1024 ? n + ' B' : n < 1048576 ? (n / 1024).toFixed(1) + ' KB' : (n / 1048576).toFixed(1) + ' MB'; }
+  function loadDevice() {
+    return jf('/api/device', { cache: 'no-store' }).then(function (d) {
+      $('name').textContent = d.name; document.title = d.name + ' – NorwinPrep';
+      $('nameInput').value = d.name; $('addr').textContent = d.address;
+      $('meta').textContent = d.platform + ' · v' + d.version;
+      $('filesNote').textContent = d.filesDir ? 'Stored in: ' + d.filesDir : '';
+    }).catch(function () { $('meta').textContent = 'Local instance unavailable'; });
+  }
+  $('renameForm').addEventListener('submit', function (e) {
+    e.preventDefault(); say('');
+    jf('/api/device', { method: 'PUT', headers: Object.assign({ 'Content-Type': 'application/json' }, H), body: JSON.stringify({ name: $('nameInput').value }) })
+      .then(loadDevice).catch(function (err) { say(err.message); });
+  });
+  function loadFiles() {
+    jf('/api/files', { cache: 'no-store' }).then(function (list) {
+      var ul = $('files'); ul.textContent = '';
+      if (!list.length) { var li = document.createElement('li'); li.textContent = 'No files yet.'; ul.appendChild(li); }
+      list.forEach(function (f) {
+        var li = document.createElement('li'), a = document.createElement('a'), sz = document.createElement('span'), del = document.createElement('button');
+        a.href = '/files/' + encodeURIComponent(f.name); a.textContent = f.name;
+        sz.className = 'size'; sz.textContent = human(f.size);
+        del.className = 'ghost'; del.textContent = 'Delete';
+        del.onclick = function () { fetch(a.href, { method: 'DELETE', headers: H }).then(loadFiles); };
+        li.appendChild(a); li.appendChild(sz); li.appendChild(del); ul.appendChild(li);
+      });
+    });
+  }
+  $('upload').addEventListener('click', function () {
+    var files = Array.prototype.slice.call($('file').files); say('');
+    if (!files.length) return say('Choose one or more files first.');
+    files.reduce(function (p, f) {
+      return p.then(function () {
+        return fetch('/files/' + encodeURIComponent(f.name), { method: 'PUT', headers: H, body: f })
+          .then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) { if (!r.ok) throw new Error(j.error || ('Upload failed (' + r.status + ')')); }); });
+      });
+    }, Promise.resolve()).then(function () { $('file').value = ''; loadFiles(); })
+      .catch(function (err) { say(err.message + ' — file names may use letters, numbers, spaces and . _ - ( )'); loadFiles(); });
+  });
+  loadDevice(); loadFiles(); document.body.setAttribute('data-ready', '1');
+})();
+</script>
+</body>
+</html>

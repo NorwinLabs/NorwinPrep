@@ -3,340 +3,553 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>NorwinPrep</title>
+<title>Module Store &ndash; NorwinPrep</title>
 <style>
-  :root{--bg:#10140f;--fg:#e8eddf;--card:#1c231a;--line:#2b3628;--accent:#9acd32;--mut:#8a9684;--bad:#e07a5f}
+  :root{
+    --bg:#0d0f14; --panel:#12151c; --line:#272b36; --line2:#363c4b; --text:#e9ebf1; --mut:#8b92a3;
+    --blue:#4aa3ff; --red:#ff5a6e; --green:#58d68d; --amber:#f0b84a;
+    --mono:ui-monospace,"SF Mono",SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
+    --sans:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  }
   *{box-sizing:border-box}
-  body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.5 system-ui,sans-serif}
-  main{max-width:760px;margin:0 auto;padding:1rem 1rem 3rem}
-  h1{margin:.5rem 0 0;font-size:1.7rem;color:var(--accent)}
-  h2{margin:1.6rem 0 .5rem;font-size:1.05rem;color:var(--accent)}
-  .sub{margin:0;color:var(--mut);font-size:.9rem;word-break:break-word}
-  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:.9rem 1rem;margin:.5rem 0}
-  .row{display:flex;gap:.6rem;align-items:center;flex-wrap:wrap}
-  .grow{flex:1;min-width:0}
-  .title{font-weight:600;overflow-wrap:anywhere}
-  .desc{color:var(--mut);font-size:.85rem;overflow-wrap:anywhere}
-  .dot{width:.7rem;height:.7rem;border-radius:50%;background:#555;flex:none}
-  .dot.on{background:var(--accent)} .dot.off{background:var(--bad)} .dot.warn{background:#e0b341}
-  button,a.btn{padding:.45rem .9rem;border-radius:8px;border:0;background:var(--accent);color:#10140f;font:inherit;font-weight:600;cursor:pointer;text-decoration:none;display:inline-block}
-  button.ghost,a.btn.ghost{background:transparent;color:var(--fg);border:1px solid var(--line)}
-  button:disabled{opacity:.45;cursor:default}
-  input[type=text]{flex:1;min-width:0;padding:.5rem .7rem;border-radius:8px;border:1px solid #3a4a35;background:#0d110c;color:var(--fg);font:inherit}
-  .badge{font-size:.72rem;border:1px solid var(--accent);color:var(--accent);border-radius:999px;padding:0 .5rem;margin-left:.4rem}
-  #banner{display:none;border-color:var(--accent)}
-  #msg{color:var(--bad);min-height:1.2em;font-size:.9rem}
-  ul{list-style:none;padding:0;margin:.4rem 0}
-  li{display:flex;gap:.6rem;align-items:center;padding:.3rem 0;border-bottom:1px solid var(--line)}
-  li a{color:var(--accent);overflow-wrap:anywhere}
-  .size{color:var(--mut);font-size:.8rem;margin-left:auto;white-space:nowrap}
-  main{padding-bottom:4.5rem}
-  .ver{position:fixed;right:.7rem;bottom:.6rem;z-index:5;background:var(--card);color:var(--mut);border:1px solid var(--line);border-radius:999px;padding:.25rem .8rem;font-size:.8rem;font-weight:500}
-  .ver:hover{color:var(--fg);border-color:var(--accent)}
-  .ver.new{color:var(--accent);border-color:var(--accent)}
-  #upd{position:fixed;right:.7rem;bottom:3rem;z-index:6;width:min(92vw,350px);display:none;box-shadow:0 8px 28px #000b;margin:0}
-  .bar{height:6px;background:#0d110c;border-radius:3px;overflow:hidden;margin-top:.5rem}
-  .bar>i{display:block;height:100%;width:0;background:var(--accent);transition:width .3s}
+  html,body{margin:0;background:var(--bg);color:var(--text);font:15px/1.5 var(--sans)}
+  button,input,select{font:inherit;color:inherit}
+  a{color:inherit}
+  .mono{font-family:var(--mono);letter-spacing:.18em;text-transform:uppercase;font-size:11px}
+
+  /* ---------- top bar ---------- */
+  header{height:44px;display:flex;align-items:stretch;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--bg);z-index:20}
+  .brand{display:flex;align-items:center;padding:0 18px;text-decoration:none;font-weight:800;font-size:18px;letter-spacing:.1em}
+  .brand i{font-style:normal;margin-right:8px;display:inline-block;width:16px;height:16px;border:2px solid #fff;transform:rotate(45deg) scale(.85)}
+  .sub{display:flex;align-items:center;padding:0 18px;border-left:1px solid var(--line);color:var(--mut);letter-spacing:.28em}
+  .spacer{flex:1}
+  .iconbtn{width:48px;border:0;border-left:1px solid var(--line);background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--mut)}
+  .iconbtn:hover{color:#fff;background:#171b24}
+
+  /* ---------- toolbar ---------- */
+  .toolbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;padding:16px}
+  .sq{height:34px;min-width:34px;border:1px solid var(--line2);background:transparent;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;padding:0 12px}
+  .sq:hover{border-color:#6b7488}
+  .sq.on{background:#fff;color:#0d0f14;border-color:#fff}
+  .sq svg{width:16px;height:16px}
+  .chips{display:flex;gap:0}
+  .chips .sq{margin-left:-1px;letter-spacing:.14em}
+  .sortlbl{color:var(--mut);margin-left:auto}
+  select,input[type=search],input[type=password],input[type=text]{height:34px;background:var(--panel);border:1px solid var(--line2);padding:0 12px;border-radius:0;outline:none}
+  select{min-width:150px}
+  input[type=search]{width:min(210px,100%)}
+  select:focus,input:focus,.sq:focus-visible,button:focus-visible,a:focus-visible{outline:2px solid var(--blue);outline-offset:1px}
+  .spin svg{animation:spin 1s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+
+  main{padding:0 16px 56px}
+  .section{margin:22px 0 10px;color:var(--mut)}
+  .section b{color:var(--text);font-weight:600}
+
+  /* ---------- grid of cards (shared borders, like a table) ---------- */
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,376px);justify-content:start;padding:0 1px 1px 0}
+  .card{border:1px solid var(--line);margin:0 -1px -1px 0;background:var(--bg);display:flex;flex-direction:column;min-height:316px;position:relative}
+  .top{display:flex;justify-content:space-between;align-items:center;padding:0 20px;height:40px;border-bottom:1px solid var(--line)}
+  .ver{color:var(--blue)} .ver.upd{color:var(--red)}
+  .src{color:var(--mut);text-decoration:none} .src:hover{color:#fff}
+  .body{padding:18px 20px 20px;display:flex;flex-direction:column;flex:1;min-width:0}
+  .head{display:flex;gap:16px;align-items:center}
+  .icon{width:56px;height:56px;border-radius:13px;flex:none;display:flex;align-items:center;justify-content:center;box-shadow:inset 0 0 0 1px #ffffff22,0 4px 14px #0008}
+  .icon svg{width:30px;height:30px;stroke:#fff;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+  .titles{min-width:0}
+  .title{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:22px;font-weight:700;line-height:1.15;letter-spacing:-.01em}
+  .title .n2{opacity:.95}
+  .by{font-family:var(--mono);font-size:10px;letter-spacing:.14em;color:var(--blue);border:1px solid #2a4a73;background:#10233b55;padding:2px 7px;text-transform:uppercase;font-weight:500}
+  .tag{color:var(--mut);margin-top:3px;font-size:14.5px}
+  .avail{margin-top:18px}
+  .pill{font-family:var(--mono);font-size:10px;letter-spacing:.14em;color:var(--blue);border:1px solid #2a4a73;background:#10233b55;padding:3px 8px;text-transform:uppercase;display:inline-block}
+  .pill.warn{color:var(--red);border-color:#7a2a36;background:#3b101855}
+  .desc{margin:16px 0 0;font-size:14.5px;color:#d3d7e0}
+  .meta{margin-top:12px;font-size:13px;color:var(--mut)}
+  .actions{margin-top:auto;padding-top:22px;display:flex;gap:10px;align-items:stretch}
+  .btn{flex:1;height:36px;border:1px solid var(--line2);background:transparent;cursor:pointer;font-family:var(--mono);font-size:11px;letter-spacing:.2em;text-transform:uppercase;font-weight:700;text-align:center;text-decoration:none;display:inline-flex;align-items:center;justify-content:center}
+  .btn:hover{border-color:#fff}
+  .btn.solid{background:#fff;color:#0d0f14;border-color:#fff} .btn.solid:hover{background:#dfe3ea}
+  .btn.warn{border-color:var(--red);color:var(--red)} .btn.warn:hover{background:#3b101855}
+  .btn:disabled{opacity:.4;cursor:default}
+  .more{flex:none;width:38px;height:36px;border:1px solid var(--line2);background:transparent;cursor:pointer;color:var(--mut);letter-spacing:.1em}
+  .more:hover{color:#fff;border-color:#fff}
+  .menu{position:absolute;right:20px;bottom:62px;background:#161a23;border:1px solid var(--line2);min-width:190px;z-index:10;box-shadow:0 10px 30px #000c;display:none}
+  .menu.open{display:block}
+  .menu button,.menu a{display:block;width:100%;text-align:left;padding:10px 14px;background:transparent;border:0;border-bottom:1px solid var(--line);cursor:pointer;text-decoration:none;font-size:14px}
+  .menu button:last-child,.menu a:last-child{border-bottom:0}
+  .menu button:hover,.menu a:hover{background:#1f2430}
+  .menu .danger{color:var(--red)}
+  .prog{flex:1;min-width:0}
+  .prog .lbl{font-family:var(--mono);font-size:11px;letter-spacing:.08em;color:var(--mut);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .bar{height:6px;background:#1b1f2a;margin-top:8px;overflow:hidden}
+  .bar i{display:block;height:100%;width:0;background:var(--blue);transition:width .4s}
+  .bar.ind i{width:35%;animation:slide 1.4s ease-in-out infinite}
+  @keyframes slide{0%{margin-left:-35%}100%{margin-left:100%}}
+  .err{flex:1;font-size:13px;color:var(--red);min-width:0;overflow-wrap:anywhere}
+
+  /* ---------- list view ---------- */
+  .grid.list{grid-template-columns:1fr}
+  .list .card{min-height:0;flex-direction:row;align-items:center}
+  .list .top{flex-direction:column;align-items:flex-start;justify-content:center;gap:2px;height:auto;border-bottom:0;border-right:1px solid var(--line);width:128px;align-self:stretch;flex:none}
+  .list .body{flex-direction:row;align-items:center;gap:20px;padding:12px 20px;flex-wrap:wrap}
+  .list .head{flex:1 1 280px}
+  .list .avail,.list .meta{display:none}
+  .list .desc{margin:0;flex:2 1 260px;font-size:13.5px}
+  .list .actions{margin:0;padding:0;flex:0 0 240px}
+  .list .menu{bottom:auto;top:calc(100% - 8px)}
+
+  /* ---------- modal ---------- */
+  .veil{position:fixed;inset:0;background:#000b;display:none;align-items:center;justify-content:center;z-index:50;padding:16px}
+  .veil.open{display:flex}
+  .modal{width:min(480px,100%);max-height:88vh;overflow:auto;background:#12151c;border:1px solid var(--line2);box-shadow:0 20px 60px #000}
+  .modal h3{margin:0;padding:16px 20px;border-bottom:1px solid var(--line);font-size:17px}
+  .modal .mb{padding:18px 20px}
+  .modal .mf{display:flex;gap:10px;padding:0 20px 20px}
+  .kv{display:grid;grid-template-columns:110px 1fr;gap:6px 12px;font-size:14px;margin:0}
+  .kv dt{color:var(--mut)} .kv dd{margin:0;overflow-wrap:anywhere}
+  .note{color:var(--mut);font-size:13px;margin-top:12px}
+  .bad{color:var(--red)} .okc{color:var(--green)}
+  .field{width:100%;margin-top:10px;font-family:var(--mono);letter-spacing:.3em;font-size:18px;text-align:center}
+  .empty{padding:60px 16px;text-align:center;color:var(--mut)}
+  .empty h2{color:var(--text);margin:0 0 6px}
+  .toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:#1b2030;border:1px solid var(--line2);padding:10px 16px;z-index:60;display:none;max-width:90vw}
+  .gauge{height:8px;background:#1b1f2a;margin:8px 0}
+  .gauge i{display:block;height:100%;background:var(--blue)}
+
+  .iconbtn{position:relative}
+  .cdot{position:absolute;right:11px;top:12px;width:8px;height:8px;border-radius:50%;background:#555;box-sizing:content-box;border:2px solid var(--bg)}
+  .cdot.on{background:var(--green)} .cdot.warn{background:var(--amber)} .cdot.off{background:var(--red)}
+  #hdrTools{display:flex}
+  .connbar{margin:0 16px 4px;border:1px solid var(--line2);padding:10px 14px;display:none;align-items:center;gap:12px;font-size:14px;color:var(--mut)}
+  .connbar.show{display:flex} .connbar.bad{border-color:#7a2a36;color:#ff9aa6} .connbar .grow{flex:1;min-width:0;overflow-wrap:anywhere}
+  .opt{display:flex;gap:12px;align-items:center;padding:12px 0;border-bottom:1px solid var(--line)}
+  .opt:last-child{border-bottom:0} .opt .grow{flex:1;min-width:0}
+  .opt .t{font-weight:600;overflow-wrap:anywhere} .opt .d{color:var(--mut);font-size:13px;overflow-wrap:anywhere}
+  .dot{width:10px;height:10px;border-radius:50%;background:#555;flex:none} .dot.on{background:var(--green)} .dot.warn{background:var(--amber)} .dot.off{background:var(--red)}
+  .tagon{font-family:var(--mono);font-size:10px;letter-spacing:.14em;color:var(--green);border:1px solid #1f5a3a;padding:2px 8px;text-transform:uppercase}
+  .sumbox{border:1px solid var(--line2);padding:12px 14px;margin-bottom:12px;background:#10131a}
+  .sumbox b{color:#fff}
+  .addr{display:flex;gap:8px;margin-top:12px} .addr input{flex:1;min-width:0}
+  .btn.sm{flex:none;height:30px;padding:0 12px}
+  #ver{position:fixed;right:12px;bottom:10px;z-index:40;background:var(--panel);color:var(--mut);border:1px solid var(--line2);padding:4px 12px;font-family:var(--mono);font-size:11px;letter-spacing:.12em;cursor:pointer}
+  #ver:hover{color:#fff;border-color:#fff} #ver.new{color:var(--green);border-color:var(--green)}
+  #upd{position:fixed;right:12px;bottom:46px;z-index:45;width:min(92vw,350px);display:none;background:#12151c;border:1px solid var(--line2);padding:14px 16px;box-shadow:0 8px 28px #000b}
+  #upd .bar{height:6px;background:#1b1f2a;margin-top:10px;overflow:hidden} #upd .bar i{display:block;height:100%;width:0;background:var(--blue);transition:width .3s}
+  @media (max-width:440px){ .grid{grid-template-columns:1fr} .sub{display:none} .sortlbl{display:none} }
+  @media (max-width:760px){ .list .card{flex-direction:column;align-items:stretch} .list .top{width:auto;flex-direction:row;border-right:0;border-bottom:1px solid var(--line);height:40px;align-items:center} .list .actions{flex:1 1 auto} }
 </style>
 </head>
 <body>
-<main>
-  <h1 id="name">NorwinPrep</h1>
-  <p class="sub" id="meta">Starting&hellip;</p>
+<header>
+  <a class="brand" href="/" aria-label="NorwinPrep home"><i></i>NORWINPREP</a>
+  <div class="sub mono">Module Store</div>
+  <div class="spacer"></div>
+  <div id="hdrTools"></div>
+  <button class="iconbtn" id="gear" aria-label="Settings" title="Settings">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
+  </button>
+</header>
 
-  <div id="banner" class="card row">
-    <div class="grow" id="bannerText"></div>
-    <button id="bannerCancel" class="ghost">Cancel</button>
+<div class="toolbar">
+  <button class="sq" id="refresh" aria-label="Check for new versions" title="Check for new versions">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 4v5h-5"/></svg>
+  </button>
+  <div class="chips" role="group" aria-label="Filter by type" id="chips">
+    <button class="sq mono on" data-t="all">All</button>
+    <button class="sq mono" data-t="content">Content</button>
+    <button class="sq mono" data-t="maps">Maps</button>
+    <button class="sq mono" data-t="app">Apps</button>
   </div>
-  <div id="msg" role="status"></div>
-
-  <h2>Connect to</h2>
-  <div id="options"></div>
-  <form id="custom" class="row" style="margin-top:.6rem">
-    <input id="addr" type="text" placeholder="Other address, e.g. 192.168.1.20 or localhost:8080" autocapitalize="off" autocomplete="off" spellcheck="false">
-    <button type="submit">Add</button>
-  </form>
-
-  <h2>This device</h2>
-  <div class="card">
-    <form id="renameForm" class="row">
-      <input id="nameInput" type="text" maxlength="40" aria-label="Device name">
-      <button type="submit">Rename</button>
-    </form>
-    <p class="desc" style="margin:.5rem 0 0">The device name is shared with anything that connects to this app's local instance
-    (<span id="localAddr"></span>).</p>
-  </div>
-
-  <h2>Local files</h2>
-  <div class="card">
-    <div class="row">
-      <input id="file" type="file" multiple>
-      <button id="upload">Upload</button>
-    </div>
-    <ul id="files"></ul>
-    <p class="desc" id="filesNote" style="margin:0"></p>
-  </div>
-</main>
-<button id="ver" class="ver" type="button" title="Check for updates" aria-haspopup="dialog">v&hellip;</button>
-<div id="upd" class="card" role="dialog" aria-live="polite" aria-label="App update">
-  <div id="updTitle" class="title">Checking for updates&hellip;</div>
-  <div id="updMsg" class="desc"></div>
-  <div class="bar" id="updBar" style="display:none"><i id="updFill"></i></div>
-  <div class="row" style="margin-top:.6rem">
-    <a id="updLink" class="btn" style="display:none" target="_blank" rel="noopener">Release page</a>
-    <button id="updClose" class="ghost" type="button">Close</button>
-  </div>
+  <span class="sortlbl mono">Sort</span>
+  <select id="sort" aria-label="Sort modules">
+    <option value="name">Name (A-Z)</option>
+    <option value="namez">Name (Z-A)</option>
+    <option value="type">Type</option>
+    <option value="updated">Recently updated</option>
+  </select>
+  <input type="search" id="q" placeholder="Search modules" aria-label="Search modules" autocomplete="off">
+  <button class="sq on" id="vgrid" aria-label="Grid view" title="Grid view"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 3h8v8H3zM13 3h8v8h-8zM3 13h8v8H3zM13 13h8v8h-8z"/></svg></button>
+  <button class="sq" id="vlist" aria-label="List view" title="List view"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 4h18v3H3zM3 10.5h18v3H3zM3 17h18v3H3z"/></svg></button>
 </div>
+
+<div class="connbar" id="conn" role="status"></div>
+<main id="main"><div class="empty">Loading modules&hellip;</div></main>
+
+<div class="veil" id="veil" role="dialog" aria-modal="true"><div class="modal" id="modal"></div></div>
+<div class="toast" id="toast" role="status"></div>
+
 <script>
 (function () {
+  'use strict';
   var $ = function (id) { return document.getElementById(id); };
-  var params = new URLSearchParams(location.search);
+  var API = '/api/modules';
+  var base = '';          // '' = same origin (page served by a NorwinPrep device); otherwise the connected device's address
+  var browse = false;     // inside an app with no device connected: show the bundled catalog, install disabled
+  var offline = false;    // connected device could not be reached
+  var IS_APP = false;     // served by an app's local instance (has the connections icon)
+  function pinKey() { return 'norwinprep.pin' + (base ? '@' + base : ''); }
   var H = { 'X-NorwinPrep': '1' };
+  var state = { mods: [], disk: null, type: 'all', sort: 'name', q: '', view: 'grid', sig: '' };
+  var pollTimer = null;
   function store(k, v) { try { if (v === undefined) return localStorage.getItem(k); if (v === null) localStorage.removeItem(k); else localStorage.setItem(k, v); } catch (e) { return null; } }
-  function say(t) { $('msg').textContent = t || ''; }
-  function jf(url, opt) {
-    return fetch(url, opt).then(function (r) {
-      return r.json().catch(function () { return {}; }).then(function (j) { if (!r.ok) throw new Error(j.error || ('Request failed (' + r.status + ')')); return j; });
+
+  // ---------- icons ----------
+  var GLYPH = {
+    cross: '<path d="M9 3h6v6h6v6h-6v6H9v-6H3V9h6z"/>',
+    drop: '<path d="M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11z"/>',
+    shield: '<path d="M12 3l8 3v6c0 4.5-3.4 8-8 9-4.6-1-8-4.5-8-9V6z"/><path d="M9 12l2 2 4-4"/>',
+    leaf: '<path d="M5 19c0-9 6-14 15-14 0 9-5 15-14 15"/><path d="M5 19c3-5 6-8 10-10"/>',
+    compass: '<circle cx="12" cy="12" r="9"/><path d="M15.5 8.5l-2 5-5 2 2-5z"/>',
+    book: '<path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2z"/><path d="M4 19a2 2 0 0 1 2-2h13"/>',
+    wrench: '<path d="M14.7 6.3a4 4 0 0 0 5 5L21 12.6 12.6 21 3 11.4 11.4 3z" transform="scale(.9) translate(1.5 1.5)"/><path d="M8 16l-3 3"/>',
+    chip: '<rect x="6" y="6" width="12" height="12" rx="1"/><path d="M9 2v4M15 2v4M9 18v4M15 18v4M2 9h4M2 15h4M18 9h4M18 15h4"/>',
+    globe: '<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/>',
+    map: '<path d="M9 4L3 6v14l6-2 6 2 6-2V4l-6 2z"/><path d="M9 4v14M15 6v14"/>',
+    phone: '<rect x="7" y="2" width="10" height="20" rx="2"/><path d="M11 18h2"/>',
+    desktop: '<rect x="3" y="4" width="18" height="12" rx="1"/><path d="M8 20h8M12 16v4"/>'
+  };
+  function shade(hex, amt) {
+    var n = parseInt(hex.slice(1), 16), r = n >> 16, g = (n >> 8) & 255, b = n & 255;
+    function c(v) { return Math.max(0, Math.min(255, Math.round(v + amt))); }
+    return 'rgb(' + c(r) + ',' + c(g) + ',' + c(b) + ')';
+  }
+  function iconEl(m) {
+    var d = document.createElement('div'); d.className = 'icon';
+    var col = /^#[0-9a-fA-F]{6}$/.test(m.color) ? m.color : '#4a6fd9';
+    d.style.background = 'linear-gradient(150deg,' + shade(col, 35) + ',' + shade(col, -45) + ')';
+    d.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true">' + (GLYPH[m.icon] || GLYPH.book) + '</svg>';   // GLYPH is a fixed local table
+    return d;
+  }
+
+  // ---------- small helpers ----------
+  function el(tag, cls, text) { var e = document.createElement(tag); if (cls) e.className = cls; if (text !== undefined) e.textContent = text; return e; }
+  function human(n) {
+    if (n === null || n === undefined) return 'unknown';
+    var u = ['B', 'KB', 'MB', 'GB', 'TB'], i = 0; n = Number(n);
+    while (n >= 1024 && i < u.length - 1) { n /= 1024; i++; }
+    return (i === 0 ? n.toFixed(0) : n.toFixed(1)) + ' ' + u[i];
+  }
+  function fmtDate(sec) { return new Date(sec * 1000).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }); }
+  function toast(msg) { var t = $('toast'); t.textContent = msg; t.style.display = 'block'; clearTimeout(toast.t); toast.t = setTimeout(function () { t.style.display = 'none'; }, 4200); }
+  function api(method, path, body, pin) {
+    var h = Object.assign({}, H);
+    if (pin) h['X-NorwinPrep-PIN'] = pin;
+    var opt = { method: method, headers: h, cache: 'no-store' };
+    if (body !== undefined) { opt.body = JSON.stringify(body); h['Content-Type'] = 'application/json'; }
+    return fetch(base + API + path, opt).then(function (r) {
+      return r.json().catch(function () { return {}; }).then(function (j) { if (!r.ok) { var e = new Error(j.error || ('Request failed (' + r.status + ')')); e.status = r.status; throw e; } return j; });
     });
   }
-  function normalize(s) {
-    s = (s || '').trim(); if (!s) return '';
-    if (!/^https?:\/\//i.test(s)) s = 'http://' + s;
-    // drop default ports so "localhost:80" is the same option as "localhost"
-    return s.replace(/\/+$/, '').replace(/^(http:\/\/[^\/]+):80$/i, '$1').replace(/^(https:\/\/[^\/]+):443$/i, '$1');
-  }
-  function human(n) { return n < 1024 ? n + ' B' : n < 1048576 ? (n / 1024).toFixed(1) + ' KB' : (n / 1048576).toFixed(1) + ' MB'; }
+  function typeLabel(t) { return t === 'app' ? 'App' : t === 'maps' ? 'Map' : 'Content'; }
+  function openHref(m) { return base + (m.type === 'maps' ? '/maps/' : m.type === 'app' ? '/apps/' : '/wiki/'); }
+  function active(m) { return m.job && (m.job.state === 'queued' || m.job.state === 'running'); }
 
-  var localOrigin = location.origin;
-
-  // ---- version button + app updates ----
-  var dev = null, updBusy = false, pollTimer = null, updateTag = '';
-  function vparts(v) { return String(v || '').replace(/^v/, '').split('.').map(function (n) { return parseInt(n, 10) || 0; }); }
-  function isNewer(a, b) {
-    var x = vparts(a), y = vparts(b);
-    for (var i = 0; i < 3; i++) { if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0); }
-    return false;
+  // ---------- modal ----------
+  function openModal(build) {
+    var m = $('modal'); m.textContent = ''; build(m); $('veil').classList.add('open');
+    var f = m.querySelector('input,button.solid,button'); if (f) f.focus();
   }
-  // choose the release file that matches how THIS copy of the app is installed
-  function pickAsset(names, d) {
-    var re = null;
-    if (d.platform === 'android') re = /-android\.apk$/;
-    else if (d.platform === 'windows') re = d.packaging === 'portable' ? /-portable-x64\.exe$/ : /-win-x64\.exe$/;
-    else if (d.platform === 'linux') {
-      if (d.packaging === 'deb') { var da = { x64: 'amd64', arm64: 'arm64', armv7l: 'armv7l' }[d.arch]; if (da) re = new RegExp('-linux-' + da + '\\.deb$'); }
-      else { var aa = { x64: 'x86_64', arm64: 'arm64', armv7l: 'armv7l' }[d.arch]; if (aa) re = new RegExp('-linux-' + aa + '\\.AppImage$'); }
+  function closeModal() { $('veil').classList.remove('open'); }
+  $('veil').addEventListener('mousedown', function (e) { if (e.target === $('veil')) closeModal(); });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') { closeModal(); closeMenus(); } });
+  function btn(label, cls, fn) { var b = el('button', 'btn ' + (cls || ''), label); b.type = 'button'; b.addEventListener('click', fn); return b; }
+
+  function askPin(msg) {
+    return new Promise(function (resolve, reject) {
+      openModal(function (m) {
+        m.appendChild(el('h3', null, 'Admin PIN'));
+        var mb = el('div', 'mb');
+        mb.appendChild(el('div', null, msg || 'Enter the admin PIN to change what is installed on this device.'));
+        var inp = el('input', 'field'); inp.type = 'password'; inp.inputMode = 'numeric'; inp.autocomplete = 'off'; inp.maxLength = 12; inp.setAttribute('aria-label', 'Admin PIN');
+        var err = el('div', 'note bad'); err.setAttribute('role', 'alert');
+        mb.appendChild(inp); mb.appendChild(err);
+        mb.appendChild(el('div', 'note', 'The PIN was shown when NorwinPrep was installed. To reset it, run on the device: sudo /opt/norwinprep/scripts/set-admin-pin.sh'));
+        m.appendChild(mb);
+        var mf = el('div', 'mf');
+        var done = false;
+        function submit() {
+          if (!inp.value) return;
+          err.textContent = '';
+          api('POST', '/pin', {}, inp.value).then(function () { store(pinKey(), inp.value); done = true; closeModal(); resolve(inp.value); })
+            .catch(function (e) { err.textContent = e.message; inp.select(); });
+        }
+        inp.addEventListener('keydown', function (e) { if (e.key === 'Enter') submit(); });
+        mf.appendChild(btn('Cancel', '', function () { closeModal(); reject(new Error('cancelled')); }));
+        mf.appendChild(btn('Unlock', 'solid', submit));
+        m.appendChild(mf);
+      });
+    });
+  }
+  function withPin(fn) {   // run fn(pin); if the saved PIN is wrong/missing, ask and retry once
+    var saved = store(pinKey());
+    var go = function (pin) { return fn(pin); };
+    var first = saved ? go(saved) : askPin().then(go);
+    return first.catch(function (e) {
+      if (e && e.status === 403 && /PIN/i.test(e.message) && saved) { store(pinKey(), null); return askPin('That saved PIN no longer works. Enter the admin PIN.').then(go); }
+      throw e;
+    });
+  }
+
+  // ---------- actions ----------
+  function needConnection() {
+    if (window.NPApp) window.NPApp.openConnections(browse ? 'Connect to a NorwinPrep device to install modules.' : 'The device could not be reached. Pick a connection.');
+    else toast('This needs a NorwinPrep device.');
+  }
+  function startInstall(m) {
+    if (browse || offline) return needConnection();
+    openModal(function (md) {
+      md.appendChild(el('h3', null, (m.installed ? 'Update ' : 'Install ') + m.name));
+      var mb = el('div', 'mb'); mb.appendChild(el('div', 'note', 'Checking size and free space…')); md.appendChild(mb);
+      var mf = el('div', 'mf'); md.appendChild(mf);
+      mf.appendChild(btn('Cancel', '', closeModal));
+      api('GET', '/info?id=' + encodeURIComponent(m.id)).then(function (i) {
+        mb.textContent = '';
+        var dl = el('dl', 'kv');
+        [['File', i.file], ['Version', i.version], ['Download', i.bytes ? human(i.bytes) : 'size unknown'], ['Free space', human(i.free)]].forEach(function (r) {
+          dl.appendChild(el('dt', null, r[0])); dl.appendChild(el('dd', null, String(r[1])));
+        });
+        mb.appendChild(dl);
+        var tooBig = i.bytes && i.bytes * 1.05 + 52428800 > i.free;
+        if (tooBig) mb.appendChild(el('div', 'note bad', 'Not enough free space on this device for this download.'));
+        else if (i.note) mb.appendChild(el('div', 'note', i.note));
+        else mb.appendChild(el('div', 'note', 'Downloads need this device to have internet (for example Ethernet). The download is checked before it is installed.'));
+        var go = btn(m.installed ? 'Update' : 'Install', 'solid', function () {
+          closeModal();
+          withPin(function (pin) { return api('POST', '/install', { id: m.id }, pin); })
+            .then(function () { load(); }).catch(function (e) { if (e.message !== 'cancelled') toast(e.message); });
+        });
+        go.disabled = !!tooBig; mf.appendChild(go);
+      }).catch(function (e) { mb.textContent = ''; mb.appendChild(el('div', 'bad', e.message)); });
+    });
+  }
+  function startRemove(m) {
+    if (browse || offline) return needConnection();
+    openModal(function (md) {
+      md.appendChild(el('h3', null, 'Remove ' + m.name + '?'));
+      var mb = el('div', 'mb');
+      mb.appendChild(el('div', null, 'This deletes ' + (m.files ? m.files.length : 1) + ' file' + ((m.files || []).length === 1 ? '' : 's') + ' (' + human(m.bytes) + ') from this device. You can install it again later.'));
+      md.appendChild(mb);
+      var mf = el('div', 'mf'); mf.appendChild(btn('Cancel', '', closeModal));
+      mf.appendChild(btn('Remove', 'warn', function () {
+        closeModal();
+        withPin(function (pin) { return api('POST', '/remove', { id: m.id }, pin); }).then(function () { load(); }).catch(function (e) { if (e.message !== 'cancelled') toast(e.message); });
+      }));
+      md.appendChild(mf);
+    });
+  }
+  function showDetails(m) {
+    openModal(function (md) {
+      md.appendChild(el('h3', null, m.name));
+      var mb = el('div', 'mb'); mb.appendChild(el('div', null, m.description));
+      var dl = el('dl', 'kv'); dl.style.marginTop = '14px';
+      var rows = [['Type', typeLabel(m.type)], ['From', m.by], ['Status', m.installed ? 'Installed (v' + m.version + ')' : 'Not installed']];
+      if (m.latest) rows.push(['Latest', 'v' + m.latest]);
+      if (m.installed) rows.push(['Size on disk', human(m.bytes)], ['Files', (m.files || []).join(', ')]);
+      rows.forEach(function (r) { dl.appendChild(el('dt', null, r[0])); dl.appendChild(el('dd', null, String(r[1]))); });
+      mb.appendChild(dl); md.appendChild(mb);
+      var mf = el('div', 'mf'); mf.appendChild(btn('Close', '', closeModal)); md.appendChild(mf);
+    });
+  }
+  function showSettings() {
+    openModal(function (md) {
+      md.appendChild(el('h3', null, 'Settings'));
+      var mb = el('div', 'mb'), d = state.disk;
+      if (d) {
+        mb.appendChild(el('div', null, 'Storage: ' + human(d.free) + ' free of ' + human(d.total)));
+        var g = el('div', 'gauge'), i = el('i'); i.style.width = Math.max(1, Math.round(100 * (1 - d.free / d.total))) + '%'; g.appendChild(i); mb.appendChild(g);
+      }
+      var inst = state.mods.filter(function (m) { return m.installed; }).length;
+      mb.appendChild(el('div', 'note', inst + ' of ' + state.mods.length + ' modules installed.'));
+      mb.appendChild(el('div', 'note', store(pinKey()) ? 'This browser remembers your admin PIN.' : 'No admin PIN saved in this browser.'));
+      mb.appendChild(el('div', 'note', 'In the NorwinPrep app: press Back (Android) or Ctrl+H (desktop) to return to the device list and change what opens at launch.'));
+      md.appendChild(mb);
+      var mf = el('div', 'mf');
+      mf.appendChild(btn('Close', '', closeModal));
+      if (store(pinKey())) mf.appendChild(btn('Forget PIN', 'warn', function () { store(pinKey(), null); closeModal(); toast('PIN forgotten'); }));
+      md.appendChild(mf);
+    });
+  }
+
+  // ---------- rendering ----------
+  function closeMenus() { var o = document.querySelectorAll('.menu.open'); for (var i = 0; i < o.length; i++) o[i].classList.remove('open'); }
+  document.addEventListener('click', function (e) { if (!e.target.closest('.more') && !e.target.closest('.menu')) closeMenus(); });
+
+  function card(m, installedSection) {
+    var c = el('article', 'card'); c.dataset.id = m.id;
+    var top = el('div', 'top');
+    var v = el('span', 'ver mono' + (m.updateAvailable ? ' upd' : ''), m.version ? 'V' + m.version : typeLabel(m.type));
+    if (m.updateAvailable) v.title = 'Update available: v' + m.latest;
+    top.appendChild(v);
+    var src = el('a', 'src mono', 'Source ↗'); src.href = m.source; src.target = '_blank'; src.rel = 'noopener noreferrer'; top.appendChild(src);
+    c.appendChild(top);
+    var body = el('div', 'body');
+    var head = el('div', 'head'); head.appendChild(iconEl(m));
+    var tt = el('div', 'titles'), title = el('div', 'title'), sp = m.name.indexOf(' ');
+    title.appendChild(el('span', 'n1', sp < 0 ? m.name : m.name.slice(0, sp)));
+    if (sp >= 0) { var n2 = el('span', 'n2', m.name.slice(sp)); n2.style.color = /^#[0-9a-fA-F]{6}$/.test(m.color) ? shade(m.color, 70) : '#8aa4ff'; title.appendChild(n2); }
+    title.appendChild(el('span', 'by', 'By ' + m.by));
+    tt.appendChild(title); tt.appendChild(el('div', 'tag', m.tagline)); head.appendChild(tt); body.appendChild(head);
+    if (!installedSection) { var av = el('div', 'avail'); av.appendChild(el('span', 'pill', 'Available to install')); body.appendChild(av); }
+    else if (m.updateAvailable) { var up = el('div', 'avail'); up.appendChild(el('span', 'pill warn', 'Update available')); body.appendChild(up); }
+    body.appendChild(el('p', 'desc', m.description));
+    body.appendChild(el('div', 'meta', m.installed ? 'Last updated: ' + fmtDate(m.updated) + '  ·  ' + human(m.bytes) : (m.latest ? 'Latest: v' + m.latest : 'Size is shown before you install')));
+
+    var act = el('div', 'actions');
+    if (m.job && (m.job.state === 'queued' || m.job.state === 'running')) {
+      var p = el('div', 'prog'), lbl = el('div', 'lbl', (m.job.action === 'remove' ? 'Removing: ' : '') + m.job.message), bar = el('div', 'bar' + (m.job.percent ? '' : ' ind')), fill = el('i');
+      fill.style.width = (m.job.percent || 0) + '%'; bar.appendChild(fill); p.appendChild(lbl); p.appendChild(bar); act.appendChild(p);
+    } else {
+      if (m.job && m.job.state === 'error') act.appendChild(el('div', 'err', m.job.message));
+      if (m.installed) {
+        var o = el('a', 'btn', 'Open'); o.href = openHref(m); act.appendChild(o);
+        if (m.updateAvailable) act.appendChild(btn('Update', 'solid', function () { startInstall(m); }));
+      } else act.appendChild(btn((browse || offline) ? 'Connect to install' : (m.job && m.job.state === 'error' ? 'Retry' : 'Install'), 'solid', function () { startInstall(m); }));
+      var more = el('button', 'more', '…'); more.type = 'button'; more.setAttribute('aria-label', 'More actions for ' + m.name); more.setAttribute('aria-haspopup', 'menu');
+      var menu = el('div', 'menu'); menu.setAttribute('role', 'menu');
+      function item(label, cls, fn) { var b = el('button', cls || '', label); b.type = 'button'; b.setAttribute('role', 'menuitem'); b.addEventListener('click', function () { closeMenus(); fn(); }); menu.appendChild(b); }
+      item('Details', '', function () { showDetails(m); });
+      if (m.installed) { item('Re-download', '', function () { startInstall(m); }); item('Remove', 'danger', function () { startRemove(m); }); }
+      more.addEventListener('click', function (e) { e.stopPropagation(); var was = menu.classList.contains('open'); closeMenus(); if (!was) menu.classList.add('open'); });
+      act.appendChild(more); c.appendChild(menu);
     }
-    if (!re) return null;
-    for (var i = 0; i < names.length; i++) if (re.test(names[i])) return names[i];
-    return null;
+    body.appendChild(act); c.appendChild(body);
+    return c;
   }
-  function setVer() {
-    var b = $('ver'); if (!dev) return;
-    b.textContent = 'v' + dev.version + (updateTag ? ' \u00b7 update available' : '');
-    b.classList.toggle('new', !!updateTag);
-    b.title = updateTag ? 'Update to ' + updateTag + ' \u2014 click to install' : 'Check for updates';
-  }
-  function showUpd(title, msg, o) {
-    o = o || {};
-    $('upd').style.display = 'block';
-    $('updTitle').textContent = title; $('updMsg').textContent = msg || '';
-    $('updBar').style.display = o.bar === undefined ? 'none' : 'block';
-    $('updFill').style.width = (o.bar || 0) + '%';
-    var l = $('updLink'); l.style.display = o.link ? 'inline-block' : 'none'; if (o.link) l.href = o.link;
-  }
-  function poll() {
-    clearInterval(pollTimer);
-    pollTimer = setInterval(function () {
-      jf('/api/update/status', { cache: 'no-store' }).then(function (st) {
-        if (st.state === 'downloading' || st.state === 'verifying' || st.state === 'installing') showUpd('Updating to ' + st.tag, st.message, { bar: st.percent });
-        else {
-          clearInterval(pollTimer); updBusy = false;
-          if (st.state === 'done') showUpd('Update ready', st.message);
-          else if (st.state === 'needs-permission') showUpd('One more step', st.message);
-          else showUpd('Update failed', st.message || 'Unknown error');
-        }
-      }).catch(function () {   // the local server stops while the desktop app restarts
-        clearInterval(pollTimer); showUpd('Restarting\u2026', 'The app is restarting to finish the update.');
-      });
-    }, 700);
-  }
-  function checkRelease() { return jf('/api/update/check', { cache: 'no-store' }); }
-  function runUpdate() {
-    if (updBusy || !dev) return;
-    updBusy = true; showUpd('Checking for updates\u2026', 'Current version: v' + dev.version);
-    checkRelease().then(function (rel) {
-      if (!isNewer(rel.tag, dev.version)) { updateTag = ''; setVer(); updBusy = false; return showUpd('You are up to date', 'v' + dev.version + ' is the latest release.', { link: rel.url }); }
-      updateTag = rel.tag; setVer();
-      if (dev.packaging === 'dev') { updBusy = false; return showUpd(rel.tag + ' is available', 'Updating works for installed builds, not a development run.', { link: rel.url }); }
-      var asset = pickAsset(rel.assets, dev);
-      if (!asset) { updBusy = false; return showUpd(rel.tag + ' is available', 'No build for this device (' + dev.platform + ' ' + dev.arch + ') is attached to the release.', { link: rel.url }); }
-      showUpd('Updating to ' + rel.tag, 'Starting\u2026', { bar: 0 });
-      return jf('/api/update/install', { method: 'POST', headers: Object.assign({ 'Content-Type': 'application/json' }, H), body: JSON.stringify({ tag: rel.tag, asset: asset }) }).then(poll);
-    }).catch(function (e) { updBusy = false; showUpd('Could not update', e.message + ' Connect this device to the internet and try again.'); });
-  }
-  $('ver').addEventListener('click', function () { if ($('upd').style.display === 'block' && !updBusy) { $('upd').style.display = 'none'; } else runUpdate(); });
-  $('updClose').addEventListener('click', function () { $('upd').style.display = 'none'; });
 
-  // ---- this device ----
-  function loadDevice() {
-    return jf('/api/device', { cache: 'no-store' }).then(function (d) {
-      $('name').textContent = d.name;
-      document.title = d.name + ' – NorwinPrep';
-      $('nameInput').value = d.name;
-      $('meta').textContent = 'Local instance · ' + d.platform + ' · v' + d.version;
-      $('localAddr').textContent = d.address;
-      dev = d; setVer();
-      $('filesNote').textContent = d.filesDir ? 'Stored in: ' + d.filesDir : '';
-    }).catch(function () { $('meta').textContent = 'Local instance unavailable'; });
-  }
-  $('renameForm').addEventListener('submit', function (e) {
-    e.preventDefault(); say('');
-    jf('/api/device', { method: 'PUT', headers: Object.assign({ 'Content-Type': 'application/json' }, H), body: JSON.stringify({ name: $('nameInput').value }) })
-      .then(loadDevice).catch(function (err) { say(err.message); });
-  });
-
-  // ---- local files ----
-  function loadFiles() {
-    jf('/api/files', { cache: 'no-store' }).then(function (list) {
-      var ul = $('files'); ul.textContent = '';
-      if (!list.length) { var li = document.createElement('li'); li.textContent = 'No files yet.'; ul.appendChild(li); }
-      list.forEach(function (f) {
-        var li = document.createElement('li'), a = document.createElement('a'), sz = document.createElement('span'), del = document.createElement('button');
-        a.href = '/files/' + encodeURIComponent(f.name); a.textContent = f.name;
-        sz.className = 'size'; sz.textContent = human(f.size);
-        del.className = 'ghost'; del.textContent = 'Delete';
-        del.onclick = function () { fetch(a.href, { method: 'DELETE', headers: H }).then(loadFiles); };
-        li.appendChild(a); li.appendChild(sz); li.appendChild(del); ul.appendChild(li);
-      });
+  function visible() {
+    var q = state.q.trim().toLowerCase();
+    var list = state.mods.filter(function (m) {
+      if (state.type !== 'all' && m.type !== state.type) return false;
+      return !q || (m.name + ' ' + m.tagline + ' ' + m.description + ' ' + m.by + ' ' + typeLabel(m.type)).toLowerCase().indexOf(q) >= 0;
     });
-  }
-  $('upload').addEventListener('click', function () {
-    var files = Array.prototype.slice.call($('file').files); say('');
-    if (!files.length) return say('Choose one or more files first.');
-    files.reduce(function (p, f) {
-      return p.then(function () {
-        return fetch('/files/' + encodeURIComponent(f.name), { method: 'PUT', headers: H, body: f })
-          .then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) { if (!r.ok) throw new Error(j.error || ('Upload failed (' + r.status + ')')); }); });
-      });
-    }, Promise.resolve()).then(function () { $('file').value = ''; loadFiles(); }).catch(function (err) { say(err.message + ' \u2014 file names may use letters, numbers, spaces and . _ - ( )'); loadFiles(); });
-  });
-
-  // ---- connection options ----
-  var BUILTIN = [
-    { id: 'local', label: 'This app (local instance)', url: localOrigin, desc: 'Runs inside this app. Always available, no Pi needed.' },
-    { id: 'localhost', label: 'Localhost', url: 'http://localhost', desc: 'NorwinPrep running on this same computer (for example, this app installed on the Pi itself).' },
-    { id: 'hotspot', label: 'NorwinPrep hotspot', url: 'http://10.42.0.1', desc: 'A Pi, when you are joined to its Wi-Fi hotspot.' },
-    { id: 'mdns', label: 'norwinprep.local', url: 'http://norwinprep.local', desc: 'A Pi on your network, found by name.' }
-  ];
-  function customList() { try { return JSON.parse(store('norwinprep.custom') || '[]'); } catch (e) { return []; } }
-  function saveCustom(l) { store('norwinprep.custom', JSON.stringify(l.slice(0, 6))); }
-  function allOptions() {
-    var seen = {}, out = [];
-    BUILTIN.concat(customList().map(function (u) { return { id: 'c:' + u, label: u, url: u, desc: 'Custom address', custom: true }; }))
-      .forEach(function (o) { if (!seen[o.url]) { seen[o.url] = 1; out.push(o); } });
-    return out;
+    var by = {
+      name: function (a, b) { return a.name.localeCompare(b.name); },
+      namez: function (a, b) { return b.name.localeCompare(a.name); },
+      type: function (a, b) { return a.type.localeCompare(b.type) || a.name.localeCompare(b.name); },
+      updated: function (a, b) { return (b.updated || 0) - (a.updated || 0) || a.name.localeCompare(b.name); }
+    }[state.sort];
+    return list.sort(by);
   }
 
-  // verified: it answered /api/device like a NorwinPrep. up-only: something answers there, but we can't tell what.
-  function probe(url) {
-    function t(ms) { var c = new AbortController(); setTimeout(function () { c.abort(); }, ms); return c.signal; }
-    return fetch(url + '/api/device', { cache: 'no-store', signal: t(2500) })
-      .then(function (r) { if (!r.ok) throw 0; return r.json(); })
-      .then(function (j) {
-        if (!j || typeof j.name !== 'string' || typeof j.version !== 'string') throw 0;
-        return { up: true, verified: true, name: j.name.slice(0, 60), version: j.version.slice(0, 20), modules: j.modules === true };
-      })
-      .catch(function () {
-        return fetch(url + '/', { mode: 'no-cors', cache: 'no-store', signal: t(2500) })
-          .then(function () { return { up: true, verified: false }; }).catch(function () { return { up: false }; });
-      });
+  function section(label, count, mods, installedSection, main) {
+    if (!mods.length) return;
+    var s = el('div', 'section mono'); s.textContent = label + '  '; s.appendChild(el('b', null, String(count))); main.appendChild(s);
+    var g = el('div', 'grid' + (state.view === 'list' ? ' list' : ''));
+    mods.forEach(function (m) { g.appendChild(card(m, installedSection)); });
+    main.appendChild(g);
   }
 
-  var defaultUrl = function () { return store('norwinprep.default'); };
-  // what to open on that device at launch: '' = its portal, '/modules/' = its Module Store
-  var defaultPath = function () { return store('norwinprep.defaultPath') === '/modules/' ? '/modules/' : ''; };
-  function setDefault(url, path) { store('norwinprep.default', url); store('norwinprep.defaultPath', url && path ? path : null); }
-  var results = {};
   function render() {
-    var box = $('options'); box.textContent = '';
-    allOptions().forEach(function (o) {
-      var r = results[o.url], isHere = o.url === localOrigin, def = defaultUrl() === o.url;
-      var defMods = def && defaultPath() === '/modules/', defHome = def && !defMods;
-      var card = document.createElement('div'); card.className = 'card row';
-      var dot = document.createElement('span'); dot.className = 'dot ' + (isHere ? 'on' : r ? (r.up ? (r.verified ? 'on' : 'warn') : 'off') : '');
-      var mid = document.createElement('div'); mid.className = 'grow';
-      var title = document.createElement('div'); title.className = 'title';
-      title.textContent = (r && r.verified && r.name && !isHere ? r.name + ' — ' : '') + o.label;
-      if (def) { var b = document.createElement('span'); b.className = 'badge'; b.textContent = defMods ? 'default · Module Store' : 'default'; title.appendChild(b); }
-      var desc = document.createElement('div'); desc.className = 'desc';
-      desc.textContent = isHere ? o.desc + ' (you are here)' : (o.custom ? 'Custom · ' : '') + (r ? (r.up ? (r.verified ? 'Online' : 'Answers, but not identified as NorwinPrep') : 'Not reachable') + ' · ' : 'Checking… · ') + o.url;
-      mid.appendChild(title); mid.appendChild(desc);
-      card.appendChild(dot); card.appendChild(mid);
-      if (!isHere) {
-        var open = document.createElement('a'); open.className = 'btn'; open.textContent = 'Open'; open.href = o.url + '/';
-        open.onclick = function () { say(''); };
-        card.appendChild(open);
-        if (r && r.verified && r.modules) {   // this device offers the Module Store
-          var mods = document.createElement('a'); mods.className = 'btn ghost'; mods.textContent = 'Modules'; mods.href = o.url + '/modules/';
-          mods.title = 'Install content, maps and apps on this device'; card.appendChild(mods);
-          var launch = document.createElement('button'); launch.className = 'ghost launchmods';   // open the Module Store at every launch
-          launch.textContent = defMods ? 'Stop opening Modules' : 'Open Modules on launch';
-          launch.onclick = function () { if (defMods) setDefault(null); else setDefault(o.url, '/modules/'); render(); };
-          card.appendChild(launch);
-        }
-      }
-      var star = document.createElement('button'); star.className = 'ghost';
-      star.textContent = defHome ? 'Clear default' : 'Make default';
-      star.onclick = function () { if (defHome) setDefault(null); else setDefault(o.url, ''); render(); };
-      card.appendChild(star);
-      if (o.custom) {
-        var rm = document.createElement('button'); rm.className = 'ghost'; rm.textContent = 'Remove';
-        rm.onclick = function () { saveCustom(customList().filter(function (u) { return u !== o.url; })); if (def) setDefault(null); render(); };
-        card.appendChild(rm);
-      }
-      box.appendChild(card);
+    var main = $('main'); main.textContent = '';
+    var list = visible();
+    var upd = list.filter(function (m) { return m.installed && m.updateAvailable; });
+    var inst = list.filter(function (m) { return m.installed; });
+    var not = list.filter(function (m) { return !m.installed; });
+    if (!list.length) {
+      var e = el('div', 'empty'); e.appendChild(el('h2', null, 'No modules match')); e.appendChild(el('div', null, 'Try a different search or filter.')); main.appendChild(e); return;
+    }
+    section('Installed', inst.length, inst, true, main);
+    section('Not installed', not.length, not, false, main);
+    state.sig = signature();
+  }
+  function signature() {
+    return state.mods.map(function (m) { return [m.id, m.installed, m.version, m.updateAvailable, m.job ? m.job.state : '', m.job && m.job.state === 'error' ? m.job.message : ''].join('|'); }).join(';') + state.type + state.sort + state.q + state.view + '|' + browse + offline + base;
+  }
+  function patchProgress() {   // update running bars in place so they don't flicker
+    state.mods.forEach(function (m) {
+      if (!active(m)) return;
+      var c = document.querySelector('.card[data-id="' + m.id + '"]'); if (!c) return;
+      var l = c.querySelector('.prog .lbl'), f = c.querySelector('.bar i'), b = c.querySelector('.bar');
+      if (l) l.textContent = (m.job.action === 'remove' ? 'Removing: ' : '') + m.job.message;
+      if (f) f.style.width = (m.job.percent || 0) + '%';
+      if (b) b.classList.toggle('ind', !m.job.percent);
     });
   }
-  function scan() {
-    results = {}; render();
-    return Promise.all(allOptions().filter(function (o) { return o.url !== localOrigin; }).map(function (o) {
-      return probe(o.url).then(function (r) { results[o.url] = r; render(); });
-    }));
+
+  function schedulePoll() {
+    clearTimeout(pollTimer);
+    if (state.mods.some(active)) pollTimer = setTimeout(load, 1000);
   }
-  $('custom').addEventListener('submit', function (e) {
-    e.preventDefault();
-    var u = normalize($('addr').value); if (!u) return;
-    var l = customList().filter(function (x) { return x !== u; }); l.unshift(u); saveCustom(l);
-    $('addr').value = ''; scan();
+  function connLabel() { return (window.NPApp && window.NPApp.label) ? window.NPApp.label() : (base || 'this device'); }
+  function showConn() {
+    var c = $('conn'); c.textContent = ''; c.className = 'connbar';
+    if (!IS_APP || (!browse && !offline)) return;
+    c.classList.add('show'); if (offline) c.classList.add('bad');
+    c.appendChild(el('div', 'grow', browse ? 'No NorwinPrep device is connected, so you are browsing the catalog. Connect to a device to install modules.' : "Can't reach " + connLabel() + '. Showing the catalog only.'));
+    var b = el('button', 'sq mono', 'Connections'); b.type = 'button'; b.addEventListener('click', function () { window.NPApp.openConnections(); }); c.appendChild(b);
+  }
+  function failPage(e) {
+    var main = $('main'); main.textContent = '';
+    var d = el('div', 'empty'); d.appendChild(el('h2', null, 'Module Store is not available here'));
+    d.appendChild(el('div', null, 'Open this page from a NorwinPrep device (its Wi-Fi hotspot, or its address), where the module service is running.'));
+    d.appendChild(el('div', 'note', 'Technical detail: ' + e.message));
+    main.appendChild(d); document.body.setAttribute('data-loaded', 'error');
+  }
+  function loadStatic() {   // the catalog shipped inside the app: browse without a device
+    return fetch('/catalog.json', { cache: 'no-store' }).then(function (r) { if (!r.ok) throw new Error('catalog missing'); return r.json(); }).then(function (c) {
+      var before = state.sig;
+      state.mods = c.modules.map(function (m) { return { id: m.id, type: m.type, name: m.name, tagline: m.tagline, description: m.description, by: m.by, source: m.source, icon: m.icon, color: m.color, installed: false }; });
+      state.disk = null;
+      if (signature() !== before) render();
+      document.body.setAttribute('data-loaded', '1'); showConn();
+    });
+  }
+  function load() {
+    if (browse) return loadStatic().catch(failPage);
+    return api('GET', '/catalog').then(function (c) {
+      var before = state.sig;
+      offline = false;
+      state.mods = c.modules; state.disk = c.disk;
+      if (signature() !== before) render(); else patchProgress();
+      document.body.setAttribute('data-loaded', '1'); showConn();
+      schedulePoll();
+    }).catch(function (e) {
+      if (!IS_APP) return failPage(e);
+      offline = true; return loadStatic().catch(failPage);
+    });
+  }
+
+  // ---------- controls ----------
+  $('chips').addEventListener('click', function (e) {
+    var b = e.target.closest('button'); if (!b) return;
+    state.type = b.dataset.t; Array.prototype.forEach.call($('chips').children, function (x) { x.classList.toggle('on', x === b); }); render();
+  });
+  $('sort').addEventListener('change', function () { state.sort = this.value; store('norwinprep.sort', this.value); render(); });
+  $('q').addEventListener('input', function () { state.q = this.value; render(); });
+  function setView(v) { state.view = v; store('norwinprep.view', v); $('vgrid').classList.toggle('on', v === 'grid'); $('vlist').classList.toggle('on', v === 'list'); render(); }
+  $('vgrid').addEventListener('click', function () { setView('grid'); });
+  $('vlist').addEventListener('click', function () { setView('list'); });
+  $('gear').addEventListener('click', showSettings);
+  $('refresh').addEventListener('click', function () {
+    if (browse || offline) return needConnection();
+    var b = this; b.classList.add('spin');
+    api('POST', '/refresh', {}).catch(function (e) { if (e.status !== 429) toast(e.message.indexOf('Could not') === 0 ? e.message : 'Could not check for new versions'); })
+      .then(function () { return load(); }).then(function () { b.classList.remove('spin'); });
   });
 
-  // ---- auto-open the default (cancelable, so you can never get locked out) ----
-  function autoOpen() {
-    var d = defaultUrl(), path = defaultPath();
-    if (!d || params.has('stay') || params.has('unreachable') || d === localOrigin) return;
-    var target = d + (path || '/');
-    probe(d).then(function (r) {
-      if (!r.up) return;
-      var left = 3, timer;
-      $('banner').style.display = 'flex';
-      function txt() { $('bannerText').textContent = 'Opening ' + (path ? 'the Module Store on ' + d : d) + ' in ' + left + 's…'; }
-      txt();
-      timer = setInterval(function () { left--; if (left <= 0) { clearInterval(timer); location.replace(target); } else txt(); }, 1000);
-      $('bannerCancel').onclick = function () { clearInterval(timer); $('banner').style.display = 'none'; };
-    });
-  }
+  var sv = store('norwinprep.sort'); if (sv && $('sort').querySelector('option[value="' + sv + '"]')) { state.sort = sv; $('sort').value = sv; }
+  if (store('norwinprep.view') === 'list') { state.view = 'list'; $('vgrid').classList.remove('on'); $('vlist').classList.add('on'); }
 
-  // quietly look for a newer release after start-up; a hash of #update opens the update panel straight away
-  setTimeout(function () {
-    if (!dev || dev.packaging === 'dev') return;
-    if (location.hash === '#update') return runUpdate();
-    checkRelease().then(function (rel) { if (isNewer(rel.tag, dev.version)) { updateTag = rel.tag; setVer(); } }).catch(function () {});
-  }, 1500);
-  if (params.get('unreachable')) say('Could not reach ' + params.get('unreachable') + '. Pick another option below.');
-  loadDevice(); loadFiles(); render();
-  scan().then(function () { document.body.setAttribute('data-scanned', '1'); });
-  autoOpen();
+  // Shared with app-ui.js (the connections icon, connection picker and app updates), which only the apps load.
+  window.NPStore = {
+    ui: { openModal: openModal, closeModal: closeModal, el: el, btn: btn, toast: toast, human: human },
+    reload: function (b) { setBase(b); state.sig = ''; return load(); }
+  };
+  function setBase(b) { if (b === null || b === undefined) { browse = true; base = ''; } else { browse = false; base = b; } offline = false; }
+  function loadScript(src) {
+    return new Promise(function (res, rej) { var s = document.createElement('script'); s.src = src; s.onload = res; s.onerror = function () { rej(new Error('missing ' + src)); }; document.head.appendChild(s); });
+  }
   document.body.setAttribute('data-ready', '1');
+  // Who is serving this page? An app's local instance (mode "local") or a NorwinPrep device itself (mode "pi").
+  fetch('/api/device', { cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : {}; }).catch(function () { return {}; }).then(function (d) {
+    if (d && d.mode === 'local') {
+      IS_APP = true;
+      var m = $('main'); m.textContent = ''; m.appendChild(el('div', 'empty', 'Looking for your NorwinPrep device\u2026'));
+      return loadScript('/app-ui.js').then(function () { return window.NPApp.start(); }).catch(function () { return null; }).then(setBase);
+    }
+    setBase('');
+  }).then(load);
 })();
 </script>
 </body>

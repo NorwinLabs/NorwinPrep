@@ -48,7 +48,10 @@ fi
 
 install -m 755 "$SRC"/scripts/*.sh "$SRC/scripts/modules-api.py" /opt/norwinprep/scripts/
 install -d /opt/norwinprep/modules
-install -m 644 "$SRC/modules/catalog.json" /opt/norwinprep/modules/catalog.json
+install -m 644 "$SRC/app/shared/site/catalog.json" /opt/norwinprep/modules/catalog.json
+# the Module Store page is the same file the apps ship as their home screen
+install -d /opt/norwinprep/web/modules
+install -m 644 "$SRC/app/shared/site/index.html" /opt/norwinprep/web/modules/index.html
 install -m 755 "$SRC/uninstall.sh" /opt/norwinprep/scripts/uninstall.sh
 cp -r "$SRC"/web/. /opt/norwinprep/web/
 # Version = the release tag this checkout is (get.sh / update.sh check out tags); otherwise "<MAJOR.MINOR>-dev"
