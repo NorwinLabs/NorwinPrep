@@ -1,0 +1,15 @@
+name: Installs against the real servers
+on:
+  workflow_dispatch:
+  push:
+    paths: ['app/desktop/modules-manager.js', 'app/shared/site/catalog.json', 'app/desktop/test/install-real.js', '.github/workflows/install-real.yml']
+jobs:
+  real:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - name: Resolve every module and install a few for real, through the app's own code
+        run: node app/desktop/test/install-real.js
