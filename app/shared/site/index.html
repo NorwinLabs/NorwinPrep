@@ -274,6 +274,7 @@
   var SIZE_CLASS = { s: { label: 'under 1 GB', min: 0 }, m: { label: '1\u201310 GB', min: 1073741824 }, l: { label: '10 GB or more', min: 10737418240 }, xl: { label: '50 GB or more', min: 53687091200 } };
   function sizeInfo(m) {
     var exact = m.installed ? (m.bytes === undefined ? null : m.bytes) : (m.size || null);
+    if (exact === null && m.approxMB) exact = m.approxMB * 1048576;   // imported maps carry a published approximate size
     var cls = SIZE_CLASS[m.sizeClass] || null, free = state.disk ? state.disk.free : null;
     var need = exact !== null ? Math.ceil(exact * 1.05) + 52428800 : (cls ? cls.min : 0);
     return { exact: exact, cls: cls, free: free,

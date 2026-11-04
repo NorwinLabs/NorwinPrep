@@ -1,0 +1,13 @@
+NorwinPrep includes data adapted from third-party projects.
+
+Project NOMAD (https://github.com/Crosstalk-Solutions/project-nomad)
+  Copyright Crosstalk Solutions, LLC. Licensed under the Apache License 2.0.
+  Adapted: the Kiwix content collections, Wikipedia options and US state map
+  list in third_party/project-nomad/collections/, and the module/topic catalog
+  entries imported from them (marked "origin": "project-nomad" in
+  app/shared/site/catalog.json). The licence text is in
+  third_party/project-nomad/LICENSE. The importer is scripts/import-nomad.py.
+  Maps are downloaded at install time from Crosstalk-Solutions/project-nomad-maps.
+
+Kiwix, Kolibri, CyberChef, llama.cpp, Protomaps and Hugging Face-hosted models
+are downloaded from their own publishers and keep their own licences.

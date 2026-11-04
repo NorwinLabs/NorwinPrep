@@ -24,7 +24,7 @@ const reset = () => { Object.assign(F, { shaOk: true, shaMissing: false, newZim:
 
   // ---------- catalog ----------
   const forLinux = loadCatalog(CATALOG, 'linux'), forWin = loadCatalog(CATALOG, 'windows'), forAndroid = loadCatalog(CATALOG, 'android');
-  ok(forLinux.length === 53 && forLinux.some((m) => m.id === 'reader') && forWin.some((m) => m.type === 'maps'), 'desktop sees all 53 modules including the reader and maps');
+  ok(forLinux.length === 149 && forLinux.some((m) => m.id === 'reader') && forWin.some((m) => m.type === 'maps'), 'desktop sees all 149 modules including the reader and maps');
   ok(forAndroid.length > 25 && forAndroid.every((m) => m.type === 'content'), 'Android only sees content packs (' + forAndroid.length + ')');
   for (const bad of [{ id: '../x', type: 'content', sizeClass: 's', install: { kind: 'zim', subdir: 'a', prefix: 'b' } }, { id: 'ok1', type: 'content', sizeClass: 's', install: { kind: 'zim', subdir: '../etc', prefix: 'b' } },
     { id: 'ok2', type: 'content', sizeClass: 's', install: { kind: 'shell', cmd: 'rm -rf /' } }, { id: 'ok3', type: 'maps', sizeClass: 's', install: { kind: 'maps', file: '../x.pmtiles', maxzoom: 7 } },
@@ -121,6 +121,10 @@ const reset = () => { Object.assign(F, { shaOk: true, shaMissing: false, newZim:
   ok(t.siteRoot('notes') === null, 'Notes: off until installed');
   t.enqueue('notes', 'install'); j = await done(t, 'notes'); ok(j.state === 'done' && t.siteRoot('notes') === path.join(bundled, 'notes') && mod(t, 'notes').installed, 'Notes: installing switches on the built-in page (nothing is downloaded)');
   t.enqueue('notes', 'remove'); await done(t, 'notes'); ok(t.siteRoot('notes') === null && !mod(t, 'notes').installed, 'Notes: remove switches it off');
+  { const u = make({ nomadMaps: 'http://127.0.0.1:' + server.address().port }), t2 = u.mgr;
+    t2.enqueue('map-alaska', 'install'); j = await done(t2, 'map-alaska'); ok(j.state === 'done' && fs.existsSync(path.join(u.dir, 'maps', 'alaska.pmtiles')) && mod(t2, 'map-alaska').installed, 'a NOMAD state map downloads, passes the PMTiles check and shows as installed');
+    t2.enqueue('map-hawaii', 'install'); j = await done(t2, 'map-hawaii'); ok(j.state === 'error' && !fs.existsSync(path.join(u.dir, 'maps', 'hawaii.pmtiles')) && fs.readdirSync(path.join(u.dir, 'maps')).filter((f) => /hawaii/.test(f)).length === 0, 'a download that is not a PMTiles file is discarded: ' + j.message);
+    t2.enqueue('map-alaska', 'remove'); await done(t2, 'map-alaska'); ok(!fs.existsSync(path.join(u.dir, 'maps', 'alaska.pmtiles')), 'a NOMAD state map can be removed'); }
   { const cat = JSON.parse(fs.readFileSync(CATALOG, 'utf8')), ids = new Set(cat.modules.map((m) => m.id)); ok(cat.tiers.length === 3 && cat.tiers.every((x) => x.modules.every((id) => ids.has(id))), 'every module named in the quick-setup tiers exists');
     ok(cat.tiers[0].modules.length < cat.tiers[1].modules.length && cat.tiers[1].modules.length < cat.tiers[2].modules.length && cat.tiers[0].modules.every((id) => cat.tiers[1].modules.includes(id)), 'tiers grow: Essential is inside Standard, Standard has more'); }
 

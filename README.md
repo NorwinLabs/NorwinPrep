@@ -200,3 +200,7 @@ For anything near 512GB, mount a USB SSD at `/srv/norwinprep/content`.
 
 ## Status
 Untested on hardware: written without access to a Pi. Expect to tune filenames in `fetch-content.sh`.
+
+## Credits
+
+The extra content packs, topics and US state maps are adapted from [Project NOMAD](https://github.com/Crosstalk-Solutions/project-nomad) (Apache-2.0). See `NOTICE` and `third_party/project-nomad/`.

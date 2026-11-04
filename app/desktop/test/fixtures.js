@@ -64,6 +64,8 @@ const server = http.createServer((q, r) => {
   if (p === '/pypi/kolibri/json') return out(200, JSON.stringify({ info: { version: '0.19.5', requires_python: '<3.15,>=3.6' }, urls: [{ packagetype: 'sdist', filename: 'kolibri-0.19.5.tar.gz', url: 'http://x/y', size: 1, digests: { sha256: '0'.repeat(64) } },
     { packagetype: 'bdist_wheel', filename: 'kolibri-0.19.5-py2.py3-none-any.whl', url: 'http://' + q.headers.host + '/files/kolibri-0.19.5-py2.py3-none-any.whl', size: WHEEL.length, digests: { sha256: F.kolibriSha === 'bad' ? '1'.repeat(64) : sha(WHEEL) } }] }));
   if (p === '/files/kolibri-0.19.5-py2.py3-none-any.whl') return out(200, WHEEL);
+  if (p === '/Crosstalk-Solutions/project-nomad-maps/raw/refs/heads/master/pmtiles/alaska_2025-12.pmtiles') return out(200, Buffer.concat([Buffer.from('PMTiles'), crypto.randomBytes(5000)]));
+  if (p === '/Crosstalk-Solutions/project-nomad-maps/raw/refs/heads/master/pmtiles/hawaii_2025-12.pmtiles') return out(200, 'this is an HTML error page');
   if (p === '/builds.json') return out(200, '[{"key":"20260101.pmtiles"},{"key":"20260301.pmtiles"}]');
   if (p === '/repos/protomaps/go-pmtiles/releases/latest') return out(200, JSON.stringify({ tag_name: 'v1.2.3' }));
   if (p === '/protomaps/go-pmtiles/releases/download/v1.2.3/go-pmtiles_1.2.3_Linux_x86_64.tar.gz') return out(200, PM_TAR);

@@ -47,6 +47,8 @@ function loadCatalog(file, platform) {
     } else if (i.kind === 'static-site') {
       if (!/^[A-Za-z0-9._-]+\/[A-Za-z0-9._-]+$/.test(i.repo || '') || !/^[a-z0-9-]+$/.test(i.dir || '') || typeof i.asset !== 'string' || i.asset.length > 120) throw new Error('bad static-site spec for ' + m.id);
       new RegExp(i.asset);
+    } else if (i.kind === 'pmtiles-file') {      // a ready-made map file; only Project NOMAD's map repository is trusted as the source
+      if (!/^https:\/\/github\.com\/Crosstalk-Solutions\/project-nomad-maps\/raw\/refs\/heads\/master\/pmtiles\/[a-z0-9_.-]+_\d{4}-\d{2}\.pmtiles$/.test(i.url || '') || !/^[a-z0-9-]+\.pmtiles$/.test(i.file || '')) throw new Error('bad pmtiles-file spec for ' + m.id);
     } else if (i.kind === 'llama-cpp') {
       if (!/^[A-Za-z0-9._-]+\/[A-Za-z0-9._-]+$/.test(i.repo || '')) throw new Error('bad llama-cpp spec for ' + m.id);
     } else if (i.kind === 'gguf') {
@@ -99,7 +101,7 @@ class Manager {
   constructor(cfg) {
     this.cfg = Object.assign({ timeout: 30000, kiwix: 'https://download.kiwix.org', githubApi: 'https://api.github.com', githubDl: 'https://github.com',
       protomaps: 'https://build.protomaps.com', protomapsMeta: null, slug: 'NorwinLabs/NorwinPrepDisk', pmtilesRepo: 'protomaps/go-pmtiles', platform: process.platform,
-      arch: process.arch, pypi: 'https://pypi.org', hf: 'https://huggingface.co', onAiChange: async () => true, ramBytes: os.totalmem(), pythonCheck: async () => true, onKolibriChange: async () => true, bundledDir: path.join(__dirname, 'site'), onLibraryChange: async () => true, run: spawn }, cfg);
+      arch: process.arch, pypi: 'https://pypi.org', nomadMaps: 'https://github.com', hf: 'https://huggingface.co', onAiChange: async () => true, ramBytes: os.totalmem(), pythonCheck: async () => true, onKolibriChange: async () => true, bundledDir: path.join(__dirname, 'site'), onLibraryChange: async () => true, run: spawn }, cfg);
     this.mods = loadCatalog(this.cfg.catalog, this.cfg.platform === 'win32' ? 'windows' : this.cfg.platform);
     this.byid = Object.fromEntries(this.mods.map((m) => [m.id, m]));
     this.jobs = {}; this.queue = []; this.working = false; this.cache = new Map();
@@ -154,7 +156,7 @@ class Manager {
       const [ver, f] = found[found.length - 1], st = fs.statSync(path.join(zdir, f));
       return { version: ver.replace('-', '.'), files: [f], bytes: st.size, updated: st.mtimeMs / 1000 };
     }
-    if (i.kind === 'maps') {
+    if (i.kind === 'maps' || i.kind === 'pmtiles-file') {
       const p = path.join(this.d('maps'), i.file);
       if (!fs.existsSync(p)) return null;
       const st = fs.statSync(p), dt = new Date(st.mtimeMs);
@@ -223,6 +225,7 @@ class Manager {
     if (i.kind === 'static-site') { const r = this.peek(['site', i.repo]); return r ? r.size : null; }
     if (i.kind === 'python-wheel') { const r = this.peek(['pypi', i.package]); return r ? r.size : null; }
     if (i.kind === 'llama-cpp') { const r = this.peek(['llama', i.repo]); return r ? r.size : null; }
+    if (i.kind === 'pmtiles-file') { const s = this.peek(['size', i.url]); return s || null; }
     if (i.kind === 'gguf') { const t = this.peek(['hf', i.repo]); return t && t[i.file] ? t[i.file].size : null; }
     return null;
   }
@@ -299,6 +302,8 @@ class Manager {
       const ins = this.installed(m), lat = this.latest(m);
       const item = {}; for (const k of ['id', 'type', 'name', 'tagline', 'description', 'by', 'source', 'icon', 'color', 'category', 'open']) if (m[k] !== undefined) item[k] = m[k];
       if (m.install.minRamGB) item.minRamGB = m.install.minRamGB;
+      if (m.topic) item.topic = m.topic;
+      if (m.approxMB) item.approxMB = m.approxMB;
       item.installed = !!ins; item.sizeClass = m.sizeClass;
       if (!ins) { const ks = this.knownSize(m); if (ks) item.size = ks; }
       if (ins) { item.version = ins.version; item.bytes = ins.bytes; item.updated = Math.floor(ins.updated); item.files = ins.files; }
@@ -328,6 +333,10 @@ class Manager {
       } else if (i.kind === 'static-site') {
         const r = await this.siteRelease(m, true);
         Object.assign(res, { file: r.name, version: r.tag.replace(/^v/, ''), bytes: r.size });
+      } else if (i.kind === 'pmtiles-file') {
+        const url = i.url.replace('https://github.com', this.cfg.nomadMaps);
+    let size = null; try { size = await this.headSize(url); } catch (e) { if (!(e instanceof HttpError)) throw e; }
+        Object.assign(res, { file: i.file, version: ((/_(\d{4}-\d{2})\.pmtiles$/.exec(i.url) || [])[1] || '').replace('-', '.'), bytes: size || (m.approxMB ? m.approxMB * 1048576 : null), note: 'A ready-made map file, downloaded as it is.' });
       } else if (i.kind === 'llama-cpp') {
         const r = await this.llamaRelease(m, true);
         Object.assign(res, { file: r.name, version: r.tag, bytes: r.size, note: 'A small program that runs AI models on your processor. It is installed automatically with your first model.' });
@@ -402,7 +411,7 @@ class Manager {
           else {
             if (m.type === 'content') await this.ensureReader(id);
             if (m.type === 'model') await this.ensureEngine(id);
-            await ({ zim: this.installZim, maps: this.installMaps, app: this.installApp, 'kiwix-tools': this.installReader, 'static-site': this.installSite, 'python-wheel': this.installWheel, 'llama-cpp': this.installLlama, gguf: this.installGguf, bundled: this.installBundled })[m.install.kind].call(this, m);
+            await ({ zim: this.installZim, maps: this.installMaps, app: this.installApp, 'kiwix-tools': this.installReader, 'static-site': this.installSite, 'python-wheel': this.installWheel, 'llama-cpp': this.installLlama, gguf: this.installGguf, 'pmtiles-file': this.installPmFile, bundled: this.installBundled })[m.install.kind].call(this, m);
           }
           this.set(id, { state: 'done', percent: 100, message: action === 'remove' ? 'Removed' : 'Installed' });
         } catch (e) {
@@ -568,6 +577,16 @@ class Manager {
     } finally { fs.rmSync(tmp, { recursive: true, force: true }); }
     await this.restartLibrary();
   }
+  async installPmFile(m) {            // a finished PMTiles map from the NOMAD map repository: download, check it really is a PMTiles file, keep
+    const i = m.install, dir = this.d('maps'), part = path.join(dir, '.' + i.file + '.part'); let have = 0; try { have = fs.statSync(part).size; } catch (e) { /* none */ }
+    const url = i.url.replace('https://github.com', this.cfg.nomadMaps);
+    let size = null; try { size = await this.headSize(url); } catch (e) { if (!(e instanceof HttpError)) throw e; }
+    this.needSpace(Math.max(0, (size || (m.approxMB || 0) * 1048576) - have));
+    await this.download(m.id, url, part, null, m.name + ': ');
+    const fd = fs.openSync(part, 'r'), head = Buffer.alloc(8); fs.readSync(fd, head, 0, 8, 0); fs.closeSync(fd);
+    if (head.toString('latin1', 0, 7) !== 'PMTiles') { fs.unlinkSync(part); throw new ApiError(502, 'The download is not a map file (it was discarded).'); }
+    fs.renameSync(part, path.join(dir, i.file));
+  }
   async installLlama(m, jid) {       // the AI engine: llama.cpp's llama-server and the libraries beside it
     jid = jid || m.id; const r = await this.llamaRelease(m, true);
     this.needSpace(r.size * 3);
@@ -649,7 +668,7 @@ class Manager {
       await this.cfg.onKolibriChange('stop'); fs.rmSync(path.join(this.cfg.dataDir, m.install.dir, 'app'), { recursive: true, force: true }); return;
     }
     if (k === 'static-site' || k === 'bundled') { fs.rmSync(path.join(this.d('sites'), m.install.dir), { recursive: true, force: true }); return; }
-    const folder = { zim: 'zim', maps: 'maps', app: 'apps' }[k];
+    const folder = { zim: 'zim', maps: 'maps', 'pmtiles-file': 'maps', app: 'apps' }[k];
     for (const f of ins.files) fs.unlinkSync(path.join(this.d(folder), f));
     if (k === 'zim') await this.restartLibrary();
   }

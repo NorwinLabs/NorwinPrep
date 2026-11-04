@@ -1317,6 +1317,2698 @@
         "app"
       ],
       "open": "/ai/"
+    },
+    {
+      "id": "nhs-uk-en-medicines",
+      "type": "content",
+      "category": "library",
+      "topic": "medicine",
+      "name": "NHS Medicines A to Z",
+      "tagline": "How medicines work, dosages, side effects, and interactions",
+      "description": "How medicines work, dosages, side effects, and interactions (Curated by Project NOMAD.)",
+      "by": "KIWIX",
+      "source": "https://library.kiwix.org/",
+      "icon": "cross",
+      "color": "#d9534f",
+      "sizeClass": "s",
+      "install": {
+        "kind": "zim",
+        "subdir": "zimit",
+        "prefix": "nhs.uk_en_medicines"
+      },
+      "platforms": [
+        "windows",
+        "linux",
+        "darwin",
+        "android"
+      ],
+      "origin": "project-nomad",
+      "approxMB": 16
+    },
+    {
+      "id": "fas-military-medicine-en",
+      "type": "content",
+      "category": "library",
+      "topic": "medicine",
+      "name": "Military Medicine",
+      "tagline": "Tactical and field medicine manuals",
+      "description": "Tactical and field medicine manuals (Curated by Project NOMAD.)",
+      "by": "KIWIX",
+      "source": "https://library.kiwix.org/",
+      "icon": "cross",
+      "color": "#d9534f",
+      "sizeClass": "s",
+      "install": {
+        "kind": "zim",
+        "subdir": "zimit",
+        "prefix": "fas-military-medicine_en"
+      },
+      "platforms": [
+        "windows",
+        "linux",
+        "darwin",
+        "android"
+      ],
+      "origin": "project-nomad",
+      "approxMB": 78
+    },
+    {
+      "id": "wwwnc-cdc-gov-en-all",
+      "type": "content",
+      "category": "library",
+      "topic": "medicine",
+      "name": "CDC Health Information",
+      "tagline": "Disease prevention, travel health, and outbreak information",
+      "description": "Disease prevention, travel health, and outbreak information (Curated by Project NOMAD.)",
+      "by": "KIWIX",
+      "source": "https://library.kiwix.org/",
+      "icon": "cross",
+      "color": "#d9534f",
+      "sizeClass": "s",
+      "install": {
+        "kind": "zim",
+        "subdir": "zimit",
+        "prefix": "wwwnc.cdc.gov_en_all"
+      },
+      "platforms": [
+        "windows",
+        "linux",
+        "darwin",
+        "android"
+      ],
+      "origin": "project-nomad",
+      "approxMB": 170
+    },
+    {
+      "id": "medlineplus-gov-en-all",
+      "type": "content",
+      "category": "library",
+      "topic": "medicine",
+      "name": "MedlinePlus",
+      "tagline": "NIH's consumer health encyclopedia - diseases, conditions, drugs, supplements",
+      "description": "NIH's consumer health encyclopedia - diseases, conditions, drugs, supplements (Curated by Project NOMAD.)",
+      "by": "KIWIX",
+      "source": "https://library.kiwix.org/",
+      "icon": "cross",
+      "color": "#d9534f",
+      "sizeClass": "m",
+      "install": {
+        "kind": "zim",
+        "subdir": "zimit",
+        "prefix": "medlineplus.gov_en_all"
+      },
+      "platforms": [
+        "windows",
+        "linux",
+        "darwin",
+        "android"
+      ],
+      "origin": "project-nomad",
+      "approxMB": 1800
+    },
+    {
+      "id": "wikipedia-en-medicine-maxi",
+      "type": "content",
+      "category": "library",
+      "topic": "medicine",
+      "name": "Wikipedia Medicine",
+      "tagline": "Curated medical articles from Wikipedia with images",
+      "description": "Curated medical articles from Wikipedia with images (Curated by Project NOMAD.)",
+      "by": "KIWIX",
+      "source": "https://library.kiwix.org/",
+      "icon": "cross",
+      "color": "#d9534f",
+      "sizeClass": "m",
+      "install": {
+        "kind": "zim",
+        "subdir": "wikipedia",
+        "prefix": "wikipedia_en_medicine_maxi"
+      },
+      "platforms": [
+        "windows",
+        "linux",
+        "darwin",
+        "android"
+      ],
+      "origin": "project-nomad",
+      "approxMB": 2000
+    },
+    {
+      "id": "librepathology-en-all-maxi",
+      "type": "content",
+      "category": "library",
+      "topic": "medicine",
+      "name": "LibrePathology",
+      "tagline": "Pathology reference for disease identification",
+      "description": "Pathology reference for disease identification (Curated by Project NOMAD.)",
+      "by": "KIWIX",
+      "source": "https://library.kiwix.org/",
+      "icon": "cross",
+      "color": "#d9534f",
+      "sizeClass": "s",
+      "install": {
+        "kind": "zim",
+        "subdir": "other",
+        "prefix": "librepathology_en_all_maxi"
+      },
+      "platforms": [
+        "windows",
+        "linux",
+        "darwin",
+        "android"
+      ],
+      "origin": "project-nomad",
+      "approxMB": 95
+    },
+    {
+      "id": "zimgit-knots-en",
+      "type": "content",
+      "category": "library",
+      "topic": "survival",
+      "name": "A Library of Knots",
+      "tagline": "Illustrated guides to knots, lashings, ladders, and sutures",
+      "description": "Illustrated guides to knots, lashings, ladders, and sutures (Curated by Project NOMAD.)",
+      "by": "KIWIX",
+      "source": "https://library.kiwix.org/",
+      "icon": "compass",
+      "color": "#c9a227",
+      "sizeClass": "s",
+      "install": {
+        "kind": "zim",
+        "subdir": "other",
+        "prefix": "zimgit-knots_en"
+      },
+      "platforms": [
+        "windows",
+        "linux",
+        "darwin",
+        "android"
+      ],
+      "origin": "project-nomad",
+      "approxMB": 27
+    },
+    {
+      "id": "canadian-prepper-en-winterprepping",
+      "type": "content",
+      "category": "library",
+      "topic": "survival",
+      "name": "Canadian Prepper: Winter Prepping",
+      "tagline": "Video guides for winter survival and cold weather emergencies",
+      "description": "Video guides for winter survival and cold weather emergencies (Curated by Project NOMAD.)",
+      "by": "KIWIX",
+      "source": "https://library.kiwix.org/",
+      "icon": "compass",
+      "color": "#c9a227",
+      "sizeClass": "m",
+      "install": {
+        "kind": "zim",
+        "subdir": "videos",
+        "prefix": "canadian-prepper_en_winterprepping"
+      },
+      "platforms": [
+        "windows",
+        "linux",
+        "darwin",
+        "android"
+      ],
+      "origin": "project-nomad",
+      "approxMB": 1342
+    },
+    {
+      "id": "canadian-prepper-en-bugoutroll",
+      "type": "content",
+      "category": "library",
+      "topic": "survival",
+      "name": "Canadian Prepper: Bug Out Roll",
+      "tagline": "Essential gear selection for your bug-out bag",
+      "description": "Essential gear selection for your bug-out bag (Curated by Project NOMAD.)",
+      "by": "KIWIX",
+      "source": "https://library.kiwix.org/",
+      "icon": "compass",
+      "color": "#c9a227",
+      "sizeClass": "s",
+      "install": {
+        "kind": "zim",
+        "subdir": "videos",
+        "prefix": "canadian-prepper_en_bugoutroll"
+      },
+      "platforms": [
+        "windows",
+        "linux",
+        "darwin",
+        "android"
+      ],
+      "origin": "project-nomad",
+      "approxMB": 879
+    },
+    {
+      "id": "www-ready-gov-en",
+      "type": "content",
+      "category": "library",
+      "topic": "survival",
+      "name": "Ready.gov",
+      "tagline": "Official US disaster planning guidance - weather, fire, evacuation plans, and em",
+      "description": "Official US disaster planning guidance - weather, fire, evacuation plans, and emergency kits (Curated by Project NOMAD.)",
+      "by": "KIWIX",
+      "source": "https://library.kiwix.org/",
+      "icon": "compass",
+      "color": "#c9a227",
+      "sizeClass": "m",
+      "install": {
+        "kind": "zim",
+        "subdir": "zimit",
+        "prefix": "www.ready.gov_en"
+      },
+      "platforms": [
+        "windows",
+        "linux",
+        "darwin",
+        "android"
+      ],
+      "origin": "project-nomad",
+      "approxMB": 2429
+    },
+    {
+      "id": "ham-stackexchange-com-en-all",
+      "type": "content",
+      "category": "library",
+      "topic": "survival",
+      "name": "Amateur Radio Q&A",
+      "tagline": "Answered questions on radio equipment, antennas, licensing, and emergency commun",
+      "description": "Answered questions on radio equipment, antennas, licensing, and emergency communications (Curated by Project NOMAD.)",
+      "by": "KIWIX",
+      "source": "https://library.kiwix.org/",
+      "icon": "compass",
+      "color": "#c9a227",
+      "sizeClass": "s",
+      "install": {
+        "kind": "zim",
+        "subdir": "stack_exchange",
+        "prefix": "ham.stackexchange.com_en_all"
+      },
+      "platforms": [
+        "windows",
+        "linux",
+        "darwin",
+        "android"
+      ],
+      "origin": "project-nomad",
+      "approxMB": 75
+    },
+    {
+      "id": "canadian-prepper-en-bugoutconcepts",
+      "type": "content",
+      "category": "library",
+      "topic": "survival",
+      "name": "Canadian Prepper: Bug Out Concepts",
+      "tagline": "Strategies and planning for emergency evacuation",
+      "description": "Strategies and planning for emergency evacuation (Curated by Project NOMAD.)",
+      "by": "KIWIX",
+      "source": "https://library.kiwix.org/",
+      "icon": "compass",
+      "color": "#c9a227",
+      "sizeClass": "m",
+      "install": {
+        "kind": "zim",
+        "subdir": "videos",
+        "prefix": "canadian-prepper_en_bugoutconcepts"
+      },
+      "platforms": [
+        "windows",
+        "linux",
+        "darwin",
+        "android"
+      ],
+      "origin": "project-nomad",
+      "approxMB": 2886
+    },
+    {
+      "id": "urban-prepper-en-all",
+      "type": "content",
+      "category": "library",
+      "topic": "survival",
+      "name": "Urban Prepper",
+      "tagline": "Comprehensive urban emergency preparedness video series",
+      "description": "Comprehensive urban emergency preparedness video series (Curated by Project NOMAD.)",
+      "by": "KIWIX",
+      "source": "https://library.kiwix.org/",
+      "icon": "compass",
+      "color": "#c9a227",
+      "sizeClass": "m",
+      "install": {
+        "kind": "zim",
+        "subdir": "videos",
+        "prefix": "urban-prepper_en_all"
+      },
+      "platforms": [
+        "windows",
+        "linux",
+        "darwin",
+        "android"
+      ],
+      "origin": "project-nomad",
+      "approxMB": 2245
+    },
+    {
+      "id": "canadian-prepper-en-preppingfood",
+      "type": "content",
+      "category": "library",
+      "topic": "survival",
+      "name": "Canadian Prepper: Prepping Food",
+      "tagline": "Long-term food storage and survival meal preparation",
+      "description": "Long-term food storage and survival meal preparation (Curated by Project NOMAD.)",
+      "by": "KIWIX",
+      "source": "https://library.kiwix.org/",
+      "icon": "compass",
+      "color": "#c9a227",
+      "sizeClass": "m",
+      "install": {
+        "kind": "zim",
+        "subdir": "videos",
+        "prefix": "canadian-prepper_en_preppingfood"
+      },
+      "platforms": [
+        "windows",
+        "linux",
+        "darwin",
+        "android"
+      ],
+      "origin": "project-nomad",
+      "approxMB": 2160
+    },
+    {
+      "id": "100r-co-en-all",
+      "type": "content",
+      "category": "library",
+      "topic": "survival",
+      "name": "Hundred Rabbits",
+      "tagline": "Field notes on low-tech living - solar power, water, food, and repair from a dec",
+      "description": "Field notes on low-tech living - solar power, water, food, and repair from a decade off-grid (Curated by Project NOMAD.)",
+      "by": "KIWIX",
+      "source": "https://library.kiwix.org/",
+      "icon": "compass",
+      "color": "#c9a227",
+      "sizeClass": "s",
+      "install": {
+        "kind": "zim",
+        "subdir": "zimit",
+        "prefix": "100r.co_en_all"
+      },
+      "platforms": [
+        "windows",
+        "linux",
+        "darwin",
+        "android"
+      ],
+      "origin": "project-nomad",
+      "approxMB": 172
+    },
+    {
+      "id": "gutenberg-en-lcc-u",
+      "type": "content",
+      "category": "library",
+      "topic": "survival",
+      "name": "Project Gutenberg: Military Science",
+      "tagline": "Classic military strategy, tactics, and field manuals",
+      "description": "Classic military strategy, tactics, and field manuals (Curated by Project NOMAD.)",
+      "by": "KIWIX",
+      "source": "https://library.kiwix.org/",
+      "icon": "compass",
+      "color": "#c9a227",
+      "sizeClass": "m",
+      "install": {
+        "kind": "zim",
+        "subdir": "gutenberg",
+        "prefix": "gutenberg_en_lcc-u"
+      },
+      "platforms": [
+        "windows",
+        "linux",
+        "darwin",
+        "android"
+      ],
+      "origin": "project-nomad",
+      "approxMB": 1200
+    },
+    {
+      "id": "cd3wdproject-org-en-all",
+      "type": "content",
+      "category": "library",
+      "topic": "survival",
+      "name": "CD3WD: Appropriate Technology Library",
+      "tagline": "Practical guides to food production, water and sanitation, construction, and vil",
+      "description": "Practical guides to food production, water and sanitation, construction, and village-scale manufacturing without industrial supply chains (Curated by Project NOMAD.)",
+      "by": "KIWIX",
+      "source": "https://library.kiwix.org/",
+      "icon": "compass",
+      "color": "#c9a227",
+      "sizeClass": "s",
+      "install": {
+        "kind": "zim",
+        "subdir": "zimit",
+        "prefix": "cd3wdproject.org_en_all"
+      },
+      "platforms": [
+        "windows",
+        "linux",
+        "darwin",
+        "android"
+      ],
+      "origin": "project-nomad",
+      "approxMB": 581
+    },
+    {
+      "id": "wikibooks-en-all-nopic",
+      "type": "content",
+      "category": "education",
+      "topic": "education",
+      "name": "Wikibooks",
+      "tagline": "Open-content textbooks covering math, science, computing, and more",
+      "description": "Open-content textbooks covering math, science, computing, and more (Curated by Project NOMAD.)",
+      "by": "KIWIX",
+      "source": "https://library.kiwix.org/",
+      "icon": "book",
+      "color": "#58a05a",
+      "sizeClass": "m",
+      "install": {
+        "kind": "zim",
+        "subdir": "wikibooks",
+        "prefix": "wikibooks_en_all_nopic"
+      },
+      "platforms": [
+        "windows",
+        "linux",
+        "darwin",
+        "android"
+      ],
+      "origin": "project-nomad",
+      "approxMB": 3100
+    },
+    {
+      "id": "ted-mul-ted-ed",
+      "type": "content",
+      "category": "education",
+      "topic": "education",
+      "name": "TED-Ed",
+      "tagline": "Educational video lessons on science, history, literature, and more",
+      "description": "Educational video lessons on science, history, literature, and more (Curated by Project NOMAD.)",
+      "by": "KIWIX",
+      "source": "https://library.kiwix.org/",
+      "icon": "book",
+      "color": "#58a05a",
+      "sizeClass": "m",
+      "install": {
+        "kind": "zim",
+        "subdir": "ted",
+        "prefix": "ted_mul_ted-ed"
+      },
+      "platforms": [
+        "windows",
+        "linux",
+        "darwin",
+        "android"
+      ],
+      "origin": "project-nomad",
+      "approxMB": 6381
+    },
+    {
+      "id": "libretexts-org-en-math",
+      "type": "content",
+      "category": "education",
+      "topic": "education",
+      "name": "LibreTexts Mathematics",
+      "tagline": "Open-source math textbooks from algebra to calculus",
+      "description": "Open-source math textbooks from algebra to calculus (Curated by Project NOMAD.)",
+      "by": "KIWIX",
+      "source": "https://library.kiwix.org/",
+      "icon": "book",
+      "color": "#58a05a",
+      "sizeClass": "s",
+      "install": {
+        "kind": "zim",
+        "subdir": "libretexts",
+        "prefix": "libretexts.org_en_math"
+      },
+      "platforms": [
+        "windows",
+        "linux",
+        "darwin",
+        "android"
+      ],
+      "origin": "project-nomad",
+      "approxMB": 792
+    },
+    {
+      "id": "libretexts-org-en-phys",
+      "type": "content",
+      "category": "education",
+      "topic": "education",
+      "name": "LibreTexts Physics",
+      "tagline": "Physics courses and textbooks",
+      "description": "Physics courses and textbooks (Curated by Project NOMAD.)",
+      "by": "KIWIX",
+      "source": "https://library.kiwix.org/",
+      "icon": "book",
+      "color": "#58a05a",
+      "sizeClass": "s",
+      "install": {
+        "kind": "zim",
+        "subdir": "libretexts",
+        "prefix": "libretexts.org_en_phys"
+      },
+      "platforms": [
+        "windows",
+        "linux",
+        "darwin",
+        "android"
+      ],
+      "origin": "project-nomad",
+      "approxMB": 534
+    },
+    {
+      "id": "libretexts-org-en-bio",
+      "type": "content",
+      "category": "education",
+      "topic": "education",
+      "name": "LibreTexts Biology",
+      "tagline": "Biology courses and textbooks",
+      "description": "Biology courses and textbooks (Curated by Project NOMAD.)",
+      "by": "KIWIX",
+      "source": "https://library.kiwix.org/",
+      "icon": "book",
+      "color": "#58a05a",
+      "sizeClass": "m",
+      "install": {
+        "kind": "zim",
+        "subdir": "libretexts",
+        "prefix": "libretexts.org_en_bio"
+      },
+      "platforms": [
+        "windows",
+        "linux",
+        "darwin",
+        "android"
+      ],
+      "origin": "project-nomad",
+      "approxMB": 2240
+    },
+    {
+      "id": "ted-mul-ted-conference",
+      "type": "content",
+      "category": "education",
+      "topic": "education",
+      "name": "TED Conference",
+      "tagline": "Main TED conference talks on ideas worth spreading",
+      "description": "Main TED conference talks on ideas worth spreading (Curated by Project NOMAD.)",
+      "by": "KIWIX",
+      "source": "https://library.kiwix.org/",
+      "icon": "book",
+      "color": "#58a05a",
+      "sizeClass": "l",
+      "install": {
+        "kind": "zim",
+        "subdir": "ted",
+        "prefix": "ted_mul_ted-conference"
+      },
+      "platforms": [
+        "windows",
+        "linux",
+        "darwin",
+        "android"
+      ],
+      "origin": "project-nomad",
+      "approxMB": 18136
+    },
+    {
+      "id": "libretexts-org-en-human",
+      "type": "content",
+      "category": "education",
+      "topic": "education",
+      "name": "LibreTexts Humanities",
+      "tagline": "Literature, philosophy, history, and social sciences",
+      "description": "Literature, philosophy, history, and social sciences (Curated by Project NOMAD.)",
+      "by": "KIWIX",
+      "source": "https://library.kiwix.org/",
+      "icon": "book",
+      "color": "#58a05a",
+      "sizeClass": "m",
+      "install": {
+        "kind": "zim",
+        "subdir": "libretexts",
+        "prefix": "libretexts.org_en_human"
+      },
+      "platforms": [
+        "windows",
+        "linux",
+        "darwin",
+        "android"
+      ],
+      "origin": "project-nomad",
+      "approxMB": 3730
+    },
+    {
+      "id": "libretexts-org-en-geo",
+      "type": "content",
+      "category": "education",
+      "topic": "education",
+      "name": "LibreTexts Geosciences",
+      "tagline": "Earth science, geology, and environmental studies",
+      "description": "Earth science, geology, and environmental studies (Curated by Project NOMAD.)",
+      "by": "KIWIX",
+      "source": "https://library.kiwix.org/",
+      "icon": "book",
+      "color": "#58a05a",
+      "sizeClass": "m",
+      "install": {
+        "kind": "zim",
+        "subdir": "libretexts",
+        "prefix": "libretexts.org_en_geo"
+      },
+      "platforms": [
+        "windows",
+        "linux",
+        "darwin",
+        "android"
+      ],
+      "origin": "project-nomad",
+      "approxMB": 1127
+    },
+    {
+      "id": "libretexts-org-en-biz",
+      "type": "content",
+      "category": "education",
+      "topic": "education",
+      "name": "LibreTexts Business",
+      "tagline": "Business, economics, and management textbooks",
+      "description": "Business, economics, and management textbooks (Curated by Project NOMAD.)",
+      "by": "KIWIX",
+      "source": "https://library.kiwix.org/",
+      "icon": "book",
+      "color": "#58a05a",
+      "sizeClass": "s",
+      "install": {
+        "kind": "zim",
+        "subdir": "libretexts",
+        "prefix": "libretexts.org_en_biz"
+      },
+      "platforms": [
+        "windows",
+        "linux",
+        "darwin",
+        "android"
+      ],
+      "origin": "project-nomad",
+      "approxMB": 801
+    },
+    {
+      "id": "woodworking-stackexchange-com-en-all",
+      "type": "content",
+      "category": "library",
+      "topic": "diy",
+      "name": "Woodworking Q&A",
+      "tagline": "Stack Exchange Q&A for carpentry, joinery, and woodcraft",
+      "description": "Stack Exchange Q&A for carpentry, joinery, and woodcraft (Curated by Project NOMAD.)",
+      "by": "KIWIX",
+      "source": "https://library.kiwix.org/",
+      "icon": "wrench",
+      "color": "#d9822b",
+      "sizeClass": "s",
+      "install": {
+        "kind": "zim",
+        "subdir": "stack_exchange",
+        "prefix": "woodworking.stackexchange.com_en_all"
+      },
+      "platforms": [
+        "windows",
+        "linux",
+        "darwin",
+        "android"
+      ],
+      "origin": "project-nomad",
+      "approxMB": 99
+    },
+    {
+      "id": "foss-cooking-en-all",
+      "type": "content",
+      "category": "library",
+      "topic": "agriculture",
+      "name": "FOSS Cooking",
+      "tagline": "Quick and easy cooking guides and recipes",
+      "description": "Quick and easy cooking guides and recipes (Curated by Project NOMAD.)",
+      "by": "KIWIX",
+      "source": "https://library.kiwix.org/",
+      "icon": "leaf",
+      "color": "#3a9d8f",
+      "sizeClass": "s",
+      "install": {
+        "kind": "zim",
+        "subdir": "zimit",
+        "prefix": "foss.cooking_en_all"
+      },
+      "platforms": [
+        "windows",
+        "linux",
+        "darwin",
+        "android"
+      ],
+      "origin": "project-nomad",
+      "approxMB": 24
+    },
+    {
+      "id": "based-cooking-en-all",
+      "type": "content",
+      "category": "library",
+      "topic": "agriculture",
+      "name": "Based.Cooking",
+      "tagline": "Simple, practical recipes from the community",
+      "description": "Simple, practical recipes from the community (Curated by Project NOMAD.)",
+      "by": "KIWIX",
+      "source": "https://library.kiwix.org/",
+      "icon": "leaf",
+      "color": "#3a9d8f",
+      "sizeClass": "s",
+      "install": {
+        "kind": "zim",
+        "subdir": "zimit",
+        "prefix": "based.cooking_en_all"
+      },
+      "platforms": [
+        "windows",
+        "linux",
+        "darwin",
+        "android"
+      ],
+      "origin": "project-nomad",
+      "approxMB": 16
+    },
+    {
+      "id": "lrnselfreliance-en-all",
+      "type": "content",
+      "category": "library",
+      "topic": "agriculture",
+      "name": "Learning Self-Reliance: Homesteading",
+      "tagline": "Beekeeping, animal husbandry, and sustainable living practices",
+      "description": "Beekeeping, animal husbandry, and sustainable living practices (Curated by Project NOMAD.)",
+      "by": "KIWIX",
+      "source": "https://library.kiwix.org/",
+      "icon": "leaf",
+      "color": "#3a9d8f",
+      "sizeClass": "m",
+      "install": {
+        "kind": "zim",
+        "subdir": "videos",
+        "prefix": "lrnselfreliance_en_all"
+      },
+      "platforms": [
+        "windows",
+        "linux",
+        "darwin",
+        "android"
+      ],
+      "origin": "project-nomad",
+      "approxMB": 3790
+    },
+    {
+      "id": "gutenberg-en-lcc-s",
+      "type": "content",
+      "category": "library",
+      "topic": "agriculture",
+      "name": "Project Gutenberg: Agriculture",
+      "tagline": "Classic texts on farming, animal husbandry, plant cultivation, and food preserva",
+      "description": "Classic texts on farming, animal husbandry, plant cultivation, and food preservation (Curated by Project NOMAD.)",
+      "by": "KIWIX",
+      "source": "https://library.kiwix.org/",
+      "icon": "leaf",
+      "color": "#3a9d8f",
+      "sizeClass": "m",
+      "install": {
+        "kind": "zim",
+        "subdir": "gutenberg",
+        "prefix": "gutenberg_en_lcc-s"
+      },
+      "platforms": [
+        "windows",
+        "linux",
+        "darwin",
+        "android"
+      ],
+      "origin": "project-nomad",
+      "approxMB": 4300
+    },
+    {
+      "id": "freecodecamp-en-all",
+      "type": "content",
+      "category": "library",
+      "topic": "computing",
+      "name": "freeCodeCamp",
+      "tagline": "Interactive programming tutorials - JavaScript, algorithms, and data structures",
+      "description": "Interactive programming tutorials - JavaScript, algorithms, and data structures (Curated by Project NOMAD.)",
+      "by": "KIWIX",
+      "source": "https://library.kiwix.org/",
+      "icon": "chip",
+      "color": "#7c6bd9",
+      "sizeClass": "s",
+      "install": {
+        "kind": "zim",
+        "subdir": "freecodecamp",
+        "prefix": "freecodecamp_en_all"
+      },
+      "platforms": [
+        "windows",
+        "linux",
+        "darwin",
+        "android"
+      ],
+      "origin": "project-nomad",
+      "approxMB": 8
+    },
+    {
+      "id": "devdocs-en-python",
+      "type": "content",
+      "category": "library",
+      "topic": "computing",
+      "name": "Python Documentation",
+      "tagline": "Complete Python language reference and tutorials",
+      "description": "Complete Python language reference and tutorials (Curated by Project NOMAD.)",
+      "by": "KIWIX",
+      "source": "https://library.kiwix.org/",
+      "icon": "chip",
+      "color": "#7c6bd9",
+      "sizeClass": "s",
+      "install": {
+        "kind": "zim",
+        "subdir": "devdocs",
+        "prefix": "devdocs_en_python"
+      },
+      "platforms": [
+        "windows",
+        "linux",
+        "darwin",
+        "android"
+      ],
+      "origin": "project-nomad",
+      "approxMB": 4
+    },
+    {
+      "id": "devdocs-en-javascript",
+      "type": "content",
+      "category": "library",
+      "topic": "computing",
+      "name": "JavaScript Documentation",
+      "tagline": "MDN JavaScript reference and guides",
+      "description": "MDN JavaScript reference and guides (Curated by Project NOMAD.)",
+      "by": "KIWIX",
+      "source": "https://library.kiwix.org/",
+      "icon": "chip",
+      "color": "#7c6bd9",
+      "sizeClass": "s",
+      "install": {
+        "kind": "zim",
+        "subdir": "devdocs",
+        "prefix": "devdocs_en_javascript"
+      },
+      "platforms": [
+        "windows",
+        "linux",
+        "darwin",
+        "android"
+      ],
+      "origin": "project-nomad",
+      "approxMB": 3
+    },
+    {
+      "id": "devdocs-en-html",
+      "type": "content",
+      "category": "library",
+      "topic": "computing",
+      "name": "HTML Documentation",
+      "tagline": "MDN HTML elements and attributes reference",
+      "description": "MDN HTML elements and attributes reference (Curated by Project NOMAD.)",
+      "by": "KIWIX",
+      "source": "https://library.kiwix.org/",
+      "icon": "chip",
+      "color": "#7c6bd9",
+      "sizeClass": "s",
+      "install": {
+        "kind": "zim",
+        "subdir": "devdocs",
+        "prefix": "devdocs_en_html"
+      },
+      "platforms": [
+        "windows",
+        "linux",
+        "darwin",
+        "android"
+      ],
+      "origin": "project-nomad",
+      "approxMB": 2
+    },
+    {
+      "id": "devdocs-en-css",
+      "type": "content",
+      "category": "library",
+      "topic": "computing",
+      "name": "CSS Documentation",
+      "tagline": "MDN CSS properties and selectors reference",
+      "description": "MDN CSS properties and selectors reference (Curated by Project NOMAD.)",
+      "by": "KIWIX",
+      "source": "https://library.kiwix.org/",
+      "icon": "chip",
+      "color": "#7c6bd9",
+      "sizeClass": "s",
+      "install": {
+        "kind": "zim",
+        "subdir": "devdocs",
+        "prefix": "devdocs_en_css"
+      },
+      "platforms": [
+        "windows",
+        "linux",
+        "darwin",
+        "android"
+      ],
+      "origin": "project-nomad",
+      "approxMB": 5
+    },
+    {
+      "id": "arduino-stackexchange-com-en-all",
+      "type": "content",
+      "category": "library",
+      "topic": "computing",
+      "name": "Arduino Q&A",
+      "tagline": "Stack Exchange Q&A for Arduino microcontroller projects",
+      "description": "Stack Exchange Q&A for Arduino microcontroller projects (Curated by Project NOMAD.)",
+      "by": "KIWIX",
+      "source": "https://library.kiwix.org/",
+      "icon": "chip",
+      "color": "#7c6bd9",
+      "sizeClass": "s",
+      "install": {
+        "kind": "zim",
+        "subdir": "stack_exchange",
+        "prefix": "arduino.stackexchange.com_en_all"
+      },
+      "platforms": [
+        "windows",
+        "linux",
+        "darwin",
+        "android"
+      ],
+      "origin": "project-nomad",
+      "approxMB": 247
+    },
+    {
+      "id": "raspberrypi-stackexchange-com-en-all",
+      "type": "content",
+      "category": "library",
+      "topic": "computing",
+      "name": "Raspberry Pi Q&A",
+      "tagline": "Stack Exchange Q&A for Raspberry Pi projects and troubleshooting",
+      "description": "Stack Exchange Q&A for Raspberry Pi projects and troubleshooting (Curated by Project NOMAD.)",
+      "by": "KIWIX",
+      "source": "https://library.kiwix.org/",
+      "icon": "chip",
+      "color": "#7c6bd9",
+      "sizeClass": "s",
+      "install": {
+        "kind": "zim",
+        "subdir": "stack_exchange",
+        "prefix": "raspberrypi.stackexchange.com_en_all"
+      },
+      "platforms": [
+        "windows",
+        "linux",
+        "darwin",
+        "android"
+      ],
+      "origin": "project-nomad",
+      "approxMB": 285
+    },
+    {
+      "id": "devdocs-en-node",
+      "type": "content",
+      "category": "library",
+      "topic": "computing",
+      "name": "Node.js Documentation",
+      "tagline": "Node.js API reference and guides",
+      "description": "Node.js API reference and guides (Curated by Project NOMAD.)",
+      "by": "KIWIX",
+      "source": "https://library.kiwix.org/",
+      "icon": "chip",
+      "color": "#7c6bd9",
+      "sizeClass": "s",
+      "install": {
+        "kind": "zim",
+        "subdir": "devdocs",
+        "prefix": "devdocs_en_node"
+      },
+      "platforms": [
+        "windows",
+        "linux",
+        "darwin",
+        "android"
+      ],
+      "origin": "project-nomad",
+      "approxMB": 1
+    },
+    {
+      "id": "devdocs-en-react",
+      "type": "content",
+      "category": "library",
+      "topic": "computing",
+      "name": "React Documentation",
+      "tagline": "React library reference and tutorials",
+      "description": "React library reference and tutorials (Curated by Project NOMAD.)",
+      "by": "KIWIX",
+      "source": "https://library.kiwix.org/",
+      "icon": "chip",
+      "color": "#7c6bd9",
+      "sizeClass": "s",
+      "install": {
+        "kind": "zim",
+        "subdir": "devdocs",
+        "prefix": "devdocs_en_react"
+      },
+      "platforms": [
+        "windows",
+        "linux",
+        "darwin",
+        "android"
+      ],
+      "origin": "project-nomad",
+      "approxMB": 3
+    },
+    {
+      "id": "devdocs-en-git",
+      "type": "content",
+      "category": "library",
+      "topic": "computing",
+      "name": "Git Documentation",
+      "tagline": "Git version control reference",
+      "description": "Git version control reference (Curated by Project NOMAD.)",
+      "by": "KIWIX",
+      "source": "https://library.kiwix.org/",
+      "icon": "chip",
+      "color": "#7c6bd9",
+      "sizeClass": "s",
+      "install": {
+        "kind": "zim",
+        "subdir": "devdocs",
+        "prefix": "devdocs_en_git"
+      },
+      "platforms": [
+        "windows",
+        "linux",
+        "darwin",
+        "android"
+      ],
+      "origin": "project-nomad",
+      "approxMB": 2
+    },
+    {
+      "id": "robotics-stackexchange-com-en-all",
+      "type": "content",
+      "category": "library",
+      "topic": "computing",
+      "name": "Robotics Q&A",
+      "tagline": "Stack Exchange Q&A for robotics projects and automation",
+      "description": "Stack Exchange Q&A for robotics projects and automation (Curated by Project NOMAD.)",
+      "by": "KIWIX",
+      "source": "https://library.kiwix.org/",
+      "icon": "chip",
+      "color": "#7c6bd9",
+      "sizeClass": "s",
+      "install": {
+        "kind": "zim",
+        "subdir": "stack_exchange",
+        "prefix": "robotics.stackexchange.com_en_all"
+      },
+      "platforms": [
+        "windows",
+        "linux",
+        "darwin",
+        "android"
+      ],
+      "origin": "project-nomad",
+      "approxMB": 233
+    },
+    {
+      "id": "devdocs-en-docker",
+      "type": "content",
+      "category": "library",
+      "topic": "computing",
+      "name": "Docker Documentation",
+      "tagline": "Docker container reference and guides",
+      "description": "Docker container reference and guides (Curated by Project NOMAD.)",
+      "by": "KIWIX",
+      "source": "https://library.kiwix.org/",
+      "icon": "chip",
+      "color": "#7c6bd9",
+      "sizeClass": "s",
+      "install": {
+        "kind": "zim",
+        "subdir": "devdocs",
+        "prefix": "devdocs_en_docker"
+      },
+      "platforms": [
+        "windows",
+        "linux",
+        "darwin",
+        "android"
+      ],
+      "origin": "project-nomad",
+      "approxMB": 2
+    },
+    {
+      "id": "devdocs-en-bash",
+      "type": "content",
+      "category": "library",
+      "topic": "computing",
+      "name": "Linux Documentation",
+      "tagline": "Linux command reference and system administration",
+      "description": "Linux command reference and system administration (Curated by Project NOMAD.)",
+      "by": "KIWIX",
+      "source": "https://library.kiwix.org/",
+      "icon": "chip",
+      "color": "#7c6bd9",
+      "sizeClass": "s",
+      "install": {
+        "kind": "zim",
+        "subdir": "devdocs",
+        "prefix": "devdocs_en_bash"
+      },
+      "platforms": [
+        "windows",
+        "linux",
+        "darwin",
+        "android"
+      ],
+      "origin": "project-nomad",
+      "approxMB": 1
+    },
+    {
+      "id": "wikipedia-en-top-mini",
+      "type": "content",
+      "category": "library",
+      "topic": "wikipedia",
+      "name": "Quick Reference",
+      "tagline": "Top 100,000 articles with minimal images. Great for quick lookups.",
+      "description": "Top 100,000 articles with minimal images. Great for quick lookups. (Curated by Project NOMAD.)",
+      "by": "KIWIX",
+      "source": "https://en.wikipedia.org/",
+      "icon": "globe",
+      "color": "#4a8fd9",
+      "sizeClass": "s",
+      "install": {
+        "kind": "zim",
+        "subdir": "wikipedia",
+        "prefix": "wikipedia_en_top_mini"
+      },
+      "platforms": [
+        "windows",
+        "linux",
+        "darwin",
+        "android"
+      ],
+      "origin": "project-nomad",
+      "approxMB": 331
+    },
+    {
+      "id": "wikipedia-en-all-mini",
+      "type": "content",
+      "category": "library",
+      "topic": "wikipedia",
+      "name": "Complete Wikipedia (Compact)",
+      "tagline": "All 6+ million articles in condensed format.",
+      "description": "All 6+ million articles in condensed format. (Curated by Project NOMAD.)",
+      "by": "KIWIX",
+      "source": "https://en.wikipedia.org/",
+      "icon": "globe",
+      "color": "#4a8fd9",
+      "sizeClass": "l",
+      "install": {
+        "kind": "zim",
+        "subdir": "wikipedia",
+        "prefix": "wikipedia_en_all_mini"
+      },
+      "platforms": [
+        "windows",
+        "linux",
+        "darwin",
+        "android"
+      ],
+      "origin": "project-nomad",
+      "approxMB": 12531
+    },
+    {
+      "id": "map-alaska",
+      "type": "maps",
+      "category": "maps",
+      "topic": "maps-pacific",
+      "name": "Alaska map",
+      "tagline": "Topographic maps for the state of Alaska.",
+      "description": "Topographic maps for the state of Alaska. Ready-made file from Project NOMAD, so no map tool is needed.",
+      "by": "PROJECT NOMAD",
+      "source": "https://github.com/Crosstalk-Solutions/project-nomad-maps",
+      "icon": "map",
+      "color": "#3a9d8f",
+      "sizeClass": "s",
+      "install": {
+        "kind": "pmtiles-file",
+        "url": "https://github.com/Crosstalk-Solutions/project-nomad-maps/raw/refs/heads/master/pmtiles/alaska_2025-12.pmtiles",
+        "file": "alaska.pmtiles"
+      },
+      "platforms": [
+        "windows",
+        "linux",
+        "darwin"
+      ],
+      "hosts": [
+        "app"
+      ],
+      "origin": "project-nomad",
+      "approxMB": 684
+    },
+    {
+      "id": "map-california",
+      "type": "maps",
+      "category": "maps",
+      "topic": "maps-pacific",
+      "name": "California map",
+      "tagline": "Topographic maps for the state of California.",
+      "description": "Topographic maps for the state of California. Ready-made file from Project NOMAD, so no map tool is needed.",
+      "by": "PROJECT NOMAD",
+      "source": "https://github.com/Crosstalk-Solutions/project-nomad-maps",
+      "icon": "map",
+      "color": "#3a9d8f",
+      "sizeClass": "m",
+      "install": {
+        "kind": "pmtiles-file",
+        "url": "https://github.com/Crosstalk-Solutions/project-nomad-maps/raw/refs/heads/master/pmtiles/california_2025-12.pmtiles",
+        "file": "california.pmtiles"
+      },
+      "platforms": [
+        "windows",
+        "linux",
+        "darwin"
+      ],
+      "hosts": [
+        "app"
+      ],
+      "origin": "project-nomad",
+      "approxMB": 1100
+    },
+    {
+      "id": "map-hawaii",
+      "type": "maps",
+      "category": "maps",
+      "topic": "maps-pacific",
+      "name": "Hawaii map",
+      "tagline": "Topographic maps for the state of Hawaii.",
+      "description": "Topographic maps for the state of Hawaii. Ready-made file from Project NOMAD, so no map tool is needed.",
+      "by": "PROJECT NOMAD",
+      "source": "https://github.com/Crosstalk-Solutions/project-nomad-maps",
+      "icon": "map",
+      "color": "#3a9d8f",
+      "sizeClass": "s",
+      "install": {
+        "kind": "pmtiles-file",
+        "url": "https://github.com/Crosstalk-Solutions/project-nomad-maps/raw/refs/heads/master/pmtiles/hawaii_2025-12.pmtiles",
+        "file": "hawaii.pmtiles"
+      },
+      "platforms": [
+        "windows",
+        "linux",
+        "darwin"
+      ],
+      "hosts": [
+        "app"
+      ],
+      "origin": "project-nomad",
+      "approxMB": 28
+    },
+    {
+      "id": "map-oregon",
+      "type": "maps",
+      "category": "maps",
+      "topic": "maps-pacific",
+      "name": "Oregon map",
+      "tagline": "Topographic maps for the state of Oregon.",
+      "description": "Topographic maps for the state of Oregon. Ready-made file from Project NOMAD, so no map tool is needed.",
+      "by": "PROJECT NOMAD",
+      "source": "https://github.com/Crosstalk-Solutions/project-nomad-maps",
+      "icon": "map",
+      "color": "#3a9d8f",
+      "sizeClass": "s",
+      "install": {
+        "kind": "pmtiles-file",
+        "url": "https://github.com/Crosstalk-Solutions/project-nomad-maps/raw/refs/heads/master/pmtiles/oregon_2025-12.pmtiles",
+        "file": "oregon.pmtiles"
+      },
+      "platforms": [
+        "windows",
+        "linux",
+        "darwin"
+      ],
+      "hosts": [
+        "app"
+      ],
+      "origin": "project-nomad",
+      "approxMB": 379
+    },
+    {
+      "id": "map-washington",
+      "type": "maps",
+      "category": "maps",
+      "topic": "maps-pacific",
+      "name": "Washington map",
+      "tagline": "Topographic maps for the state of Washington.",
+      "description": "Topographic maps for the state of Washington. Ready-made file from Project NOMAD, so no map tool is needed.",
+      "by": "PROJECT NOMAD",
+      "source": "https://github.com/Crosstalk-Solutions/project-nomad-maps",
+      "icon": "map",
+      "color": "#3a9d8f",
+      "sizeClass": "s",
+      "install": {
+        "kind": "pmtiles-file",
+        "url": "https://github.com/Crosstalk-Solutions/project-nomad-maps/raw/refs/heads/master/pmtiles/washington_2025-12.pmtiles",
+        "file": "washington.pmtiles"
+      },
+      "platforms": [
+        "windows",
+        "linux",
+        "darwin"
+      ],
+      "hosts": [
+        "app"
+      ],
+      "origin": "project-nomad",
+      "approxMB": 466
+    },
+    {
+      "id": "map-arizona",
+      "type": "maps",
+      "category": "maps",
+      "topic": "maps-mountain",
+      "name": "Arizona map",
+      "tagline": "Topographic maps for the state of Arizona.",
+      "description": "Topographic maps for the state of Arizona. Ready-made file from Project NOMAD, so no map tool is needed.",
+      "by": "PROJECT NOMAD",
+      "source": "https://github.com/Crosstalk-Solutions/project-nomad-maps",
+      "icon": "map",
+      "color": "#3a9d8f",
+      "sizeClass": "s",
+      "install": {
+        "kind": "pmtiles-file",
+        "url": "https://github.com/Crosstalk-Solutions/project-nomad-maps/raw/refs/heads/master/pmtiles/arizona_2025-12.pmtiles",
+        "file": "arizona.pmtiles"
+      },
+      "platforms": [
+        "windows",
+        "linux",
+        "darwin"
+      ],
+      "hosts": [
+        "app"
+      ],
+      "origin": "project-nomad",
+      "approxMB": 400
+    },
+    {
+      "id": "map-colorado",
+      "type": "maps",
+      "category": "maps",
+      "topic": "maps-mountain",
+      "name": "Colorado map",
+      "tagline": "Topographic maps for the state of Colorado.",
+      "description": "Topographic maps for the state of Colorado. Ready-made file from Project NOMAD, so no map tool is needed.",
+      "by": "PROJECT NOMAD",
+      "source": "https://github.com/Crosstalk-Solutions/project-nomad-maps",
+      "icon": "map",
+      "color": "#3a9d8f",
+      "sizeClass": "s",
+      "install": {
+        "kind": "pmtiles-file",
+        "url": "https://github.com/Crosstalk-Solutions/project-nomad-maps/raw/refs/heads/master/pmtiles/colorado_2025-12.pmtiles",
+        "file": "colorado.pmtiles"
+      },
+      "platforms": [
+        "windows",
+        "linux",
+        "darwin"
+      ],
+      "hosts": [
+        "app"
+      ],
+      "origin": "project-nomad",
+      "approxMB": 450
+    },
+    {
+      "id": "map-idaho",
+      "type": "maps",
+      "category": "maps",
+      "topic": "maps-mountain",
+      "name": "Idaho map",
+      "tagline": "Topographic maps for the state of Idaho.",
+      "description": "Topographic maps for the state of Idaho. Ready-made file from Project NOMAD, so no map tool is needed.",
+      "by": "PROJECT NOMAD",
+      "source": "https://github.com/Crosstalk-Solutions/project-nomad-maps",
+      "icon": "map",
+      "color": "#3a9d8f",
+      "sizeClass": "s",
+      "install": {
+        "kind": "pmtiles-file",
+        "url": "https://github.com/Crosstalk-Solutions/project-nomad-maps/raw/refs/heads/master/pmtiles/idaho_2025-12.pmtiles",
+        "file": "idaho.pmtiles"
+      },
+      "platforms": [
+        "windows",
+        "linux",
+        "darwin"
+      ],
+      "hosts": [
+        "app"
+      ],
+      "origin": "project-nomad",
+      "approxMB": 220
+    },
+    {
+      "id": "map-montana",
+      "type": "maps",
+      "category": "maps",
+      "topic": "maps-mountain",
+      "name": "Montana map",
+      "tagline": "Topographic maps for the state of Montana.",
+      "description": "Topographic maps for the state of Montana. Ready-made file from Project NOMAD, so no map tool is needed.",
+      "by": "PROJECT NOMAD",
+      "source": "https://github.com/Crosstalk-Solutions/project-nomad-maps",
+      "icon": "map",
+      "color": "#3a9d8f",
+      "sizeClass": "s",
+      "install": {
+        "kind": "pmtiles-file",
+        "url": "https://github.com/Crosstalk-Solutions/project-nomad-maps/raw/refs/heads/master/pmtiles/montana_2025-12.pmtiles",
+        "file": "montana.pmtiles"
+      },
+      "platforms": [
+        "windows",
+        "linux",
+        "darwin"
+      ],
+      "hosts": [
+        "app"
+      ],
+      "origin": "project-nomad",
+      "approxMB": 270
+    },
+    {
+      "id": "map-nevada",
+      "type": "maps",
+      "category": "maps",
+      "topic": "maps-mountain",
+      "name": "Nevada map",
+      "tagline": "Topographic maps for the state of Nevada.",
+      "description": "Topographic maps for the state of Nevada. Ready-made file from Project NOMAD, so no map tool is needed.",
+      "by": "PROJECT NOMAD",
+      "source": "https://github.com/Crosstalk-Solutions/project-nomad-maps",
+      "icon": "map",
+      "color": "#3a9d8f",
+      "sizeClass": "s",
+      "install": {
+        "kind": "pmtiles-file",
+        "url": "https://github.com/Crosstalk-Solutions/project-nomad-maps/raw/refs/heads/master/pmtiles/nevada_2025-12.pmtiles",
+        "file": "nevada.pmtiles"
+      },
+      "platforms": [
+        "windows",
+        "linux",
+        "darwin"
+      ],
+      "hosts": [
+        "app"
+      ],
+      "origin": "project-nomad",
+      "approxMB": 200
+    },
+    {
+      "id": "map-new-mexico",
+      "type": "maps",
+      "category": "maps",
+      "topic": "maps-mountain",
+      "name": "New Mexico map",
+      "tagline": "Topographic maps for the state of New Mexico.",
+      "description": "Topographic maps for the state of New Mexico. Ready-made file from Project NOMAD, so no map tool is needed.",
+      "by": "PROJECT NOMAD",
+      "source": "https://github.com/Crosstalk-Solutions/project-nomad-maps",
+      "icon": "map",
+      "color": "#3a9d8f",
+      "sizeClass": "s",
+      "install": {
+        "kind": "pmtiles-file",
+        "url": "https://github.com/Crosstalk-Solutions/project-nomad-maps/raw/refs/heads/master/pmtiles/new_mexico_2025-12.pmtiles",
+        "file": "new-mexico.pmtiles"
+      },
+      "platforms": [
+        "windows",
+        "linux",
+        "darwin"
+      ],
+      "hosts": [
+        "app"
+      ],
+      "origin": "project-nomad",
+      "approxMB": 230
+    },
+    {
+      "id": "map-utah",
+      "type": "maps",
+      "category": "maps",
+      "topic": "maps-mountain",
+      "name": "Utah map",
+      "tagline": "Topographic maps for the state of Utah.",
+      "description": "Topographic maps for the state of Utah. Ready-made file from Project NOMAD, so no map tool is needed.",
+      "by": "PROJECT NOMAD",
+      "source": "https://github.com/Crosstalk-Solutions/project-nomad-maps",
+      "icon": "map",
+      "color": "#3a9d8f",
+      "sizeClass": "s",
+      "install": {
+        "kind": "pmtiles-file",
+        "url": "https://github.com/Crosstalk-Solutions/project-nomad-maps/raw/refs/heads/master/pmtiles/utah_2025-12.pmtiles",
+        "file": "utah.pmtiles"
+      },
+      "platforms": [
+        "windows",
+        "linux",
+        "darwin"
+      ],
+      "hosts": [
+        "app"
+      ],
+      "origin": "project-nomad",
+      "approxMB": 240
+    },
+    {
+      "id": "map-wyoming",
+      "type": "maps",
+      "category": "maps",
+      "topic": "maps-mountain",
+      "name": "Wyoming map",
+      "tagline": "Topographic maps for the state of Wyoming.",
+      "description": "Topographic maps for the state of Wyoming. Ready-made file from Project NOMAD, so no map tool is needed.",
+      "by": "PROJECT NOMAD",
+      "source": "https://github.com/Crosstalk-Solutions/project-nomad-maps",
+      "icon": "map",
+      "color": "#3a9d8f",
+      "sizeClass": "s",
+      "install": {
+        "kind": "pmtiles-file",
+        "url": "https://github.com/Crosstalk-Solutions/project-nomad-maps/raw/refs/heads/master/pmtiles/wyoming_2025-12.pmtiles",
+        "file": "wyoming.pmtiles"
+      },
+      "platforms": [
+        "windows",
+        "linux",
+        "darwin"
+      ],
+      "hosts": [
+        "app"
+      ],
+      "origin": "project-nomad",
+      "approxMB": 210
+    },
+    {
+      "id": "map-arkansas",
+      "type": "maps",
+      "category": "maps",
+      "topic": "maps-west-south-central",
+      "name": "Arkansas map",
+      "tagline": "Topographic maps for the state of Arkansas",
+      "description": "Topographic maps for the state of Arkansas Ready-made file from Project NOMAD, so no map tool is needed.",
+      "by": "PROJECT NOMAD",
+      "source": "https://github.com/Crosstalk-Solutions/project-nomad-maps",
+      "icon": "map",
+      "color": "#3a9d8f",
+      "sizeClass": "s",
+      "install": {
+        "kind": "pmtiles-file",
+        "url": "https://github.com/Crosstalk-Solutions/project-nomad-maps/raw/refs/heads/master/pmtiles/arkansas_2025-12.pmtiles",
+        "file": "arkansas.pmtiles"
+      },
+      "platforms": [
+        "windows",
+        "linux",
+        "darwin"
+      ],
+      "hosts": [
+        "app"
+      ],
+      "origin": "project-nomad",
+      "approxMB": 400
+    },
+    {
+      "id": "map-oklahoma",
+      "type": "maps",
+      "category": "maps",
+      "topic": "maps-west-south-central",
+      "name": "Oklahoma map",
+      "tagline": "Topographic maps for the state of Oklahoma",
+      "description": "Topographic maps for the state of Oklahoma Ready-made file from Project NOMAD, so no map tool is needed.",
+      "by": "PROJECT NOMAD",
+      "source": "https://github.com/Crosstalk-Solutions/project-nomad-maps",
+      "icon": "map",
+      "color": "#3a9d8f",
+      "sizeClass": "s",
+      "install": {
+        "kind": "pmtiles-file",
+        "url": "https://github.com/Crosstalk-Solutions/project-nomad-maps/raw/refs/heads/master/pmtiles/oklahoma_2025-12.pmtiles",
+        "file": "oklahoma.pmtiles"
+      },
+      "platforms": [
+        "windows",
+        "linux",
+        "darwin"
+      ],
+      "hosts": [
+        "app"
+      ],
+      "origin": "project-nomad",
+      "approxMB": 400
+    },
+    {
+      "id": "map-louisiana",
+      "type": "maps",
+      "category": "maps",
+      "topic": "maps-west-south-central",
+      "name": "Louisiana map",
+      "tagline": "Topographic maps for the state of Louisiana",
+      "description": "Topographic maps for the state of Louisiana Ready-made file from Project NOMAD, so no map tool is needed.",
+      "by": "PROJECT NOMAD",
+      "source": "https://github.com/Crosstalk-Solutions/project-nomad-maps",
+      "icon": "map",
+      "color": "#3a9d8f",
+      "sizeClass": "s",
+      "install": {
+        "kind": "pmtiles-file",
+        "url": "https://github.com/Crosstalk-Solutions/project-nomad-maps/raw/refs/heads/master/pmtiles/louisiana_2025-12.pmtiles",
+        "file": "louisiana.pmtiles"
+      },
+      "platforms": [
+        "windows",
+        "linux",
+        "darwin"
+      ],
+      "hosts": [
+        "app"
+      ],
+      "origin": "project-nomad",
+      "approxMB": 400
+    },
+    {
+      "id": "map-texas",
+      "type": "maps",
+      "category": "maps",
+      "topic": "maps-west-south-central",
+      "name": "Texas map",
+      "tagline": "Topographic maps for the state of Texas",
+      "description": "Topographic maps for the state of Texas Ready-made file from Project NOMAD, so no map tool is needed.",
+      "by": "PROJECT NOMAD",
+      "source": "https://github.com/Crosstalk-Solutions/project-nomad-maps",
+      "icon": "map",
+      "color": "#3a9d8f",
+      "sizeClass": "s",
+      "install": {
+        "kind": "pmtiles-file",
+        "url": "https://github.com/Crosstalk-Solutions/project-nomad-maps/raw/refs/heads/master/pmtiles/texas_2025-12.pmtiles",
+        "file": "texas.pmtiles"
+      },
+      "platforms": [
+        "windows",
+        "linux",
+        "darwin"
+      ],
+      "hosts": [
+        "app"
+      ],
+      "origin": "project-nomad",
+      "approxMB": 400
+    },
+    {
+      "id": "map-alabama",
+      "type": "maps",
+      "category": "maps",
+      "topic": "maps-east-south-central",
+      "name": "Alabama map",
+      "tagline": "Topographic maps for the state of Alabama",
+      "description": "Topographic maps for the state of Alabama Ready-made file from Project NOMAD, so no map tool is needed.",
+      "by": "PROJECT NOMAD",
+      "source": "https://github.com/Crosstalk-Solutions/project-nomad-maps",
+      "icon": "map",
+      "color": "#3a9d8f",
+      "sizeClass": "s",
+      "install": {
+        "kind": "pmtiles-file",
+        "url": "https://github.com/Crosstalk-Solutions/project-nomad-maps/raw/refs/heads/master/pmtiles/alabama_2025-12.pmtiles",
+        "file": "alabama.pmtiles"
+      },
+      "platforms": [
+        "windows",
+        "linux",
+        "darwin"
+      ],
+      "hosts": [
+        "app"
+      ],
+      "origin": "project-nomad",
+      "approxMB": 400
+    },
+    {
+      "id": "map-kentucky",
+      "type": "maps",
+      "category": "maps",
+      "topic": "maps-east-south-central",
+      "name": "Kentucky map",
+      "tagline": "Topographic maps for the state of Kentucky",
+      "description": "Topographic maps for the state of Kentucky Ready-made file from Project NOMAD, so no map tool is needed.",
+      "by": "PROJECT NOMAD",
+      "source": "https://github.com/Crosstalk-Solutions/project-nomad-maps",
+      "icon": "map",
+      "color": "#3a9d8f",
+      "sizeClass": "s",
+      "install": {
+        "kind": "pmtiles-file",
+        "url": "https://github.com/Crosstalk-Solutions/project-nomad-maps/raw/refs/heads/master/pmtiles/kentucky_2025-12.pmtiles",
+        "file": "kentucky.pmtiles"
+      },
+      "platforms": [
+        "windows",
+        "linux",
+        "darwin"
+      ],
+      "hosts": [
+        "app"
+      ],
+      "origin": "project-nomad",
+      "approxMB": 400
+    },
+    {
+      "id": "map-mississippi",
+      "type": "maps",
+      "category": "maps",
+      "topic": "maps-east-south-central",
+      "name": "Mississippi map",
+      "tagline": "Topographic maps for the state of Mississippi",
+      "description": "Topographic maps for the state of Mississippi Ready-made file from Project NOMAD, so no map tool is needed.",
+      "by": "PROJECT NOMAD",
+      "source": "https://github.com/Crosstalk-Solutions/project-nomad-maps",
+      "icon": "map",
+      "color": "#3a9d8f",
+      "sizeClass": "s",
+      "install": {
+        "kind": "pmtiles-file",
+        "url": "https://github.com/Crosstalk-Solutions/project-nomad-maps/raw/refs/heads/master/pmtiles/mississippi_2025-12.pmtiles",
+        "file": "mississippi.pmtiles"
+      },
+      "platforms": [
+        "windows",
+        "linux",
+        "darwin"
+      ],
+      "hosts": [
+        "app"
+      ],
+      "origin": "project-nomad",
+      "approxMB": 400
+    },
+    {
+      "id": "map-tennessee",
+      "type": "maps",
+      "category": "maps",
+      "topic": "maps-east-south-central",
+      "name": "Tennessee map",
+      "tagline": "Topographic maps for the state of Tennessee",
+      "description": "Topographic maps for the state of Tennessee Ready-made file from Project NOMAD, so no map tool is needed.",
+      "by": "PROJECT NOMAD",
+      "source": "https://github.com/Crosstalk-Solutions/project-nomad-maps",
+      "icon": "map",
+      "color": "#3a9d8f",
+      "sizeClass": "s",
+      "install": {
+        "kind": "pmtiles-file",
+        "url": "https://github.com/Crosstalk-Solutions/project-nomad-maps/raw/refs/heads/master/pmtiles/tennessee_2025-12.pmtiles",
+        "file": "tennessee.pmtiles"
+      },
+      "platforms": [
+        "windows",
+        "linux",
+        "darwin"
+      ],
+      "hosts": [
+        "app"
+      ],
+      "origin": "project-nomad",
+      "approxMB": 400
+    },
+    {
+      "id": "map-delaware",
+      "type": "maps",
+      "category": "maps",
+      "topic": "maps-south-atlantic",
+      "name": "Delaware map",
+      "tagline": "Topographic maps for the state of Delaware",
+      "description": "Topographic maps for the state of Delaware Ready-made file from Project NOMAD, so no map tool is needed.",
+      "by": "PROJECT NOMAD",
+      "source": "https://github.com/Crosstalk-Solutions/project-nomad-maps",
+      "icon": "map",
+      "color": "#3a9d8f",
+      "sizeClass": "s",
+      "install": {
+        "kind": "pmtiles-file",
+        "url": "https://github.com/Crosstalk-Solutions/project-nomad-maps/raw/refs/heads/master/pmtiles/delaware_2025-12.pmtiles",
+        "file": "delaware.pmtiles"
+      },
+      "platforms": [
+        "windows",
+        "linux",
+        "darwin"
+      ],
+      "hosts": [
+        "app"
+      ],
+      "origin": "project-nomad",
+      "approxMB": 400
+    },
+    {
+      "id": "map-florida",
+      "type": "maps",
+      "category": "maps",
+      "topic": "maps-south-atlantic",
+      "name": "Florida map",
+      "tagline": "Topographic maps for the state of Florida",
+      "description": "Topographic maps for the state of Florida Ready-made file from Project NOMAD, so no map tool is needed.",
+      "by": "PROJECT NOMAD",
+      "source": "https://github.com/Crosstalk-Solutions/project-nomad-maps",
+      "icon": "map",
+      "color": "#3a9d8f",
+      "sizeClass": "s",
+      "install": {
+        "kind": "pmtiles-file",
+        "url": "https://github.com/Crosstalk-Solutions/project-nomad-maps/raw/refs/heads/master/pmtiles/florida_2025-12.pmtiles",
+        "file": "florida.pmtiles"
+      },
+      "platforms": [
+        "windows",
+        "linux",
+        "darwin"
+      ],
+      "hosts": [
+        "app"
+      ],
+      "origin": "project-nomad",
+      "approxMB": 400
+    },
+    {
+      "id": "map-georgia",
+      "type": "maps",
+      "category": "maps",
+      "topic": "maps-south-atlantic",
+      "name": "Georgia map",
+      "tagline": "Topographic maps for the state of Georgia",
+      "description": "Topographic maps for the state of Georgia Ready-made file from Project NOMAD, so no map tool is needed.",
+      "by": "PROJECT NOMAD",
+      "source": "https://github.com/Crosstalk-Solutions/project-nomad-maps",
+      "icon": "map",
+      "color": "#3a9d8f",
+      "sizeClass": "s",
+      "install": {
+        "kind": "pmtiles-file",
+        "url": "https://github.com/Crosstalk-Solutions/project-nomad-maps/raw/refs/heads/master/pmtiles/georgia_2025-12.pmtiles",
+        "file": "georgia.pmtiles"
+      },
+      "platforms": [
+        "windows",
+        "linux",
+        "darwin"
+      ],
+      "hosts": [
+        "app"
+      ],
+      "origin": "project-nomad",
+      "approxMB": 400
+    },
+    {
+      "id": "map-maryland",
+      "type": "maps",
+      "category": "maps",
+      "topic": "maps-south-atlantic",
+      "name": "Maryland map",
+      "tagline": "Topographic maps for the state of Maryland",
+      "description": "Topographic maps for the state of Maryland Ready-made file from Project NOMAD, so no map tool is needed.",
+      "by": "PROJECT NOMAD",
+      "source": "https://github.com/Crosstalk-Solutions/project-nomad-maps",
+      "icon": "map",
+      "color": "#3a9d8f",
+      "sizeClass": "s",
+      "install": {
+        "kind": "pmtiles-file",
+        "url": "https://github.com/Crosstalk-Solutions/project-nomad-maps/raw/refs/heads/master/pmtiles/maryland_2025-12.pmtiles",
+        "file": "maryland.pmtiles"
+      },
+      "platforms": [
+        "windows",
+        "linux",
+        "darwin"
+      ],
+      "hosts": [
+        "app"
+      ],
+      "origin": "project-nomad",
+      "approxMB": 400
+    },
+    {
+      "id": "map-north-carolina",
+      "type": "maps",
+      "category": "maps",
+      "topic": "maps-south-atlantic",
+      "name": "North_Carolina map",
+      "tagline": "Topographic maps for the state of North_Carolina",
+      "description": "Topographic maps for the state of North_Carolina Ready-made file from Project NOMAD, so no map tool is needed.",
+      "by": "PROJECT NOMAD",
+      "source": "https://github.com/Crosstalk-Solutions/project-nomad-maps",
+      "icon": "map",
+      "color": "#3a9d8f",
+      "sizeClass": "s",
+      "install": {
+        "kind": "pmtiles-file",
+        "url": "https://github.com/Crosstalk-Solutions/project-nomad-maps/raw/refs/heads/master/pmtiles/north_carolina_2025-12.pmtiles",
+        "file": "north-carolina.pmtiles"
+      },
+      "platforms": [
+        "windows",
+        "linux",
+        "darwin"
+      ],
+      "hosts": [
+        "app"
+      ],
+      "origin": "project-nomad",
+      "approxMB": 400
+    },
+    {
+      "id": "map-south-carolina",
+      "type": "maps",
+      "category": "maps",
+      "topic": "maps-south-atlantic",
+      "name": "South_Carolina map",
+      "tagline": "Topographic maps for the state of South_Carolina",
+      "description": "Topographic maps for the state of South_Carolina Ready-made file from Project NOMAD, so no map tool is needed.",
+      "by": "PROJECT NOMAD",
+      "source": "https://github.com/Crosstalk-Solutions/project-nomad-maps",
+      "icon": "map",
+      "color": "#3a9d8f",
+      "sizeClass": "s",
+      "install": {
+        "kind": "pmtiles-file",
+        "url": "https://github.com/Crosstalk-Solutions/project-nomad-maps/raw/refs/heads/master/pmtiles/south_carolina_2025-12.pmtiles",
+        "file": "south-carolina.pmtiles"
+      },
+      "platforms": [
+        "windows",
+        "linux",
+        "darwin"
+      ],
+      "hosts": [
+        "app"
+      ],
+      "origin": "project-nomad",
+      "approxMB": 400
+    },
+    {
+      "id": "map-virginia",
+      "type": "maps",
+      "category": "maps",
+      "topic": "maps-south-atlantic",
+      "name": "Virginia map",
+      "tagline": "Topographic maps for the state of Virginia",
+      "description": "Topographic maps for the state of Virginia Ready-made file from Project NOMAD, so no map tool is needed.",
+      "by": "PROJECT NOMAD",
+      "source": "https://github.com/Crosstalk-Solutions/project-nomad-maps",
+      "icon": "map",
+      "color": "#3a9d8f",
+      "sizeClass": "s",
+      "install": {
+        "kind": "pmtiles-file",
+        "url": "https://github.com/Crosstalk-Solutions/project-nomad-maps/raw/refs/heads/master/pmtiles/virginia_2025-12.pmtiles",
+        "file": "virginia.pmtiles"
+      },
+      "platforms": [
+        "windows",
+        "linux",
+        "darwin"
+      ],
+      "hosts": [
+        "app"
+      ],
+      "origin": "project-nomad",
+      "approxMB": 400
+    },
+    {
+      "id": "map-west-virginia",
+      "type": "maps",
+      "category": "maps",
+      "topic": "maps-south-atlantic",
+      "name": "West_Virginia map",
+      "tagline": "Topographic maps for the state of West_Virginia",
+      "description": "Topographic maps for the state of West_Virginia Ready-made file from Project NOMAD, so no map tool is needed.",
+      "by": "PROJECT NOMAD",
+      "source": "https://github.com/Crosstalk-Solutions/project-nomad-maps",
+      "icon": "map",
+      "color": "#3a9d8f",
+      "sizeClass": "s",
+      "install": {
+        "kind": "pmtiles-file",
+        "url": "https://github.com/Crosstalk-Solutions/project-nomad-maps/raw/refs/heads/master/pmtiles/west_virginia_2025-12.pmtiles",
+        "file": "west-virginia.pmtiles"
+      },
+      "platforms": [
+        "windows",
+        "linux",
+        "darwin"
+      ],
+      "hosts": [
+        "app"
+      ],
+      "origin": "project-nomad",
+      "approxMB": 400
+    },
+    {
+      "id": "map-iowa",
+      "type": "maps",
+      "category": "maps",
+      "topic": "maps-west-north-central",
+      "name": "Iowa map",
+      "tagline": "Topographic maps for the state of Iowa",
+      "description": "Topographic maps for the state of Iowa Ready-made file from Project NOMAD, so no map tool is needed.",
+      "by": "PROJECT NOMAD",
+      "source": "https://github.com/Crosstalk-Solutions/project-nomad-maps",
+      "icon": "map",
+      "color": "#3a9d8f",
+      "sizeClass": "s",
+      "install": {
+        "kind": "pmtiles-file",
+        "url": "https://github.com/Crosstalk-Solutions/project-nomad-maps/raw/refs/heads/master/pmtiles/iowa_2025-12.pmtiles",
+        "file": "iowa.pmtiles"
+      },
+      "platforms": [
+        "windows",
+        "linux",
+        "darwin"
+      ],
+      "hosts": [
+        "app"
+      ],
+      "origin": "project-nomad",
+      "approxMB": 400
+    },
+    {
+      "id": "map-kansas",
+      "type": "maps",
+      "category": "maps",
+      "topic": "maps-west-north-central",
+      "name": "Kansas map",
+      "tagline": "Topographic maps for the state of Kansas",
+      "description": "Topographic maps for the state of Kansas Ready-made file from Project NOMAD, so no map tool is needed.",
+      "by": "PROJECT NOMAD",
+      "source": "https://github.com/Crosstalk-Solutions/project-nomad-maps",
+      "icon": "map",
+      "color": "#3a9d8f",
+      "sizeClass": "s",
+      "install": {
+        "kind": "pmtiles-file",
+        "url": "https://github.com/Crosstalk-Solutions/project-nomad-maps/raw/refs/heads/master/pmtiles/kansas_2025-12.pmtiles",
+        "file": "kansas.pmtiles"
+      },
+      "platforms": [
+        "windows",
+        "linux",
+        "darwin"
+      ],
+      "hosts": [
+        "app"
+      ],
+      "origin": "project-nomad",
+      "approxMB": 400
+    },
+    {
+      "id": "map-minnesota",
+      "type": "maps",
+      "category": "maps",
+      "topic": "maps-west-north-central",
+      "name": "Minnesota map",
+      "tagline": "Topographic maps for the state of Minnesota",
+      "description": "Topographic maps for the state of Minnesota Ready-made file from Project NOMAD, so no map tool is needed.",
+      "by": "PROJECT NOMAD",
+      "source": "https://github.com/Crosstalk-Solutions/project-nomad-maps",
+      "icon": "map",
+      "color": "#3a9d8f",
+      "sizeClass": "s",
+      "install": {
+        "kind": "pmtiles-file",
+        "url": "https://github.com/Crosstalk-Solutions/project-nomad-maps/raw/refs/heads/master/pmtiles/minnesota_2025-12.pmtiles",
+        "file": "minnesota.pmtiles"
+      },
+      "platforms": [
+        "windows",
+        "linux",
+        "darwin"
+      ],
+      "hosts": [
+        "app"
+      ],
+      "origin": "project-nomad",
+      "approxMB": 400
+    },
+    {
+      "id": "map-missouri",
+      "type": "maps",
+      "category": "maps",
+      "topic": "maps-west-north-central",
+      "name": "Missouri map",
+      "tagline": "Topographic maps for the state of Missouri",
+      "description": "Topographic maps for the state of Missouri Ready-made file from Project NOMAD, so no map tool is needed.",
+      "by": "PROJECT NOMAD",
+      "source": "https://github.com/Crosstalk-Solutions/project-nomad-maps",
+      "icon": "map",
+      "color": "#3a9d8f",
+      "sizeClass": "s",
+      "install": {
+        "kind": "pmtiles-file",
+        "url": "https://github.com/Crosstalk-Solutions/project-nomad-maps/raw/refs/heads/master/pmtiles/missouri_2025-12.pmtiles",
+        "file": "missouri.pmtiles"
+      },
+      "platforms": [
+        "windows",
+        "linux",
+        "darwin"
+      ],
+      "hosts": [
+        "app"
+      ],
+      "origin": "project-nomad",
+      "approxMB": 400
+    },
+    {
+      "id": "map-nebraska",
+      "type": "maps",
+      "category": "maps",
+      "topic": "maps-west-north-central",
+      "name": "Nebraska map",
+      "tagline": "Topographic maps for the state of Nebraska",
+      "description": "Topographic maps for the state of Nebraska Ready-made file from Project NOMAD, so no map tool is needed.",
+      "by": "PROJECT NOMAD",
+      "source": "https://github.com/Crosstalk-Solutions/project-nomad-maps",
+      "icon": "map",
+      "color": "#3a9d8f",
+      "sizeClass": "s",
+      "install": {
+        "kind": "pmtiles-file",
+        "url": "https://github.com/Crosstalk-Solutions/project-nomad-maps/raw/refs/heads/master/pmtiles/nebraska_2025-12.pmtiles",
+        "file": "nebraska.pmtiles"
+      },
+      "platforms": [
+        "windows",
+        "linux",
+        "darwin"
+      ],
+      "hosts": [
+        "app"
+      ],
+      "origin": "project-nomad",
+      "approxMB": 400
+    },
+    {
+      "id": "map-north-dakota",
+      "type": "maps",
+      "category": "maps",
+      "topic": "maps-west-north-central",
+      "name": "North_Dakota map",
+      "tagline": "Topographic maps for the state of North_Dakota",
+      "description": "Topographic maps for the state of North_Dakota Ready-made file from Project NOMAD, so no map tool is needed.",
+      "by": "PROJECT NOMAD",
+      "source": "https://github.com/Crosstalk-Solutions/project-nomad-maps",
+      "icon": "map",
+      "color": "#3a9d8f",
+      "sizeClass": "s",
+      "install": {
+        "kind": "pmtiles-file",
+        "url": "https://github.com/Crosstalk-Solutions/project-nomad-maps/raw/refs/heads/master/pmtiles/north_dakota_2025-12.pmtiles",
+        "file": "north-dakota.pmtiles"
+      },
+      "platforms": [
+        "windows",
+        "linux",
+        "darwin"
+      ],
+      "hosts": [
+        "app"
+      ],
+      "origin": "project-nomad",
+      "approxMB": 400
+    },
+    {
+      "id": "map-south-dakota",
+      "type": "maps",
+      "category": "maps",
+      "topic": "maps-west-north-central",
+      "name": "South_Dakota map",
+      "tagline": "Topographic maps for the state of South_Dakota",
+      "description": "Topographic maps for the state of South_Dakota Ready-made file from Project NOMAD, so no map tool is needed.",
+      "by": "PROJECT NOMAD",
+      "source": "https://github.com/Crosstalk-Solutions/project-nomad-maps",
+      "icon": "map",
+      "color": "#3a9d8f",
+      "sizeClass": "s",
+      "install": {
+        "kind": "pmtiles-file",
+        "url": "https://github.com/Crosstalk-Solutions/project-nomad-maps/raw/refs/heads/master/pmtiles/south_dakota_2025-12.pmtiles",
+        "file": "south-dakota.pmtiles"
+      },
+      "platforms": [
+        "windows",
+        "linux",
+        "darwin"
+      ],
+      "hosts": [
+        "app"
+      ],
+      "origin": "project-nomad",
+      "approxMB": 400
+    },
+    {
+      "id": "map-illinois",
+      "type": "maps",
+      "category": "maps",
+      "topic": "maps-east-north-central",
+      "name": "Illinois map",
+      "tagline": "Topographic maps for the state of Illinois",
+      "description": "Topographic maps for the state of Illinois Ready-made file from Project NOMAD, so no map tool is needed.",
+      "by": "PROJECT NOMAD",
+      "source": "https://github.com/Crosstalk-Solutions/project-nomad-maps",
+      "icon": "map",
+      "color": "#3a9d8f",
+      "sizeClass": "s",
+      "install": {
+        "kind": "pmtiles-file",
+        "url": "https://github.com/Crosstalk-Solutions/project-nomad-maps/raw/refs/heads/master/pmtiles/illinois_2025-12.pmtiles",
+        "file": "illinois.pmtiles"
+      },
+      "platforms": [
+        "windows",
+        "linux",
+        "darwin"
+      ],
+      "hosts": [
+        "app"
+      ],
+      "origin": "project-nomad",
+      "approxMB": 400
+    },
+    {
+      "id": "map-indiana",
+      "type": "maps",
+      "category": "maps",
+      "topic": "maps-east-north-central",
+      "name": "Indiana map",
+      "tagline": "Topographic maps for the state of Indiana",
+      "description": "Topographic maps for the state of Indiana Ready-made file from Project NOMAD, so no map tool is needed.",
+      "by": "PROJECT NOMAD",
+      "source": "https://github.com/Crosstalk-Solutions/project-nomad-maps",
+      "icon": "map",
+      "color": "#3a9d8f",
+      "sizeClass": "s",
+      "install": {
+        "kind": "pmtiles-file",
+        "url": "https://github.com/Crosstalk-Solutions/project-nomad-maps/raw/refs/heads/master/pmtiles/indiana_2025-12.pmtiles",
+        "file": "indiana.pmtiles"
+      },
+      "platforms": [
+        "windows",
+        "linux",
+        "darwin"
+      ],
+      "hosts": [
+        "app"
+      ],
+      "origin": "project-nomad",
+      "approxMB": 400
+    },
+    {
+      "id": "map-michigan",
+      "type": "maps",
+      "category": "maps",
+      "topic": "maps-east-north-central",
+      "name": "Michigan map",
+      "tagline": "Topographic maps for the state of Michigan",
+      "description": "Topographic maps for the state of Michigan Ready-made file from Project NOMAD, so no map tool is needed.",
+      "by": "PROJECT NOMAD",
+      "source": "https://github.com/Crosstalk-Solutions/project-nomad-maps",
+      "icon": "map",
+      "color": "#3a9d8f",
+      "sizeClass": "s",
+      "install": {
+        "kind": "pmtiles-file",
+        "url": "https://github.com/Crosstalk-Solutions/project-nomad-maps/raw/refs/heads/master/pmtiles/michigan_2025-12.pmtiles",
+        "file": "michigan.pmtiles"
+      },
+      "platforms": [
+        "windows",
+        "linux",
+        "darwin"
+      ],
+      "hosts": [
+        "app"
+      ],
+      "origin": "project-nomad",
+      "approxMB": 400
+    },
+    {
+      "id": "map-ohio",
+      "type": "maps",
+      "category": "maps",
+      "topic": "maps-east-north-central",
+      "name": "Ohio map",
+      "tagline": "Topographic maps for the state of Ohio",
+      "description": "Topographic maps for the state of Ohio Ready-made file from Project NOMAD, so no map tool is needed.",
+      "by": "PROJECT NOMAD",
+      "source": "https://github.com/Crosstalk-Solutions/project-nomad-maps",
+      "icon": "map",
+      "color": "#3a9d8f",
+      "sizeClass": "s",
+      "install": {
+        "kind": "pmtiles-file",
+        "url": "https://github.com/Crosstalk-Solutions/project-nomad-maps/raw/refs/heads/master/pmtiles/ohio_2025-12.pmtiles",
+        "file": "ohio.pmtiles"
+      },
+      "platforms": [
+        "windows",
+        "linux",
+        "darwin"
+      ],
+      "hosts": [
+        "app"
+      ],
+      "origin": "project-nomad",
+      "approxMB": 400
+    },
+    {
+      "id": "map-wisconsin",
+      "type": "maps",
+      "category": "maps",
+      "topic": "maps-east-north-central",
+      "name": "Wisconsin map",
+      "tagline": "Topographic maps for the state of Wisconsin",
+      "description": "Topographic maps for the state of Wisconsin Ready-made file from Project NOMAD, so no map tool is needed.",
+      "by": "PROJECT NOMAD",
+      "source": "https://github.com/Crosstalk-Solutions/project-nomad-maps",
+      "icon": "map",
+      "color": "#3a9d8f",
+      "sizeClass": "s",
+      "install": {
+        "kind": "pmtiles-file",
+        "url": "https://github.com/Crosstalk-Solutions/project-nomad-maps/raw/refs/heads/master/pmtiles/wisconsin_2025-12.pmtiles",
+        "file": "wisconsin.pmtiles"
+      },
+      "platforms": [
+        "windows",
+        "linux",
+        "darwin"
+      ],
+      "hosts": [
+        "app"
+      ],
+      "origin": "project-nomad",
+      "approxMB": 400
+    },
+    {
+      "id": "map-new-jersey",
+      "type": "maps",
+      "category": "maps",
+      "topic": "maps-mid-atlantic",
+      "name": "New_Jersey map",
+      "tagline": "Topographic maps for the state of New_Jersey",
+      "description": "Topographic maps for the state of New_Jersey Ready-made file from Project NOMAD, so no map tool is needed.",
+      "by": "PROJECT NOMAD",
+      "source": "https://github.com/Crosstalk-Solutions/project-nomad-maps",
+      "icon": "map",
+      "color": "#3a9d8f",
+      "sizeClass": "s",
+      "install": {
+        "kind": "pmtiles-file",
+        "url": "https://github.com/Crosstalk-Solutions/project-nomad-maps/raw/refs/heads/master/pmtiles/new_jersey_2025-12.pmtiles",
+        "file": "new-jersey.pmtiles"
+      },
+      "platforms": [
+        "windows",
+        "linux",
+        "darwin"
+      ],
+      "hosts": [
+        "app"
+      ],
+      "origin": "project-nomad",
+      "approxMB": 400
+    },
+    {
+      "id": "map-new-york",
+      "type": "maps",
+      "category": "maps",
+      "topic": "maps-mid-atlantic",
+      "name": "New_York map",
+      "tagline": "Topographic maps for the state of New_York",
+      "description": "Topographic maps for the state of New_York Ready-made file from Project NOMAD, so no map tool is needed.",
+      "by": "PROJECT NOMAD",
+      "source": "https://github.com/Crosstalk-Solutions/project-nomad-maps",
+      "icon": "map",
+      "color": "#3a9d8f",
+      "sizeClass": "s",
+      "install": {
+        "kind": "pmtiles-file",
+        "url": "https://github.com/Crosstalk-Solutions/project-nomad-maps/raw/refs/heads/master/pmtiles/new_york_2025-12.pmtiles",
+        "file": "new-york.pmtiles"
+      },
+      "platforms": [
+        "windows",
+        "linux",
+        "darwin"
+      ],
+      "hosts": [
+        "app"
+      ],
+      "origin": "project-nomad",
+      "approxMB": 400
+    },
+    {
+      "id": "map-pennsylvania",
+      "type": "maps",
+      "category": "maps",
+      "topic": "maps-mid-atlantic",
+      "name": "Pennsylvania map",
+      "tagline": "Topographic maps for the state of Pennsylvania",
+      "description": "Topographic maps for the state of Pennsylvania Ready-made file from Project NOMAD, so no map tool is needed.",
+      "by": "PROJECT NOMAD",
+      "source": "https://github.com/Crosstalk-Solutions/project-nomad-maps",
+      "icon": "map",
+      "color": "#3a9d8f",
+      "sizeClass": "s",
+      "install": {
+        "kind": "pmtiles-file",
+        "url": "https://github.com/Crosstalk-Solutions/project-nomad-maps/raw/refs/heads/master/pmtiles/pennsylvania_2025-12.pmtiles",
+        "file": "pennsylvania.pmtiles"
+      },
+      "platforms": [
+        "windows",
+        "linux",
+        "darwin"
+      ],
+      "hosts": [
+        "app"
+      ],
+      "origin": "project-nomad",
+      "approxMB": 400
+    },
+    {
+      "id": "map-connecticut",
+      "type": "maps",
+      "category": "maps",
+      "topic": "maps-new-england",
+      "name": "Connecticut map",
+      "tagline": "Topographic maps for the state of Connecticut",
+      "description": "Topographic maps for the state of Connecticut Ready-made file from Project NOMAD, so no map tool is needed.",
+      "by": "PROJECT NOMAD",
+      "source": "https://github.com/Crosstalk-Solutions/project-nomad-maps",
+      "icon": "map",
+      "color": "#3a9d8f",
+      "sizeClass": "s",
+      "install": {
+        "kind": "pmtiles-file",
+        "url": "https://github.com/Crosstalk-Solutions/project-nomad-maps/raw/refs/heads/master/pmtiles/connecticut_2025-12.pmtiles",
+        "file": "connecticut.pmtiles"
+      },
+      "platforms": [
+        "windows",
+        "linux",
+        "darwin"
+      ],
+      "hosts": [
+        "app"
+      ],
+      "origin": "project-nomad",
+      "approxMB": 400
+    },
+    {
+      "id": "map-maine",
+      "type": "maps",
+      "category": "maps",
+      "topic": "maps-new-england",
+      "name": "Maine map",
+      "tagline": "Topographic maps for the state of Maine",
+      "description": "Topographic maps for the state of Maine Ready-made file from Project NOMAD, so no map tool is needed.",
+      "by": "PROJECT NOMAD",
+      "source": "https://github.com/Crosstalk-Solutions/project-nomad-maps",
+      "icon": "map",
+      "color": "#3a9d8f",
+      "sizeClass": "s",
+      "install": {
+        "kind": "pmtiles-file",
+        "url": "https://github.com/Crosstalk-Solutions/project-nomad-maps/raw/refs/heads/master/pmtiles/maine_2025-12.pmtiles",
+        "file": "maine.pmtiles"
+      },
+      "platforms": [
+        "windows",
+        "linux",
+        "darwin"
+      ],
+      "hosts": [
+        "app"
+      ],
+      "origin": "project-nomad",
+      "approxMB": 400
+    },
+    {
+      "id": "map-massachusetts",
+      "type": "maps",
+      "category": "maps",
+      "topic": "maps-new-england",
+      "name": "Massachusetts map",
+      "tagline": "Topographic maps for the state of Massachusetts",
+      "description": "Topographic maps for the state of Massachusetts Ready-made file from Project NOMAD, so no map tool is needed.",
+      "by": "PROJECT NOMAD",
+      "source": "https://github.com/Crosstalk-Solutions/project-nomad-maps",
+      "icon": "map",
+      "color": "#3a9d8f",
+      "sizeClass": "s",
+      "install": {
+        "kind": "pmtiles-file",
+        "url": "https://github.com/Crosstalk-Solutions/project-nomad-maps/raw/refs/heads/master/pmtiles/massachusetts_2025-12.pmtiles",
+        "file": "massachusetts.pmtiles"
+      },
+      "platforms": [
+        "windows",
+        "linux",
+        "darwin"
+      ],
+      "hosts": [
+        "app"
+      ],
+      "origin": "project-nomad",
+      "approxMB": 400
+    },
+    {
+      "id": "map-new-hampshire",
+      "type": "maps",
+      "category": "maps",
+      "topic": "maps-new-england",
+      "name": "New_Hampshire map",
+      "tagline": "Topographic maps for the state of New_Hampshire",
+      "description": "Topographic maps for the state of New_Hampshire Ready-made file from Project NOMAD, so no map tool is needed.",
+      "by": "PROJECT NOMAD",
+      "source": "https://github.com/Crosstalk-Solutions/project-nomad-maps",
+      "icon": "map",
+      "color": "#3a9d8f",
+      "sizeClass": "s",
+      "install": {
+        "kind": "pmtiles-file",
+        "url": "https://github.com/Crosstalk-Solutions/project-nomad-maps/raw/refs/heads/master/pmtiles/new_hampshire_2025-12.pmtiles",
+        "file": "new-hampshire.pmtiles"
+      },
+      "platforms": [
+        "windows",
+        "linux",
+        "darwin"
+      ],
+      "hosts": [
+        "app"
+      ],
+      "origin": "project-nomad",
+      "approxMB": 400
+    },
+    {
+      "id": "map-rhode-island",
+      "type": "maps",
+      "category": "maps",
+      "topic": "maps-new-england",
+      "name": "Rhode_Island map",
+      "tagline": "Topographic maps for the state of Rhode_Island",
+      "description": "Topographic maps for the state of Rhode_Island Ready-made file from Project NOMAD, so no map tool is needed.",
+      "by": "PROJECT NOMAD",
+      "source": "https://github.com/Crosstalk-Solutions/project-nomad-maps",
+      "icon": "map",
+      "color": "#3a9d8f",
+      "sizeClass": "s",
+      "install": {
+        "kind": "pmtiles-file",
+        "url": "https://github.com/Crosstalk-Solutions/project-nomad-maps/raw/refs/heads/master/pmtiles/rhode_island_2025-12.pmtiles",
+        "file": "rhode-island.pmtiles"
+      },
+      "platforms": [
+        "windows",
+        "linux",
+        "darwin"
+      ],
+      "hosts": [
+        "app"
+      ],
+      "origin": "project-nomad",
+      "approxMB": 400
+    },
+    {
+      "id": "map-vermont",
+      "type": "maps",
+      "category": "maps",
+      "topic": "maps-new-england",
+      "name": "Vermont map",
+      "tagline": "Topographic maps for the state of Vermont",
+      "description": "Topographic maps for the state of Vermont Ready-made file from Project NOMAD, so no map tool is needed.",
+      "by": "PROJECT NOMAD",
+      "source": "https://github.com/Crosstalk-Solutions/project-nomad-maps",
+      "icon": "map",
+      "color": "#3a9d8f",
+      "sizeClass": "s",
+      "install": {
+        "kind": "pmtiles-file",
+        "url": "https://github.com/Crosstalk-Solutions/project-nomad-maps/raw/refs/heads/master/pmtiles/vermont_2025-12.pmtiles",
+        "file": "vermont.pmtiles"
+      },
+      "platforms": [
+        "windows",
+        "linux",
+        "darwin"
+      ],
+      "hosts": [
+        "app"
+      ],
+      "origin": "project-nomad",
+      "approxMB": 400
     }
   ],
   "tiers": [
@@ -1406,6 +4098,576 @@
         "ai-engine",
         "qwen25-05b"
       ]
+    }
+  ],
+  "topics": [
+    {
+      "id": "medicine",
+      "name": "Medicine",
+      "description": "Medical references, guides, and encyclopedias for healthcare information and emergency preparedness.",
+      "icon": "cross",
+      "tiers": [
+        {
+          "id": "medicine-essential",
+          "name": "Essential",
+          "recommended": true,
+          "description": "Core medical references for first aid, medications, and emergency care. Start here.",
+          "modules": [
+            "medicine",
+            "nhs-uk-en-medicines",
+            "fas-military-medicine-en",
+            "wwwnc-cdc-gov-en-all"
+          ]
+        },
+        {
+          "id": "medicine-standard",
+          "name": "Standard",
+          "recommended": false,
+          "description": "Comprehensive medical encyclopedia with detailed health information. Includes everything in Essential.",
+          "modules": [
+            "medicine",
+            "nhs-uk-en-medicines",
+            "fas-military-medicine-en",
+            "wwwnc-cdc-gov-en-all",
+            "medlineplus-gov-en-all"
+          ]
+        },
+        {
+          "id": "medicine-comprehensive",
+          "name": "Comprehensive",
+          "recommended": false,
+          "description": "Professional-level medical references and textbooks. Includes everything in Standard.",
+          "modules": [
+            "medicine",
+            "nhs-uk-en-medicines",
+            "fas-military-medicine-en",
+            "wwwnc-cdc-gov-en-all",
+            "medlineplus-gov-en-all",
+            "wikipedia-en-medicine-maxi",
+            "libretexts-med",
+            "librepathology-en-all-maxi"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "survival",
+      "name": "Survival & preparedness",
+      "description": "Emergency preparedness, bug-out planning, and tactical survival skills for crisis situations.",
+      "icon": "compass",
+      "tiers": [
+        {
+          "id": "survival-essential",
+          "name": "Essential",
+          "recommended": true,
+          "description": "Water, food, and knot references plus core survival videos. Start here for emergency basics.",
+          "modules": [
+            "water",
+            "food",
+            "zimgit-knots-en",
+            "canadian-prepper-en-winterprepping",
+            "canadian-prepper-en-bugoutroll"
+          ]
+        },
+        {
+          "id": "survival-standard",
+          "name": "Standard",
+          "recommended": false,
+          "description": "Official disaster planning, field skills, and radio communications, plus bug-out and urban survival techniques. Includes everything in Essential.",
+          "modules": [
+            "water",
+            "food",
+            "zimgit-knots-en",
+            "canadian-prepper-en-winterprepping",
+            "canadian-prepper-en-bugoutroll",
+            "www-ready-gov-en",
+            "outdoors-se",
+            "ham-stackexchange-com-en-all",
+            "canadian-prepper-en-bugoutconcepts",
+            "urban-prepper-en-all"
+          ]
+        },
+        {
+          "id": "survival-comprehensive",
+          "name": "Comprehensive",
+          "recommended": false,
+          "description": "Complete prepper library - post-disaster recovery, growing and storing food, off-grid technical references, and classic military strategy. Includes everything in Standard.",
+          "modules": [
+            "water",
+            "food",
+            "zimgit-knots-en",
+            "canadian-prepper-en-winterprepping",
+            "canadian-prepper-en-bugoutroll",
+            "www-ready-gov-en",
+            "outdoors-se",
+            "ham-stackexchange-com-en-all",
+            "canadian-prepper-en-bugoutconcepts",
+            "urban-prepper-en-all",
+            "canadian-prepper-en-preppingfood",
+            "post-disaster",
+            "100r-co-en-all",
+            "gutenberg-en-lcc-u",
+            "cd3wdproject-org-en-all"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "education",
+      "name": "Education",
+      "description": "Encyclopedias, textbooks, tutorials, and educational videos for self-directed learning.",
+      "icon": "book",
+      "tiers": [
+        {
+          "id": "education-essential",
+          "name": "Essential",
+          "recommended": true,
+          "description": "Core reference materials - open textbooks and essential educational content. Lightweight, text-focused.",
+          "modules": [
+            "wikibooks-en-all-nopic"
+          ]
+        },
+        {
+          "id": "education-standard",
+          "name": "Standard",
+          "recommended": false,
+          "description": "Adds educational videos, university-level tutorials, and STEM textbooks. Includes Essential.",
+          "modules": [
+            "wikibooks-en-all-nopic",
+            "ted-mul-ted-ed",
+            "wikiversity",
+            "libretexts-org-en-math",
+            "libretexts-org-en-phys",
+            "libretexts-chem",
+            "libretexts-org-en-bio"
+          ]
+        },
+        {
+          "id": "education-comprehensive",
+          "name": "Comprehensive",
+          "recommended": false,
+          "description": "Complete educational library with enhanced textbooks and TED talks. Includes Standard.",
+          "modules": [
+            "wikibooks-en-all-nopic",
+            "ted-mul-ted-ed",
+            "wikiversity",
+            "libretexts-org-en-math",
+            "libretexts-org-en-phys",
+            "libretexts-chem",
+            "libretexts-org-en-bio",
+            "wikibooks",
+            "ted-mul-ted-conference",
+            "libretexts-org-en-human",
+            "libretexts-org-en-geo",
+            "libretexts-eng",
+            "libretexts-org-en-biz"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "diy",
+      "name": "Repair & DIY",
+      "description": "Fix it yourself - repair guides, home improvement, woodworking, and vehicle maintenance.",
+      "icon": "wrench",
+      "tiers": [
+        {
+          "id": "diy-essential",
+          "name": "Essential",
+          "recommended": true,
+          "description": "Core repair knowledge - woodworking basics and vehicle maintenance Q&A.",
+          "modules": [
+            "woodworking-stackexchange-com-en-all",
+            "mechanics"
+          ]
+        },
+        {
+          "id": "diy-standard",
+          "name": "Standard",
+          "recommended": false,
+          "description": "Home improvement expertise with thousands of Q&A threads. Includes Essential.",
+          "modules": [
+            "woodworking-stackexchange-com-en-all",
+            "mechanics",
+            "diy"
+          ]
+        },
+        {
+          "id": "diy-comprehensive",
+          "name": "Comprehensive",
+          "recommended": false,
+          "description": "Complete repair library with step-by-step guides for electronics and appliances. Includes Standard.",
+          "modules": [
+            "woodworking-stackexchange-com-en-all",
+            "mechanics",
+            "diy",
+            "ifixit"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "agriculture",
+      "name": "Food & growing",
+      "description": "Grow and prepare your own food - gardening, cooking techniques, and food preservation.",
+      "icon": "leaf",
+      "tiers": [
+        {
+          "id": "agriculture-essential",
+          "name": "Essential",
+          "recommended": true,
+          "description": "Quick recipes and cooking basics for everyday meal preparation.",
+          "modules": [
+            "foss-cooking-en-all",
+            "based-cooking-en-all"
+          ]
+        },
+        {
+          "id": "agriculture-standard",
+          "name": "Standard",
+          "recommended": false,
+          "description": "Gardening knowledge and cooking expertise from community Q&A. Includes Essential.",
+          "modules": [
+            "foss-cooking-en-all",
+            "based-cooking-en-all",
+            "gardening",
+            "cooking",
+            "food"
+          ]
+        },
+        {
+          "id": "agriculture-comprehensive",
+          "name": "Comprehensive",
+          "recommended": false,
+          "description": "Complete self-sufficiency with homesteading videos, classic agricultural texts, and advanced techniques. Includes Standard.",
+          "modules": [
+            "foss-cooking-en-all",
+            "based-cooking-en-all",
+            "gardening",
+            "cooking",
+            "food",
+            "lrnselfreliance-en-all",
+            "gutenberg-en-lcc-s"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "computing",
+      "name": "Computing",
+      "description": "Programming tutorials, electronics projects, and technical documentation for makers and developers.",
+      "icon": "chip",
+      "tiers": [
+        {
+          "id": "computing-essential",
+          "name": "Essential",
+          "recommended": true,
+          "description": "Learn to code with interactive tutorials and core programming documentation.",
+          "modules": [
+            "freecodecamp-en-all",
+            "devdocs-en-python",
+            "devdocs-en-javascript",
+            "devdocs-en-html",
+            "devdocs-en-css"
+          ]
+        },
+        {
+          "id": "computing-standard",
+          "name": "Standard",
+          "recommended": false,
+          "description": "Maker projects with Arduino and Raspberry Pi, plus more programming docs. Includes Essential.",
+          "modules": [
+            "freecodecamp-en-all",
+            "devdocs-en-python",
+            "devdocs-en-javascript",
+            "devdocs-en-html",
+            "devdocs-en-css",
+            "arduino-stackexchange-com-en-all",
+            "raspberrypi-stackexchange-com-en-all",
+            "devdocs-en-node",
+            "devdocs-en-react",
+            "devdocs-en-git"
+          ]
+        },
+        {
+          "id": "computing-comprehensive",
+          "name": "Comprehensive",
+          "recommended": false,
+          "description": "Deep electronics knowledge and extensive Q&A for hardware projects. Includes Standard.",
+          "modules": [
+            "freecodecamp-en-all",
+            "devdocs-en-python",
+            "devdocs-en-javascript",
+            "devdocs-en-html",
+            "devdocs-en-css",
+            "arduino-stackexchange-com-en-all",
+            "raspberrypi-stackexchange-com-en-all",
+            "devdocs-en-node",
+            "devdocs-en-react",
+            "devdocs-en-git",
+            "electronics",
+            "robotics-stackexchange-com-en-all",
+            "devdocs-en-docker",
+            "devdocs-en-bash"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "wikipedia",
+      "name": "Wikipedia",
+      "description": "Pick how much of Wikipedia to carry.",
+      "icon": "globe",
+      "tiers": [
+        {
+          "id": "wikipedia-top-mini",
+          "name": "Quick Reference",
+          "recommended": false,
+          "description": "",
+          "modules": [
+            "wikipedia-en-top-mini"
+          ]
+        },
+        {
+          "id": "wikipedia-top-nopic",
+          "name": "Popular Articles",
+          "recommended": false,
+          "description": "",
+          "modules": [
+            "wikipedia-top"
+          ]
+        },
+        {
+          "id": "wikipedia-all-mini",
+          "name": "Complete Wikipedia (Compact)",
+          "recommended": false,
+          "description": "",
+          "modules": [
+            "wikipedia-en-all-mini"
+          ]
+        },
+        {
+          "id": "wikipedia-all-nopic",
+          "name": "Complete Wikipedia (No Images)",
+          "recommended": false,
+          "description": "",
+          "modules": [
+            "wikipedia-nopic"
+          ]
+        },
+        {
+          "id": "wikipedia-all-maxi",
+          "name": "Complete Wikipedia (Full)",
+          "recommended": false,
+          "description": "",
+          "modules": [
+            "wikipedia-full"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "maps-pacific",
+      "name": "Pacific Region (maps)",
+      "description": "Map assets for the Pacific region, including Alaska, California, Hawaii, Oregon, and Washington.",
+      "icon": "map",
+      "tiers": [
+        {
+          "id": "maps-pacific-all",
+          "name": "All of Pacific Region",
+          "recommended": false,
+          "description": "",
+          "modules": [
+            "map-alaska",
+            "map-california",
+            "map-hawaii",
+            "map-oregon",
+            "map-washington"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "maps-mountain",
+      "name": "Mountain Region (maps)",
+      "description": "Map assets for the Mountain region, including Arizona, Colorado, Idaho, Montana, Nevada, New Mexico, Utah, and Wyoming.",
+      "icon": "map",
+      "tiers": [
+        {
+          "id": "maps-mountain-all",
+          "name": "All of Mountain Region",
+          "recommended": false,
+          "description": "",
+          "modules": [
+            "map-arizona",
+            "map-colorado",
+            "map-idaho",
+            "map-montana",
+            "map-nevada",
+            "map-new-mexico",
+            "map-utah",
+            "map-wyoming"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "maps-west-south-central",
+      "name": "West South Central (maps)",
+      "description": "Map assets for the West South Central region, including Arkansas, Louisiana, Oklahoma, and Texas.",
+      "icon": "map",
+      "tiers": [
+        {
+          "id": "maps-west-south-central-all",
+          "name": "All of West South Central",
+          "recommended": false,
+          "description": "",
+          "modules": [
+            "map-arkansas",
+            "map-oklahoma",
+            "map-louisiana",
+            "map-texas"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "maps-east-south-central",
+      "name": "East South Central (maps)",
+      "description": "Map assets for the East South Central region, including Alabama, Kentucky, Mississippi, and Tennessee.",
+      "icon": "map",
+      "tiers": [
+        {
+          "id": "maps-east-south-central-all",
+          "name": "All of East South Central",
+          "recommended": false,
+          "description": "",
+          "modules": [
+            "map-alabama",
+            "map-kentucky",
+            "map-mississippi",
+            "map-tennessee"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "maps-south-atlantic",
+      "name": "South Atlantic (maps)",
+      "description": "Map assets for the South Atlantic region, including Delaware, Florida, Georgia, Maryland, North Carolina, South Carolina, Virginia, and West Virginia.",
+      "icon": "map",
+      "tiers": [
+        {
+          "id": "maps-south-atlantic-all",
+          "name": "All of South Atlantic",
+          "recommended": false,
+          "description": "",
+          "modules": [
+            "map-delaware",
+            "map-florida",
+            "map-georgia",
+            "map-maryland",
+            "map-north-carolina",
+            "map-south-carolina",
+            "map-virginia",
+            "map-west-virginia"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "maps-west-north-central",
+      "name": "West North Central (maps)",
+      "description": "Map assets for the West North Central region, including Iowa, Kansas, Minnesota, Missouri, Nebraska, North Dakota, and South Dakota.",
+      "icon": "map",
+      "tiers": [
+        {
+          "id": "maps-west-north-central-all",
+          "name": "All of West North Central",
+          "recommended": false,
+          "description": "",
+          "modules": [
+            "map-iowa",
+            "map-kansas",
+            "map-minnesota",
+            "map-missouri",
+            "map-nebraska",
+            "map-north-dakota",
+            "map-south-dakota"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "maps-east-north-central",
+      "name": "East North Central (maps)",
+      "description": "Map assets for the East North Central region, including Illinois, Indiana, Michigan, Ohio, and Wisconsin.",
+      "icon": "map",
+      "tiers": [
+        {
+          "id": "maps-east-north-central-all",
+          "name": "All of East North Central",
+          "recommended": false,
+          "description": "",
+          "modules": [
+            "map-illinois",
+            "map-indiana",
+            "map-michigan",
+            "map-ohio",
+            "map-wisconsin"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "maps-mid-atlantic",
+      "name": "Mid-Atlantic (maps)",
+      "description": "Map assets for the Mid-Atlantic region, including New Jersey, New York, and Pennsylvania.",
+      "icon": "map",
+      "tiers": [
+        {
+          "id": "maps-mid-atlantic-all",
+          "name": "All of Mid-Atlantic",
+          "recommended": false,
+          "description": "",
+          "modules": [
+            "map-new-jersey",
+            "map-new-york",
+            "map-pennsylvania"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "maps-new-england",
+      "name": "New England (maps)",
+      "description": "Map assets for the New England region, including Connecticut, Maine, Massachusetts, New Hampshire, Rhode Island, and Vermont.",
+      "icon": "map",
+      "tiers": [
+        {
+          "id": "maps-new-england-all",
+          "name": "All of New England",
+          "recommended": false,
+          "description": "",
+          "modules": [
+            "map-connecticut",
+            "map-maine",
+            "map-massachusetts",
+            "map-new-hampshire",
+            "map-rhode-island",
+            "map-vermont"
+          ]
+        }
+      ]
+    }
+  ],
+  "credits": [
+    {
+      "name": "Project NOMAD",
+      "by": "Crosstalk Solutions, LLC",
+      "license": "Apache-2.0",
+      "url": "https://github.com/Crosstalk-Solutions/project-nomad",
+      "what": "curated content lists (Kiwix packs by topic and tier, Wikipedia choices, US regional maps)"
     }
   ]
 }

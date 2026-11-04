@@ -51,6 +51,8 @@ for m in mods:
             near = sorted(set(re.findall(r'href="(%s[^"]*)\.zim"' % re.escape(i["prefix"].split("_")[0][:8]), html)))[:3]
             report(m, False, "no file %s_YYYY-MM.zim in %s (similar: %s)" % (i["prefix"], base, ", ".join(near) or "none")); continue
         r = probe("%s%s_%s.zim" % (base, i["prefix"], vs[-1])); report(m, r is not None and not isinstance(r, str), "%s %s" % (vs[-1], r))
+    elif k == "pmtiles-file":
+        r = probe(i["url"]); report(m, r is not None and not isinstance(r, str), "%s %s" % (i["file"], r))
     elif k == "maps":
         t = listing(PM_META + "/builds.json")
         if not re.search(r"\d{8}(?=\.pmtiles)", t):
