@@ -27,8 +27,17 @@ def listing(url):
     return listings[url]
 
 def report(m, ok, msg):
+    if not ok and m.get("install", {}).get("kind") == "zim": msg += "\n       CANDIDATES: " + (", ".join(candidates(m)) or "none")
     print(("ok   " if ok else "FAIL ") + "%-26s %s" % (m["id"], msg))
     if not ok: bad.append(m["id"])
+
+def candidates(m):
+    """Real file names that look like this module, searched in its folder, other/ and stack_exchange/."""
+    key = m["install"]["prefix"].split("_")[0].split(".")[0].lower(); out = set()
+    for sub in {m["install"]["subdir"], "other", "stack_exchange"}:
+        for f in re.findall(r'href="([^"/]+\.zim)"', listing("%s/zim/%s/" % (KIWIX, sub))):
+            if key in f.lower() and re.search(r"_(en|all)", f): out.add(sub + "/" + re.sub(r"_\d{4}-\d{2}\.zim$", "", f))
+    return sorted(out)[:12]
 
 mods = json.load(open(CAT, encoding="utf-8"))["modules"]
 for m in mods:
@@ -43,6 +52,10 @@ for m in mods:
         r = probe("%s%s_%s.zim" % (base, i["prefix"], vs[-1])); report(m, r is not None and not isinstance(r, str), "%s %s" % (vs[-1], r))
     elif k == "maps":
         t = listing(PM + "/builds.json")
+        if not re.search(r"\d{8}(?=\.pmtiles)", t):
+            for alt in ("https://build-metadata.protomaps.dev/builds.json",):
+                t2 = listing(alt); print("     builds.json head:", t[:200].replace("\n", " "), "| alt", alt, "->", t2[:200].replace("\n", " "))
+                if re.search(r"\d{8}", t2): t = t2
         b = sorted(re.findall(r"\d{8}(?=\.pmtiles)", t))
         report(m, bool(b), "latest build %s" % (b[-1] if b else "none found (builds.json unreadable)"))
     elif k == "app":
@@ -64,4 +77,5 @@ try:
         report(dict(id="pmtiles/" + need), any(n.endswith(need) for n in names), j["tag_name"])
     print("pmtiles assets:", ", ".join(names))
 except Exception as e: report(dict(id="pmtiles"), False, str(e))
+top = re.findall(r'href="([^"/]+)/\"', listing(KIWIX + "/zim/")); print("zim folders:", ", ".join(top))
 print("\n%d problem(s)" % len(bad)); sys.exit(1 if bad else 0)
