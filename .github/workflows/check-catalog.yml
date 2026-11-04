@@ -1,0 +1,14 @@
+name: Check module URLs
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '17 6 * * 1'
+  push:
+    paths: ['app/shared/site/catalog.json', 'scripts/check-catalog.py', '.github/workflows/check-catalog.yml']
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Every module against the real download servers
+        run: python3 scripts/check-catalog.py
