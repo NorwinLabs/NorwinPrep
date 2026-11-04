@@ -54,7 +54,6 @@ large=(
   "wikipedia wikipedia_en_all_maxi"
   "wikisource wikisource_en_all_maxi"
   "other khanacademy_en_all"
-  "wikinews wikinews_en_all_nopic"
 )
 case "$tier" in
   survival) items=("${survival[@]}") ;;

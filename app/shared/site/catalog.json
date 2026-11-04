@@ -692,29 +692,6 @@
       ]
     },
     {
-      "id": "wikinews",
-      "type": "content",
-      "name": "Wikinews",
-      "tagline": "News archive",
-      "description": "Archived Wikinews articles.",
-      "by": "WIKIMEDIA",
-      "source": "https://en.wikinews.org/",
-      "icon": "globe",
-      "color": "#5d6d7e",
-      "install": {
-        "kind": "zim",
-        "subdir": "wikinews",
-        "prefix": "wikinews_en_all_nopic"
-      },
-      "sizeClass": "s",
-      "platforms": [
-        "windows",
-        "linux",
-        "darwin",
-        "android"
-      ]
-    },
-    {
       "id": "map-world",
       "type": "maps",
       "name": "World Map",
