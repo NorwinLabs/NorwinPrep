@@ -1003,7 +1003,7 @@
       "install": {
         "kind": "static-site",
         "repo": "gchq/CyberChef",
-        "asset": "^CyberChef_v[0-9.]+\\.zip$",
+        "asset": "^CyberChef_(v[0-9.]+|[0-9a-f]{40})\\.zip$",
         "dir": "cyberchef"
       },
       "platforms": [
