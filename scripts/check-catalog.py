@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Check every module in the catalog against the REAL download servers (needs internet). Exit 1 if any module would fail.
    python3 scripts/check-catalog.py [catalog.json]"""
-import json, re, sys, functools, urllib.request, urllib.error
+import json, re, sys, functools, urllib.parse, urllib.request, urllib.error
 print = functools.partial(print, flush=True)
 
 CAT = sys.argv[1] if len(sys.argv) > 1 else "app/shared/site/catalog.json"
@@ -83,10 +83,13 @@ except Exception as e: report(dict(id="pmtiles"), False, str(e))
 top = re.findall(r'href="([^"/]+)/\"', listing(KIWIX + "/zim/")); print("zim folders:", ", ".join(top))
 # ---- every other link in the repo: catalog "source" pages, README, install/fetch scripts, CDN files ----
 import glob, os
-SKIP = re.compile(r"(127\.0\.0\.1|localhost|^http://10\.|example\.|norwinprep\.local|0\.0\.0\.0|schemas\.android|^http://x$|github\.com/x/y|github\.com/bot|\.\.\.|\$|^http://$|/releases/download/)")
+SKIP = re.compile(r"(127\.0\.0\.1|localhost|^http://10\.|example\.|norwinprep\.local|evil\.example|0\.0\.0\.0|schemas\.android|^http://x$|github\.com/x/y|github\.com/bot|\.\.\.|\$|^http://$|/releases/download/)")
 found = {}
+BASES = {"https://api.github.com/repos", "https://download.kiwix.org/release", "https://download.kiwix.org/zim", "https://build.protomaps.com",
+         "https://build-metadata.protomaps.dev", "https://cdn.jsdelivr.net/npm"}
 def add(u, where):
     u = u.rstrip(".,;:)'\"`>]"); u = re.sub(r"\.git$", "", u)
+    if u.rstrip("/") in BASES: return                     # a base the code appends paths to; those real paths are checked above
     if len(u) > 12 and not SKIP.search(u): found.setdefault(u, where)
 for m in mods: add(m.get("source", ""), "catalog:" + m["id"]) if m.get("source", "").startswith("http") else None
 files = ["README.md", "install.sh", "get.sh", "uninstall.sh"] + glob.glob("scripts/*.sh") + glob.glob("scripts/*.py") + glob.glob("app/desktop/scripts/*.js") + glob.glob("app/shared/site/*.html") + glob.glob("app/shared/site/*.js") + glob.glob("app/desktop/*.js")
