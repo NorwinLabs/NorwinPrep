@@ -42,6 +42,7 @@ public class ModuleManager implements LocalServer.Modules {
     static final class Job {
         volatile String state = "queued", message = "Waiting…", action;
         volatile int percent;
+        final long t = System.currentTimeMillis();
     }
 
     static final class Fail extends Exception {
@@ -340,7 +341,7 @@ public class ModuleManager implements LocalServer.Modules {
 
     private static String jobJson(Job j) {
         return "{\"state\":" + MiniJson.quote(j.state) + ",\"percent\":" + j.percent + ",\"message\":" + MiniJson.quote(j.message)
-                + ",\"action\":" + (j.action == null ? "null" : MiniJson.quote(j.action)) + "}";
+                + ",\"action\":" + (j.action == null ? "null" : MiniJson.quote(j.action)) + ",\"t\":" + j.t + "}";
     }
 
     private String diskJson() {
@@ -390,8 +391,18 @@ public class ModuleManager implements LocalServer.Modules {
         return j;
     }
 
+    private synchronized void cancel(String id) throws Fail {
+        Job j = jobs.get(id);
+        if (j == null || !"queued".equals(j.state)) throw new Fail(409, "Only items still waiting in line can be removed");
+        j.state = "cancelled";
+        jobs.remove(id);
+    }
+
     private void run(Mod m, Job j) {
-        j.state = "running";
+        synchronized (this) {
+            if (!"queued".equals(j.state)) return;      // removed from the line while it waited
+            j.state = "running";
+        }
         try {
             if ("remove".equals(j.action)) {
                 j.message = "Removing…";
@@ -544,6 +555,17 @@ public class ModuleManager implements LocalServer.Modules {
                 return ok(200, "{\"ok\":true}");
             }
             if (route.equals("/pin")) return ok(200, "{\"ok\":true}");               // your own device: no PIN
+            if (route.equals("/cancel")) {
+                String cid = "";
+                try {
+                    Object v = MiniJson.obj(MiniJson.parse(body == null || body.isEmpty() ? "{}" : body)).get("id");
+                    cid = v instanceof String ? (String) v : "";
+                } catch (RuntimeException e) {
+                    throw new Fail(400, "invalid JSON");
+                }
+                cancel(cid);
+                return ok(200, "{\"ok\":true}");
+            }
             if (route.equals("/install") || route.equals("/remove")) {
                 String id = "";
                 try {

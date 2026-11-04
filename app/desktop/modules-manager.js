@@ -308,12 +308,12 @@ class Manager {
       if (!ins) { const ks = this.knownSize(m); if (ks) item.size = ks; }
       if (ins) { item.version = ins.version; item.bytes = ins.bytes; item.updated = Math.floor(ins.updated); item.files = ins.files; }
       if (lat) { item.latest = lat; item.updateAvailable = !!ins && vgt(lat, ins.version); if (!ins) item.version = lat; }
-      const j = this.jobs[m.id]; if (j) item.job = { state: j.state, percent: j.percent, message: j.message, action: j.action };
+      const j = this.jobs[m.id]; if (j) item.job = { state: j.state, percent: j.percent, message: j.message, action: j.action, t: j.t };
       out.push(item);
     }
     return out;
   }
-  status() { const jobs = {}; for (const [k, j] of Object.entries(this.jobs)) jobs[k] = { state: j.state, percent: j.percent, message: j.message, action: j.action }; return { jobs, disk: this.disk() }; }
+  status() { const jobs = {}; for (const [k, j] of Object.entries(this.jobs)) jobs[k] = { state: j.state, percent: j.percent, message: j.message, action: j.action, t: j.t }; return { jobs, disk: this.disk() }; }
   async info(id) {
     const m = this.byid[id]; if (!m) throw new ApiError(404, 'unknown module');
     const i = m.install, res = { id, name: m.name, free: this.disk().free, bytes: null, file: null, version: null };
@@ -398,6 +398,11 @@ class Manager {
     const job = { state: 'queued', percent: 0, message: 'Waiting in line…', action, t: Date.now() };
     this.jobs[id] = job; this.queue.push([id, action]); this.pump();
     return job;
+  }
+  cancel(id) {                          // take a waiting job out of the line (one already running is not interrupted)
+    const i = this.queue.findIndex((q) => q[0] === id);
+    if (i < 0) throw new ApiError(409, 'Only items still waiting in line can be removed');
+    this.queue.splice(i, 1); delete this.jobs[id];
   }
   set(id, patch) { Object.assign(this.jobs[id], patch); }
   async pump() {
@@ -683,6 +688,7 @@ class Manager {
       }
       if (route === '/refresh') return { code: 200, body: await this.refresh() };
       if (route === '/pin') return { code: 200, body: { ok: true } };            // no PIN on this device: it is your own app
+      if (route === '/cancel') { this.cancel(String((body && body.id) || '')); return { code: 200, body: { ok: true } }; }
       if (route === '/install' || route === '/remove') {
         const j = this.enqueue(String((body && body.id) || ''), route.slice(1));
         return { code: 202, body: { state: j.state, percent: j.percent, message: j.message, action: j.action } };

@@ -125,6 +125,12 @@ const reset = () => { Object.assign(F, { shaOk: true, shaMissing: false, newZim:
     t2.enqueue('map-alaska', 'install'); j = await done(t2, 'map-alaska'); ok(j.state === 'done' && fs.existsSync(path.join(u.dir, 'maps', 'alaska.pmtiles')) && mod(t2, 'map-alaska').installed, 'a NOMAD state map downloads, passes the PMTiles check and shows as installed');
     t2.enqueue('map-hawaii', 'install'); j = await done(t2, 'map-hawaii'); ok(j.state === 'error' && !fs.existsSync(path.join(u.dir, 'maps', 'hawaii.pmtiles')) && fs.readdirSync(path.join(u.dir, 'maps')).filter((f) => /hawaii/.test(f)).length === 0, 'a download that is not a PMTiles file is discarded: ' + j.message);
     t2.enqueue('map-alaska', 'remove'); await done(t2, 'map-alaska'); ok(!fs.existsSync(path.join(u.dir, 'maps', 'alaska.pmtiles')), 'a NOMAD state map can be removed'); }
+  { const u = make({}), q = u.mgr; q.enqueue('water', 'install'); q.enqueue('medicine', 'install'); q.enqueue('notes', 'install');
+    let r = await q.handle('POST', '/cancel', new URLSearchParams(), { id: 'notes' }); ok(r.code === 200 && !q.jobs.notes && !q.queue.some((x) => x[0] === 'notes'), 'a waiting download can be taken out of the queue');
+    const run = Object.keys(q.jobs).find((k) => q.jobs[k].state === 'running'); r = await q.handle('POST', '/cancel', new URLSearchParams(), { id: run || 'water' }); ok(r.code === 409, 'one that is already downloading cannot be removed: ' + JSON.stringify(r.body));
+    r = await q.handle('POST', '/cancel', new URLSearchParams(), { id: 'nothing' }); ok(r.code === 409, 'cancelling something that is not queued is refused');
+    ok(q.catalog().filter((m) => m.job).every((m) => typeof m.job.t === 'number'), 'jobs carry their start time so the store can order the queue');
+    await done(q, 'water'); await done(q, 'medicine'); }
   { const cat = JSON.parse(fs.readFileSync(CATALOG, 'utf8')), ids = new Set(cat.modules.map((m) => m.id)); ok(cat.tiers.length === 3 && cat.tiers.every((x) => x.modules.every((id) => ids.has(id))), 'every module named in the quick-setup tiers exists');
     ok(cat.tiers[0].modules.length < cat.tiers[1].modules.length && cat.tiers[1].modules.length < cat.tiers[2].modules.length && cat.tiers[0].modules.every((id) => cat.tiers[1].modules.includes(id)), 'tiers grow: Essential is inside Standard, Standard has more'); }
 

@@ -152,6 +152,15 @@
   #upd{position:fixed;right:12px;bottom:48px;z-index:45;width:min(92vw,350px);display:none;background:#12151c;border:1px solid var(--line2);border-radius:var(--r);padding:14px 16px;box-shadow:0 8px 28px #000b}
   #upd .bar{height:8px;margin-top:10px} #upd .bar i{transition:width .3s}
   body.home .toolbar{display:none}
+  #dlbtn{position:fixed;left:12px;bottom:10px;z-index:40;display:none;background:var(--panel);color:#fff;border:1px solid var(--line2);border-radius:var(--pill);padding:6px 14px;font-size:13px;cursor:pointer}
+  #dlbtn:hover{border-color:#fff} #dlbtn.busy{border-color:var(--green)}
+  #dlpanel{position:fixed;left:12px;bottom:48px;z-index:45;width:min(94vw,420px);max-height:70vh;overflow:auto;display:none;background:#12151c;border:1px solid var(--line2);border-radius:var(--r);padding:14px 16px;box-shadow:0 8px 28px #000b}
+  #dlpanel h3{margin:0 0 8px;font-size:15px} #dlpanel .grp{margin:12px 0 4px;color:var(--mut)}
+  .dlrow{display:flex;flex-direction:column;gap:4px;padding:8px 0;border-top:1px solid var(--line)}
+  .dlrow:first-of-type{border-top:0}
+  .dlrow .top{display:flex;gap:8px;align-items:center} .dlrow .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600}
+  .dlrow .st{color:var(--mut);font-size:12px} .dlrow .st.bad{color:#ff8a98}
+  .dlrow .bar{height:6px}
   .hero{text-align:center;padding:18px 0 6px} .hero h1{margin:0;font-size:28px;letter-spacing:-.01em} .hero p{margin:6px 0 0;color:var(--mut)}
   .big{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));margin-top:18px}
   .tile{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;min-height:150px;padding:18px 12px;border:1px solid var(--line2);border-radius:var(--r);background:#0f1218;color:inherit;text-decoration:none;cursor:pointer;text-align:center;font:inherit}
@@ -209,6 +218,8 @@
 <div class="connbar" id="conn" role="status"></div>
 <main id="main"><div class="empty">Loading modules&hellip;</div></main>
 
+<button id="dlbtn" type="button" aria-haspopup="dialog">Downloads</button>
+<div id="dlpanel" role="dialog" aria-label="Download queue" aria-live="polite"></div>
 <div class="veil" id="veil" role="dialog" aria-modal="true"><div class="modal" id="modal"></div></div>
 <div class="toast" id="toast" role="status"></div>
 
@@ -703,6 +714,42 @@
     return state.mods.map(function (m) { return [m.id, m.installed, m.version, m.updateAvailable, m.size || '', m.bytes || '', m.job ? m.job.state : '', m.job && m.job.state === 'error' ? m.job.message : ''].join('|'); }).join(';')
       + (state.tiers.length) + (state.topics.length) + state.home + state.type + state.sort + state.q + state.view + '|' + browse + offline + base + '|' + hiddenIds().join(',') + state.showHidden + '|' + (state.disk ? state.disk.free : '') + state.pending;
   }
+  // ---------- download queue: what is running, what is waiting, what just finished ----------
+  var dlOpen = false;
+  function jobsNow() {
+    var all = state.mods.filter(function (m) { return m.job; });
+    var run = all.filter(function (m) { return m.job.state === 'running'; });
+    var wait = all.filter(function (m) { return m.job.state === 'queued'; }).sort(function (a, b) { return (a.job.t || 0) - (b.job.t || 0); });
+    var fin = all.filter(function (m) { return m.job.state === 'done' || m.job.state === 'error'; }).sort(function (a, b) { return (b.job.t || 0) - (a.job.t || 0); }).slice(0, 6);
+    return { run: run, wait: wait, fin: fin };
+  }
+  function dlRow(m, kind, pos) {
+    var r = el('div', 'dlrow'), top = el('div', 'top'), j = m.job;
+    top.appendChild(el('div', 'nm', (j.action === 'remove' ? 'Remove: ' : '') + m.name));
+    if (kind === 'wait') {
+      top.appendChild(el('span', 'st', '#' + pos));
+      var c = btn('Remove from queue', 'sm', function () { c.disabled = true; withPin(function (pin) { return api('POST', '/cancel', { id: m.id }, pin); }).then(function () { toast(m.name + ' removed from the queue'); load(); }).catch(function (e) { c.disabled = false; if (e.message !== 'cancelled') toast(e.message); }); });
+      top.appendChild(c);
+    }
+    r.appendChild(top);
+    if (kind === 'run') { var bar = el('div', 'bar' + (j.percent ? '' : ' ind')), f = el('i'); f.style.width = (j.percent || 0) + '%'; bar.appendChild(f); r.appendChild(bar); }
+    r.appendChild(el('div', 'st' + (j.state === 'error' ? ' bad' : ''), kind === 'wait' ? 'Waiting for ' + (pos === 1 ? 'the current download' : (pos - 1) + ' ahead') : j.message));
+    return r;
+  }
+  function updateQueue() {
+    var q = jobsNow(), n = q.run.length + q.wait.length, b = $('dlbtn'), p = $('dlpanel');
+    if (!n && !q.fin.length) { b.style.display = 'none'; p.style.display = 'none'; dlOpen = false; return; }
+    b.style.display = 'block'; b.classList.toggle('busy', n > 0);
+    b.textContent = n ? 'Downloads \u00b7 ' + q.run.length + ' running' + (q.wait.length ? ', ' + q.wait.length + ' waiting' : '') : 'Downloads';
+    p.style.display = dlOpen ? 'block' : 'none'; if (!dlOpen) return;
+    p.textContent = ''; p.appendChild(el('h3', null, 'Download queue'));
+    if (!n) p.appendChild(el('div', 'st', 'Nothing is downloading.'));
+    if (q.run.length) { p.appendChild(el('div', 'grp mono', 'Downloading')); q.run.forEach(function (m) { p.appendChild(dlRow(m, 'run')); }); }
+    if (q.wait.length) { p.appendChild(el('div', 'grp mono', 'Waiting (' + q.wait.length + ')')); q.wait.forEach(function (m, i) { p.appendChild(dlRow(m, 'wait', i + 1)); }); }
+    if (q.fin.length) { p.appendChild(el('div', 'grp mono', 'Finished')); q.fin.forEach(function (m) { p.appendChild(dlRow(m, 'fin')); }); }
+    p.appendChild(el('div', 'st', 'Downloads run one after another. Keep the app open.'));
+  }
+  $('dlbtn').addEventListener('click', function () { dlOpen = !dlOpen; updateQueue(); });
   function patchProgress() {   // update running bars in place so they don't flicker
     state.mods.forEach(function (m) {
       if (!active(m)) return;
@@ -750,6 +797,7 @@
       offline = false;
       state.mods = c.modules; state.disk = c.disk; state.pending = !!c.sizesPending;
       if (signature() !== before) render(); else patchProgress();
+      updateQueue();
       document.body.setAttribute('data-loaded', '1'); showConn();
       schedulePoll();
     }).catch(function (e) {
