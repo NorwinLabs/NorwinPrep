@@ -52,6 +52,7 @@ install -m 644 "$SRC/app/shared/site/catalog.json" /opt/norwinprep/modules/catal
 # the Module Store page is the same file the apps ship as their home screen
 install -d /opt/norwinprep/web/modules
 install -m 644 "$SRC/app/shared/site/index.html" /opt/norwinprep/web/modules/index.html
+install -m 644 "$SRC/app/shared/site/catalog.json" /opt/norwinprep/web/modules/catalog.json   # the page reads the quick-setup tiers from here
 install -m 755 "$SRC/uninstall.sh" /opt/norwinprep/scripts/uninstall.sh
 cp -r "$SRC"/web/. /opt/norwinprep/web/
 install -d /opt/norwinprep/web/maps

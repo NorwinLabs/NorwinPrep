@@ -46,6 +46,12 @@
   @keyframes spin{to{transform:rotate(360deg)}}
 
   main{padding:0 16px 64px}
+  .tiers{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(250px,1fr))}
+  .tier{border:1px solid var(--line);border-radius:var(--r);background:#0f1218;padding:16px;display:flex;flex-direction:column;gap:8px}
+  .tier h3{margin:0;font-size:18px}
+  .tier p{margin:0;color:var(--mut);font-size:13px;flex:1}
+  .tier .meta{font-size:12px;color:var(--mut)}
+  .tier ul{margin:8px 0;padding-left:18px;max-height:34vh;overflow:auto}
   .section{margin:24px 0 12px;color:var(--mut)}
   .section b{color:var(--text);font-weight:600}
 
@@ -166,10 +172,11 @@
   </button>
   <div class="chips" role="group" aria-label="Filter by type" id="chips">
     <button class="sq mono on" data-t="all">All</button>
-    <button class="sq mono" data-t="content">Content</button>
+    <button class="sq mono" data-t="library">Library</button>
+    <button class="sq mono" data-t="education">Education</button>
     <button class="sq mono" data-t="maps">Maps</button>
-    <button class="sq mono" data-t="app">Apps</button>
-    <button class="sq mono" data-t="tool">Tools</button>
+    <button class="sq mono" data-t="tools">Tools</button>
+    <button class="sq mono" data-t="apps">Apps</button>
   </div>
   <span class="sortlbl mono">Sort</span>
   <select id="sort" aria-label="Sort modules">
@@ -289,8 +296,10 @@
     b.appendChild(bv); f.appendChild(b);
     return f;
   }
+  var CATS = ['library', 'education', 'maps', 'tools', 'apps'];
+  function catOf(m) { return CATS.indexOf(m.category) >= 0 ? m.category : (m.type === 'maps' ? 'maps' : m.type === 'app' ? 'apps' : m.type === 'tool' ? 'tools' : 'library'); }
   function typeLabel(t) { return t === 'app' ? 'App' : t === 'maps' ? 'Map' : t === 'tool' ? 'Tool' : 'Content'; }
-  function openHref(m) { return base + (m.type === 'maps' ? '/maps/' : m.type === 'app' ? '/apps/' : '/wiki/'); }
+  function openHref(m) { return base + (/^\/tools\/[a-z0-9-]+\/$/.test(m.open || '') ? m.open : m.type === 'maps' ? '/maps/' : m.type === 'app' ? '/apps/' : '/wiki/'); }
   function active(m) { return m.job && (m.job.state === 'queued' || m.job.state === 'running'); }
 
   // ---------- modal ----------
@@ -487,7 +496,7 @@
     } else {
       if (m.job && m.job.state === 'error') act.appendChild(el('div', 'err', m.job.message));
       if (isHid) act.appendChild(btn('Unhide', 'solid', function () { setHidden(m.id, false); render(); }));
-      else if (m.installed && m.type === 'tool') { var tb = el('button', 'btn', 'Installed'); tb.type = 'button'; tb.disabled = true; act.appendChild(tb); }
+      else if (m.installed && m.type === 'tool' && !m.open) { var tb = el('button', 'btn', 'Installed'); tb.type = 'button'; tb.disabled = true; act.appendChild(tb); }
       else if (m.installed) {
         var o = el('a', 'btn', 'Open'); o.href = openHref(m); act.appendChild(o);
         if (m.updateAvailable) act.appendChild(btn('Update', 'solid', function () { startInstall(m); }));
@@ -513,7 +522,7 @@
   function visible() {
     var q = state.q.trim().toLowerCase();
     var list = state.mods.filter(function (m) {
-      if (state.type !== 'all' && m.type !== state.type) return false;
+      if (state.type !== 'all' && catOf(m) !== state.type) return false;
       return !q || (m.name + ' ' + m.tagline + ' ' + m.description + ' ' + m.by + ' ' + typeLabel(m.type)).toLowerCase().indexOf(q) >= 0;
     });
     var by = {
@@ -533,6 +542,48 @@
     main.appendChild(g);
   }
 
+  // ---------- quick setup (Essential / Standard / Comprehensive) ----------
+  state.tiers = [];
+  function tierMods(t) { return t.modules.map(function (id) { return state.mods.filter(function (m) { return m.id === id; })[0]; }).filter(Boolean); }
+  function tierNeed(list) { var n = 0, exact = true; list.forEach(function (m) { var s = sizeInfo(m); if (s.exact !== null) n += s.exact; else { exact = false; n += s.cls ? s.cls.min : 0; } }); return { bytes: n, exact: exact }; }
+  function renderTiers(main) {
+    if (state.type !== 'all' || state.q.trim() || !state.tiers.length) return;
+    var s = el('div', 'section mono'); s.textContent = 'Quick setup'; main.appendChild(s);
+    var g = el('div', 'tiers');
+    state.tiers.forEach(function (t) {
+      var all = tierMods(t), missing = all.filter(function (m) { return !m.installed; }), need = tierNeed(missing);
+      if (!all.length) return;
+      var c = el('div', 'tier'); c.appendChild(el('h3', null, t.name)); c.appendChild(el('p', null, t.blurb));
+      c.appendChild(el('div', 'meta', (all.length - missing.length) + ' of ' + all.length + ' installed' + (missing.length ? ' \u00b7 ' + (need.exact ? '' : 'at least ') + human(need.bytes) + ' to download' : '')));
+      var b = btn(missing.length ? 'Install ' + missing.length + ' module' + (missing.length === 1 ? '' : 's') : 'All installed', missing.length ? 'solid' : '', function () { startTier(t, missing); });
+      b.disabled = !missing.length; b.setAttribute('data-tier', t.id); c.appendChild(b); g.appendChild(c);
+    });
+    main.appendChild(g);
+  }
+  function startTier(t, missing) {
+    if (browse || offline) return needConnection();
+    var need = tierNeed(missing), free = state.disk ? state.disk.free : null, tooBig = free !== null && need.bytes * 1.05 > free;
+    openModal(function (md) {
+      md.appendChild(el('h3', null, 'Install ' + t.name));
+      var mb = el('div', 'mb'); md.appendChild(mb);
+      var dl = el('dl', 'kv');
+      [['Modules', String(missing.length)], ['Download', (need.exact ? '' : 'at least ') + human(need.bytes)], ['Space left', free === null ? 'unknown' : human(free)]].forEach(function (r) { dl.appendChild(el('dt', null, r[0])); dl.appendChild(el('dd', null, r[1])); });
+      mb.appendChild(dl);
+      var ul = el('ul'); missing.forEach(function (m) { ul.appendChild(el('li', null, m.name)); }); mb.appendChild(ul);
+      if (tooBig) mb.appendChild(el('div', 'note bad', 'There may not be enough free space for all of these. You can still install them one at a time from the list.'));
+      mb.appendChild(el('div', 'note', 'They install one after another. Keep the app open; you can watch progress on each card.'));
+      var mf = el('div', 'mf'); md.appendChild(mf); mf.appendChild(btn('Cancel', '', closeModal));
+      var go = btn('Install all', 'solid', function () {
+        closeModal();
+        withPin(function (pin) {
+          return missing.reduce(function (p, m) {
+            return p.then(function () { return api('POST', '/install', { id: m.id }, pin).catch(function (e) { if (e.status === 403 || e.status === 401) throw e; }); });   // already queued etc.: carry on
+          }, Promise.resolve());
+        }).then(function () { toast(t.name + ': ' + missing.length + ' modules queued'); load(); }).catch(function (e) { if (e.message !== 'cancelled') toast(e.message); });
+      });
+      go.disabled = tooBig && free !== null && need.bytes > free; mf.appendChild(go);
+    });
+  }
   function updateHiddenBtn() {
     var n = hiddenCount(), hb = $('hiddenBtn');
     if (!n) state.showHidden = false;
@@ -550,6 +601,7 @@
       e.appendChild(el('div', null, hid.length ? hid.length + ' matching module' + (hid.length === 1 ? ' is' : 's are') + ' hidden. Use the Hidden button to show them.' : 'Try a different search or filter.'));
       main.appendChild(e); state.sig = signature(); return;
     }
+    renderTiers(main);
     section('Installed', inst.length, inst, true, main);
     section('Not installed', not.length, not, false, main);
     if (state.showHidden) section('Hidden', hid.length, hid, null, main, true);
@@ -557,7 +609,7 @@
   }
   function signature() {
     return state.mods.map(function (m) { return [m.id, m.installed, m.version, m.updateAvailable, m.size || '', m.bytes || '', m.job ? m.job.state : '', m.job && m.job.state === 'error' ? m.job.message : ''].join('|'); }).join(';')
-      + state.type + state.sort + state.q + state.view + '|' + browse + offline + base + '|' + hiddenIds().join(',') + state.showHidden + '|' + (state.disk ? state.disk.free : '') + state.pending;
+      + (state.tiers.length) + state.type + state.sort + state.q + state.view + '|' + browse + offline + base + '|' + hiddenIds().join(',') + state.showHidden + '|' + (state.disk ? state.disk.free : '') + state.pending;
   }
   function patchProgress() {   // update running bars in place so they don't flicker
     state.mods.forEach(function (m) {
@@ -593,7 +645,7 @@
   function loadStatic() {   // the catalog shipped inside the app: browse without a device
     return fetch('/catalog.json', { cache: 'no-store' }).then(function (r) { if (!r.ok) throw new Error('catalog missing'); return r.json(); }).then(function (c) {
       var before = state.sig;
-      state.mods = c.modules.filter(function (m) { return (!devPlatform || !m.platforms || m.platforms.indexOf(devPlatform) >= 0) && (!IS_APP || !m.hosts || m.hosts.indexOf('app') >= 0); }).map(function (m) { return { id: m.id, type: m.type, name: m.name, tagline: m.tagline, description: m.description, by: m.by, source: m.source, icon: m.icon, color: m.color, sizeClass: m.sizeClass, installed: false }; });
+      state.mods = c.modules.filter(function (m) { return (!devPlatform || !m.platforms || m.platforms.indexOf(devPlatform) >= 0) && (!IS_APP || !m.hosts || m.hosts.indexOf('app') >= 0); }).map(function (m) { return { id: m.id, type: m.type, category: m.category, open: m.open, name: m.name, tagline: m.tagline, description: m.description, by: m.by, source: m.source, icon: m.icon, color: m.color, sizeClass: m.sizeClass, installed: false }; });
       state.disk = null; state.pending = false;
       if (signature() !== before) render();
       document.body.setAttribute('data-loaded', '1'); showConn();
@@ -649,6 +701,11 @@
     return new Promise(function (res, rej) { var s = document.createElement('script'); s.src = src; s.onload = res; s.onerror = function () { rej(new Error('missing ' + src)); }; document.head.appendChild(s); });
   }
   document.body.setAttribute('data-ready', '1');
+  fetch('catalog.json', { cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : {}; }).then(function (j) {
+    state.tiers = (Array.isArray(j.tiers) ? j.tiers : []).filter(function (t) { return t && typeof t.id === 'string' && typeof t.name === 'string' && typeof t.blurb === 'string' && Array.isArray(t.modules); })
+      .map(function (t) { return { id: t.id.slice(0, 20), name: t.name.slice(0, 30), blurb: t.blurb.slice(0, 300), modules: t.modules.filter(function (x) { return typeof x === 'string'; }) }; });
+    state.sig = ''; if (state.mods.length) render();
+  }).catch(function () { /* no quick setup row */ });
   // Who is serving this page? An app's local instance (mode "local") or a NorwinPrep device itself (mode "pi").
   fetch('/api/device', { cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : {}; }).catch(function () { return {}; }).then(function (d) {
     if (d && d.mode === 'local') {

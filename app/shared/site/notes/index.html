@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Notes &ndash; NorwinPrep</title>
+<style>
+  :root{--bg:#0d0f14;--panel:#12151c;--line:#272b36;--line2:#363c4b;--text:#e9ebf1;--mut:#8b92a3;--blue:#4aa3ff;--red:#ff5a6e;--mono:ui-monospace,"SF Mono",SFMono-Regular,Menlo,Consolas,monospace}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);font:15px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;height:100vh;display:flex;flex-direction:column}
+  header{height:48px;display:flex;align-items:center;gap:14px;border-bottom:1px solid var(--line);padding:0 16px;flex:none}
+  header a{color:var(--text);text-decoration:none;font-family:var(--mono);font-size:11px;letter-spacing:.2em;text-transform:uppercase}
+  header span{color:var(--mut);font-family:var(--mono);font-size:11px;letter-spacing:.28em;text-transform:uppercase}
+  main{flex:1;min-height:0;display:flex;gap:12px;padding:12px}
+  aside{width:260px;display:flex;flex-direction:column;gap:8px;min-height:0}
+  #list{flex:1;overflow:auto;display:flex;flex-direction:column;gap:6px}
+  .item{border:1px solid var(--line);border-radius:14px;padding:8px 12px;cursor:pointer;background:var(--panel);overflow:hidden}
+  .item.on{border-color:var(--blue)}
+  .item b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .item small{color:var(--mut)}
+  input,textarea{width:100%;background:var(--panel);border:1px solid var(--line2);color:inherit;border-radius:12px;padding:8px 12px;font:inherit}
+  textarea{flex:1;resize:none;min-height:0}
+  button{height:36px;padding:0 16px;border-radius:10px;border:1px solid #fff;background:#fff;color:#0d0f14;font-family:var(--mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;font-weight:700;cursor:pointer}
+  button.ghost{background:transparent;color:var(--text);border-color:var(--line2)}
+  button.del{background:transparent;color:var(--red);border-color:#5a2630}
+  section{flex:1;display:flex;flex-direction:column;gap:8px;min-width:0;min-height:0}
+  .bar{display:flex;gap:8px;align-items:center}
+  .bar small{margin-left:auto;color:var(--mut)}
+  @media(max-width:640px){main{flex-direction:column}aside{width:100%;max-height:34vh}}
+  :focus-visible{outline:2px solid var(--blue);outline-offset:1px}
+</style>
+</head>
+<body>
+<header><a href="/">&larr; Module Store</a><span>Notes</span></header>
+<main>
+  <aside>
+    <button id="new" type="button">New note</button>
+    <input id="q" type="search" placeholder="Search notes" aria-label="Search notes">
+    <div id="list" role="list"></div>
+  </aside>
+  <section>
+    <input id="title" type="text" maxlength="120" placeholder="Title" aria-label="Title">
+    <textarea id="body" placeholder="Write here. Saved automatically on this device." aria-label="Note"></textarea>
+    <div class="bar"><button id="del" class="del" type="button">Delete</button><small id="status">Notes stay on this device.</small></div>
+  </section>
+</main>
+<script>
+(function () {
+  'use strict';
+  var KEY = 'norwinprep.notes', notes = [], cur = null, $ = function (id) { return document.getElementById(id); };
+  function load() { try { var a = JSON.parse(localStorage.getItem(KEY) || '[]'); notes = Array.isArray(a) ? a.filter(function (n) { return n && typeof n.id === 'string'; }) : []; } catch (e) { notes = []; } }
+  function save() { try { localStorage.setItem(KEY, JSON.stringify(notes)); $('status').textContent = 'Saved on this device.'; } catch (e) { $('status').textContent = 'Could not save (storage is full or blocked).'; } }
+  function find(id) { return notes.filter(function (n) { return n.id === id; })[0]; }
+  function renderList() {
+    var q = $('q').value.trim().toLowerCase(), box = $('list'); box.textContent = '';
+    notes.slice().sort(function (a, b) { return (b.t || 0) - (a.t || 0); }).forEach(function (n) {
+      if (q && ((n.title || '') + ' ' + (n.body || '')).toLowerCase().indexOf(q) < 0) return;
+      var d = document.createElement('div'); d.className = 'item' + (n.id === cur ? ' on' : ''); d.setAttribute('role', 'listitem'); d.tabIndex = 0;
+      var b = document.createElement('b'); b.textContent = n.title || 'Untitled'; var s = document.createElement('small'); s.textContent = new Date(n.t || 0).toLocaleString();
+      d.appendChild(b); d.appendChild(s);
+      function open() { select(n.id); } d.addEventListener('click', open); d.addEventListener('keydown', function (e) { if (e.key === 'Enter') open(); });
+      box.appendChild(d);
+    });
+  }
+  function select(id) { cur = id; var n = find(id); $('title').value = n ? n.title : ''; $('body').value = n ? n.body : ''; $('title').disabled = $('body').disabled = $('del').disabled = !n; renderList(); }
+  function create() { var n = { id: String(Date.now()) + Math.random().toString(36).slice(2, 6), title: '', body: '', t: Date.now() }; notes.push(n); save(); select(n.id); $('title').focus(); }
+  function edit() { var n = find(cur); if (!n) return; n.title = $('title').value; n.body = $('body').value; n.t = Date.now(); save(); renderList(); }
+  $('new').addEventListener('click', create); $('q').addEventListener('input', renderList);
+  $('title').addEventListener('input', edit); $('body').addEventListener('input', edit);
+  $('del').addEventListener('click', function () { var n = find(cur); if (!n || !confirm('Delete this note?')) return; notes = notes.filter(function (x) { return x !== n; }); save(); select(notes.length ? notes[notes.length - 1].id : null); });
+  load(); if (!notes.length) create(); else select(notes.slice().sort(function (a, b) { return (b.t || 0) - (a.t || 0); })[0].id);
+  document.body.setAttribute('data-ready', '1');
+})();
+</script>
+</body>
+</html>

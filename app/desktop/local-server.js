@@ -8,6 +8,7 @@ const path = require('path');
 const TYPES = {
   '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8',
   '.json': 'application/json; charset=utf-8', '.png': 'image/png', '.svg': 'image/svg+xml', '.ico': 'image/x-icon',
+  '.htm': 'text/html; charset=utf-8', '.mjs': 'text/javascript; charset=utf-8', '.woff': 'font/woff', '.woff2': 'font/woff2', '.ttf': 'font/ttf', '.wasm': 'application/wasm', '.map': 'application/json',
   '.txt': 'text/plain; charset=utf-8', '.pdf': 'application/pdf', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.gif': 'image/gif'
 };
 const NAME_RE = /^[A-Za-z0-9 ._()\-]{1,40}$/;                 // device name
@@ -53,6 +54,24 @@ function serveContent(req, res, p, head, o) {
     return true;
   }
   if (p.startsWith('/tiles/')) { const n = p.slice(7); if (!TILE_RE.test(n)) send(400, 'text/plain', 'Bad file name'); else serveRange(req, res, path.join(o.mapsDir, n), 'application/octet-stream', head); return true; }
+  if (p.startsWith('/tools/')) {                      // installed browser tools (CyberChef, Notes): static files, read-only
+    const m = /^\/tools\/([a-z0-9-]+)(\/.*)?$/.exec(p), root = m && o.siteRoot ? o.siteRoot(m[1]) : null;
+    if (!root) { send(404, 'text/plain', 'Not installed'); return true; }
+    if (!m[2]) { res.writeHead(302, { Location: p + '/' }); res.end(); return true; }
+    let rel = m[2];
+    if (rel.endsWith('/')) {
+      if (fs.existsSync(path.join(root, rel.slice(1), 'index.html'))) rel += 'index.html';
+      else {                                           // e.g. CyberChef ships one CyberChef_vX.html: open that
+        const first = (() => { try { return fs.readdirSync(path.join(root, rel.slice(1))).filter((f) => /\.html?$/i.test(f)).sort()[0]; } catch (e) { return null; } })();
+        if (!first) { send(404, 'text/plain', 'Not found'); return true; }
+        res.writeHead(302, { Location: p + first }); res.end(); return true;
+      }
+    }
+    const full = path.resolve(root, rel.slice(1));
+    if (!full.startsWith(path.resolve(root) + path.sep) || path.basename(full).startsWith('.')) { send(404, 'text/plain', 'Not found'); return true; }
+    serveRange(req, res, full, TYPES[path.extname(full).toLowerCase()] || 'application/octet-stream', head);
+    return true;
+  }
   if (p === '/apps' || p === '/apps/') {
     const rows = listDir(o.appsDir, ASSET_FILE_RE).map((f) => '<li style="margin:.5rem 0"><a style="color:#4aa3ff" href="/apps/' + encodeURIComponent(f.name) + '">' + esc(f.name) + '</a> <span style="color:#8b92a3">' + (f.st.size / 1048576).toFixed(1) + ' MB</span></li>').join('');
     send(200, 'text/html; charset=utf-8', page('Apps', '<p><a style="color:#4aa3ff" href="/">&larr; Back</a></p><h1>Apps</h1><p style="color:#8b92a3">Install NorwinPrep on your own device from here.</p><ul>' + (rows || '<li>No apps are installed on this device yet.</li>') + '</ul>'));
@@ -149,7 +168,7 @@ function create(opts) {
     }
 
     // ---- content the viewers need: map tiles, hosted apps, the reader ----
-    if (!writes && serveContent(req, res, p, head, { mapsDir: opts.mapsDir, appsDir: opts.appsDir, reader: opts.reader })) return;
+    if (!writes && serveContent(req, res, p, head, { mapsDir: opts.mapsDir, appsDir: opts.appsDir, reader: opts.reader, siteRoot: opts.modules ? (d) => opts.modules.siteRoot(d) : null })) return;
 
     // ---- app updates (check GitHub, install the matching build) ----
     if (p === '/api/update/check' && !writes) {
@@ -269,7 +288,7 @@ function createShare(opts) {
     if (p === '/api/device') {
       res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store', 'Access-Control-Allow-Origin': '*' });
       return res.end(head ? undefined : JSON.stringify({ name: opts.getName(), mode: 'pi', version: opts.version, share: true, modules: false, address: 'http://' + (req.headers.host || ''),
-        hasLibrary: !!(opts.reader && opts.reader.ready()), hasMaps: listDir(opts.mapsDir, TILE_RE).length > 0, hasApps: listDir(opts.appsDir, ASSET_FILE_RE).length > 0 }));
+        hasLibrary: !!(opts.reader && opts.reader.ready()), hasMaps: listDir(opts.mapsDir, TILE_RE).length > 0, hasApps: listDir(opts.appsDir, ASSET_FILE_RE).length > 0, tools: opts.siteList ? opts.siteList() : [] }));
     }
     if (serveContent(req, res, p, head, opts)) return;
     // only the portal and the map viewer are public; the store, settings and updates are not

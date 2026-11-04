@@ -95,7 +95,7 @@ def load_catalog(path):
                 p = [float(x) for x in i["bbox"].split(",")]
                 if len(p) != 4 or not (-180 <= p[0] < p[2] <= 180 and -90 <= p[1] < p[3] <= 90):
                     raise ValueError("bad bbox for %s" % m["id"])
-        elif k == "kiwix-tools":
+        elif k in ("kiwix-tools", "static-site", "bundled"):
             pass                         # the app downloads this reader itself; the headless Pi already has kiwix-serve
         elif k == "app":
             if not i.get("suffixes") or not all(re.match(r"^[A-Za-z0-9._-]+$", s) for s in i["suffixes"]):
@@ -342,6 +342,7 @@ class Manager:
             ins = self.installed(m)
             lat = self.latest(m)
             item = {k: m[k] for k in ("id", "type", "name", "tagline", "description", "by", "source", "icon", "color")}
+            item.update({k: m[k] for k in ("category", "open") if k in m})
             item["installed"] = bool(ins)
             item["sizeClass"] = m["sizeClass"]
             if not ins:

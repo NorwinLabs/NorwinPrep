@@ -22,7 +22,8 @@
       ],
       "hosts": [
         "app"
-      ]
+      ],
+      "category": "tools"
     },
     {
       "id": "medicine",
@@ -45,7 +46,8 @@
         "linux",
         "darwin",
         "android"
-      ]
+      ],
+      "category": "library"
     },
     {
       "id": "water",
@@ -68,7 +70,8 @@
         "linux",
         "darwin",
         "android"
-      ]
+      ],
+      "category": "library"
     },
     {
       "id": "post-disaster",
@@ -91,7 +94,8 @@
         "linux",
         "darwin",
         "android"
-      ]
+      ],
+      "category": "library"
     },
     {
       "id": "food",
@@ -114,7 +118,8 @@
         "linux",
         "darwin",
         "android"
-      ]
+      ],
+      "category": "library"
     },
     {
       "id": "outdoors-se",
@@ -137,7 +142,8 @@
         "linux",
         "darwin",
         "android"
-      ]
+      ],
+      "category": "library"
     },
     {
       "id": "appropedia",
@@ -160,7 +166,8 @@
         "linux",
         "darwin",
         "android"
-      ]
+      ],
+      "category": "library"
     },
     {
       "id": "wikipedia-top",
@@ -183,7 +190,8 @@
         "linux",
         "darwin",
         "android"
-      ]
+      ],
+      "category": "library"
     },
     {
       "id": "wikipedia-top-maxi",
@@ -206,7 +214,8 @@
         "linux",
         "darwin",
         "android"
-      ]
+      ],
+      "category": "library"
     },
     {
       "id": "ifixit",
@@ -229,7 +238,8 @@
         "linux",
         "darwin",
         "android"
-      ]
+      ],
+      "category": "library"
     },
     {
       "id": "mdwiki",
@@ -252,7 +262,8 @@
         "linux",
         "darwin",
         "android"
-      ]
+      ],
+      "category": "library"
     },
     {
       "id": "diy",
@@ -275,7 +286,8 @@
         "linux",
         "darwin",
         "android"
-      ]
+      ],
+      "category": "library"
     },
     {
       "id": "gardening",
@@ -298,7 +310,8 @@
         "linux",
         "darwin",
         "android"
-      ]
+      ],
+      "category": "library"
     },
     {
       "id": "cooking",
@@ -321,7 +334,8 @@
         "linux",
         "darwin",
         "android"
-      ]
+      ],
+      "category": "library"
     },
     {
       "id": "mechanics",
@@ -344,7 +358,8 @@
         "linux",
         "darwin",
         "android"
-      ]
+      ],
+      "category": "library"
     },
     {
       "id": "electronics",
@@ -367,7 +382,8 @@
         "linux",
         "darwin",
         "android"
-      ]
+      ],
+      "category": "library"
     },
     {
       "id": "sustainability",
@@ -390,7 +406,8 @@
         "linux",
         "darwin",
         "android"
-      ]
+      ],
+      "category": "library"
     },
     {
       "id": "wikibooks",
@@ -413,7 +430,8 @@
         "linux",
         "darwin",
         "android"
-      ]
+      ],
+      "category": "education"
     },
     {
       "id": "wikivoyage",
@@ -436,7 +454,8 @@
         "linux",
         "darwin",
         "android"
-      ]
+      ],
+      "category": "library"
     },
     {
       "id": "wikiversity",
@@ -459,7 +478,8 @@
         "linux",
         "darwin",
         "android"
-      ]
+      ],
+      "category": "education"
     },
     {
       "id": "wiktionary",
@@ -482,7 +502,8 @@
         "linux",
         "darwin",
         "android"
-      ]
+      ],
+      "category": "library"
     },
     {
       "id": "gutenberg",
@@ -505,7 +526,8 @@
         "linux",
         "darwin",
         "android"
-      ]
+      ],
+      "category": "library"
     },
     {
       "id": "phet",
@@ -528,7 +550,8 @@
         "linux",
         "darwin",
         "android"
-      ]
+      ],
+      "category": "education"
     },
     {
       "id": "libretexts-med",
@@ -551,7 +574,8 @@
         "linux",
         "darwin",
         "android"
-      ]
+      ],
+      "category": "education"
     },
     {
       "id": "libretexts-chem",
@@ -574,7 +598,8 @@
         "linux",
         "darwin",
         "android"
-      ]
+      ],
+      "category": "education"
     },
     {
       "id": "libretexts-eng",
@@ -597,7 +622,8 @@
         "linux",
         "darwin",
         "android"
-      ]
+      ],
+      "category": "education"
     },
     {
       "id": "wikipedia-nopic",
@@ -620,7 +646,8 @@
         "linux",
         "darwin",
         "android"
-      ]
+      ],
+      "category": "library"
     },
     {
       "id": "wikipedia-full",
@@ -643,7 +670,8 @@
         "linux",
         "darwin",
         "android"
-      ]
+      ],
+      "category": "library"
     },
     {
       "id": "wikisource",
@@ -666,7 +694,8 @@
         "linux",
         "darwin",
         "android"
-      ]
+      ],
+      "category": "library"
     },
     {
       "id": "khan",
@@ -689,7 +718,8 @@
         "linux",
         "darwin",
         "android"
-      ]
+      ],
+      "category": "education"
     },
     {
       "id": "map-world",
@@ -711,7 +741,8 @@
         "windows",
         "linux",
         "darwin"
-      ]
+      ],
+      "category": "maps"
     },
     {
       "id": "map-usa",
@@ -734,7 +765,8 @@
         "windows",
         "linux",
         "darwin"
-      ]
+      ],
+      "category": "maps"
     },
     {
       "id": "map-canada",
@@ -757,7 +789,8 @@
         "windows",
         "linux",
         "darwin"
-      ]
+      ],
+      "category": "maps"
     },
     {
       "id": "map-europe",
@@ -780,7 +813,8 @@
         "windows",
         "linux",
         "darwin"
-      ]
+      ],
+      "category": "maps"
     },
     {
       "id": "map-uk",
@@ -803,7 +837,8 @@
         "windows",
         "linux",
         "darwin"
-      ]
+      ],
+      "category": "maps"
     },
     {
       "id": "map-australia",
@@ -826,7 +861,8 @@
         "windows",
         "linux",
         "darwin"
-      ]
+      ],
+      "category": "maps"
     },
     {
       "id": "app-android",
@@ -849,7 +885,8 @@
         "windows",
         "linux",
         "darwin"
-      ]
+      ],
+      "category": "apps"
     },
     {
       "id": "app-windows",
@@ -873,7 +910,8 @@
         "windows",
         "linux",
         "darwin"
-      ]
+      ],
+      "category": "apps"
     },
     {
       "id": "app-pi64",
@@ -897,7 +935,8 @@
         "windows",
         "linux",
         "darwin"
-      ]
+      ],
+      "category": "apps"
     },
     {
       "id": "app-pi32",
@@ -921,7 +960,8 @@
         "windows",
         "linux",
         "darwin"
-      ]
+      ],
+      "category": "apps"
     },
     {
       "id": "app-linux",
@@ -945,6 +985,148 @@
         "windows",
         "linux",
         "darwin"
+      ],
+      "category": "apps"
+    },
+    {
+      "id": "cyberchef",
+      "type": "tool",
+      "category": "tools",
+      "name": "CyberChef",
+      "tagline": "The data Swiss Army knife",
+      "description": "Encode, decode, encrypt, hash, convert and analyse data in the app. A static web app from GCHQ that runs fully offline.",
+      "by": "GCHQ",
+      "source": "https://github.com/gchq/CyberChef",
+      "icon": "wrench",
+      "color": "#d9822b",
+      "sizeClass": "s",
+      "install": {
+        "kind": "static-site",
+        "repo": "gchq/CyberChef",
+        "asset": "^CyberChef_v[0-9.]+\\.zip$",
+        "dir": "cyberchef"
+      },
+      "platforms": [
+        "windows",
+        "linux",
+        "darwin"
+      ],
+      "hosts": [
+        "app"
+      ],
+      "open": "/tools/cyberchef/"
+    },
+    {
+      "id": "notes",
+      "type": "tool",
+      "category": "tools",
+      "name": "Notes",
+      "tagline": "Private notes that work offline",
+      "description": "A simple notepad built into the app. Notes stay on this device and are not shared when you share over Wi-Fi.",
+      "by": "NORWINPREP",
+      "source": "https://github.com/NorwinLabs/NorwinPrepDisk",
+      "icon": "book",
+      "color": "#c9a227",
+      "sizeClass": "s",
+      "install": {
+        "kind": "bundled",
+        "dir": "notes"
+      },
+      "platforms": [
+        "windows",
+        "linux",
+        "darwin"
+      ],
+      "hosts": [
+        "app"
+      ],
+      "open": "/tools/notes/"
+    }
+  ],
+  "tiers": [
+    {
+      "id": "essential",
+      "name": "Essential",
+      "blurb": "Medicine, water, food, first aid, a Wikipedia starter and a world map. The smallest set that is still useful in an emergency.",
+      "modules": [
+        "reader",
+        "medicine",
+        "water",
+        "post-disaster",
+        "food",
+        "outdoors-se",
+        "appropedia",
+        "wikipedia-top",
+        "map-world"
+      ]
+    },
+    {
+      "id": "standard",
+      "name": "Standard",
+      "blurb": "Adds repair, DIY, gardening, cooking, electronics, textbooks, travel guides and the tools.",
+      "modules": [
+        "reader",
+        "medicine",
+        "water",
+        "post-disaster",
+        "food",
+        "outdoors-se",
+        "appropedia",
+        "wikipedia-top",
+        "map-world",
+        "ifixit",
+        "mdwiki",
+        "diy",
+        "gardening",
+        "cooking",
+        "mechanics",
+        "electronics",
+        "sustainability",
+        "phet",
+        "wikibooks",
+        "wikivoyage",
+        "cyberchef",
+        "notes"
+      ]
+    },
+    {
+      "id": "comprehensive",
+      "name": "Comprehensive",
+      "blurb": "Adds a large encyclopedia, books, Khan Academy, more textbooks and detailed US and Europe maps. Needs a lot of space.",
+      "modules": [
+        "reader",
+        "medicine",
+        "water",
+        "post-disaster",
+        "food",
+        "outdoors-se",
+        "appropedia",
+        "wikipedia-top",
+        "map-world",
+        "ifixit",
+        "mdwiki",
+        "diy",
+        "gardening",
+        "cooking",
+        "mechanics",
+        "electronics",
+        "sustainability",
+        "phet",
+        "wikibooks",
+        "wikivoyage",
+        "cyberchef",
+        "notes",
+        "wikiversity",
+        "wiktionary",
+        "libretexts-med",
+        "libretexts-chem",
+        "libretexts-eng",
+        "wikisource",
+        "gutenberg",
+        "wikipedia-nopic",
+        "khan",
+        "map-usa",
+        "map-europe"
       ]
     }
   ]

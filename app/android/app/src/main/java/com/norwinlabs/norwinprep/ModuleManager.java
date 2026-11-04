@@ -32,7 +32,7 @@ import java.util.regex.Pattern;
  */
 public class ModuleManager implements LocalServer.Modules {
     static final Pattern ID_RE = Pattern.compile("^[a-z0-9][a-z0-9-]{0,40}$");
-    static final String[] TEXT_FIELDS = {"id", "type", "name", "tagline", "description", "by", "source", "icon", "color"};
+    static final String[] TEXT_FIELDS = {"id", "type", "name", "tagline", "description", "by", "source", "icon", "color", "category"};
 
     static final class Mod {
         final Map<String, String> text = new LinkedHashMap<>();

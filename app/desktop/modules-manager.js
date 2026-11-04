@@ -21,6 +21,7 @@ class HttpError extends Error { constructor(status, url) { super('HTTP ' + statu
 const human = (n) => { const u = ['B', 'KB', 'MB', 'GB', 'TB']; let i = 0; n = Number(n); while (n >= 1024 && i < 4) { n /= 1024; i++; } return i === 0 ? n.toFixed(0) + ' B' : n.toFixed(1) + ' ' + u[i]; };
 const vkey = (v) => (String(v || '').match(/\d+/g) || []).map(Number);
 const vgt = (a, b) => { const x = vkey(a), y = vkey(b); for (let i = 0; i < Math.max(x.length, y.length); i++) { if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0); } return false; };
+const { unzip } = require('./unzip');
 const esc = (s) => String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 // ---------------------------------------------------------------- catalog
@@ -42,6 +43,11 @@ function loadCatalog(file, platform) {
       }
     } else if (i.kind === 'app') {
       if (!Array.isArray(i.suffixes) || !i.suffixes.length || !i.suffixes.every((s) => /^[A-Za-z0-9._-]+$/.test(s))) throw new Error('bad app suffixes for ' + m.id);
+    } else if (i.kind === 'static-site') {
+      if (!/^[A-Za-z0-9._-]+\/[A-Za-z0-9._-]+$/.test(i.repo || '') || !/^[a-z0-9-]+$/.test(i.dir || '') || typeof i.asset !== 'string' || i.asset.length > 120) throw new Error('bad static-site spec for ' + m.id);
+      new RegExp(i.asset);
+    } else if (i.kind === 'bundled') {
+      if (!/^[a-z0-9-]+$/.test(i.dir || '')) throw new Error('bad bundled spec for ' + m.id);
     } else if (i.kind !== 'kiwix-tools') throw new Error('unknown install kind for ' + m.id);
     seen.add(m.id);
     if ((m.platforms || ['windows', 'linux', 'darwin', 'android']).includes(platform) && (m.hosts || ['app', 'pi']).includes('app')) out.push(m);
@@ -86,7 +92,7 @@ class Manager {
   constructor(cfg) {
     this.cfg = Object.assign({ timeout: 30000, kiwix: 'https://download.kiwix.org', githubApi: 'https://api.github.com', githubDl: 'https://github.com',
       protomaps: 'https://build.protomaps.com', protomapsMeta: null, slug: 'NorwinLabs/NorwinPrepDisk', pmtilesRepo: 'protomaps/go-pmtiles', platform: process.platform,
-      arch: process.arch, onLibraryChange: async () => true, run: spawn }, cfg);
+      arch: process.arch, bundledDir: path.join(__dirname, 'site'), onLibraryChange: async () => true, run: spawn }, cfg);
     this.mods = loadCatalog(this.cfg.catalog, this.cfg.platform === 'win32' ? 'windows' : this.cfg.platform);
     this.byid = Object.fromEntries(this.mods.map((m) => [m.id, m]));
     this.jobs = {}; this.queue = []; this.working = false; this.cache = new Map();
@@ -154,6 +160,13 @@ class Manager {
       const st = fs.statSync(bin);
       return { version: ver, files: ['kiwix-serve'], bytes: dirSize(dir), updated: st.mtimeMs / 1000 };
     }
+    if (i.kind === 'static-site' || i.kind === 'bundled') {
+      const dir = path.join(this.d('sites'), i.dir);
+      try {
+        const meta = JSON.parse(fs.readFileSync(path.join(dir, '.installed'), 'utf8')), st = fs.statSync(path.join(dir, '.installed'));
+        return { version: String(meta.version || '1').slice(0, 20), files: [i.dir], bytes: i.kind === 'bundled' ? 0 : dirSize(dir), updated: st.mtimeMs / 1000 };
+      } catch (e) { return null; }
+    }
     const adir = this.d('apps'); let files = [], ver = null, size = 0, newest = 0;
     for (const s of i.suffixes) {
       const re = new RegExp('^NorwinPrep-(\\d+\\.\\d+\\.\\d+)-' + esc(s) + '$');
@@ -168,6 +181,7 @@ class Manager {
     const i = m.install;
     if (i.kind === 'zim') { const html = this.peek(['list', this.zimBase(m)]); if (html === undefined) return null; const vs = this.zimVersions(html, i.prefix); return vs.length ? vs[vs.length - 1].replace('-', '.') : null; }
     if (i.kind === 'app') { const r = this.peek(['release', this.releaseUrl()]); return r ? r.tag.slice(1) : null; }
+    if (i.kind === 'static-site') { const r = this.peek(['site', i.repo]); return r ? r.tag.replace(/^v/, '') : null; }
     return null;
   }
   knownSize(m) {
@@ -182,7 +196,29 @@ class Manager {
       const files = i.suffixes.flatMap((s) => Object.keys(r.assets).filter((n) => n.endsWith('-' + s)));
       return files.length === i.suffixes.length ? files.reduce((a, n) => a + r.assets[n], 0) : null;
     }
+    if (i.kind === 'static-site') { const r = this.peek(['site', i.repo]); return r ? r.size : null; }
     return null;
+  }
+  // the newest release of a static web app on GitHub (e.g. CyberChef) and the one asset we install
+  async siteRelease(m, force) {
+    const i = m.install, re = new RegExp(i.asset);
+    return this.cached(['site', i.repo], async () => {
+      const j = JSON.parse(await this.text(this.cfg.githubApi + '/repos/' + i.repo + '/releases/latest'));
+      if (!/^v?\d+\.\d+\.\d+$/.test(j.tag_name || '')) throw new ApiError(502, 'unexpected release tag');
+      const a = (j.assets || []).filter((x) => re.test(x.name || '') && /^[A-Za-z0-9._-]+$/.test(x.name))[0];
+      if (!a) throw new ApiError(404, 'The latest ' + i.repo + ' release has no download for this');
+      const dg = /^sha256:([0-9a-f]{64})$/i.exec(a.digest || '');
+      return { tag: j.tag_name, name: a.name, size: Number(a.size || 0), sha: dg ? dg[1].toLowerCase() : null, url: this.cfg.githubDl + '/' + i.repo + '/releases/download/' + j.tag_name + '/' + a.name };
+    }, 3600000, force);
+  }
+  // where an installed tool is served from (null when not installed); used by the local and the sharing server
+  siteRoot(dir) {
+    const m = this.mods.find((x) => (x.install.kind === 'static-site' || x.install.kind === 'bundled') && x.install.dir === dir);
+    if (!m || !this.installed(m)) return null;
+    return m.install.kind === 'bundled' ? path.join(this.cfg.bundledDir, dir) : path.join(this.d('sites'), dir);
+  }
+  listSites() {   // installed tools that run in a browser: what a device that joins the Wi-Fi may use
+    return this.mods.filter((m) => m.open && this.installed(m)).map((m) => ({ id: m.id, name: m.name, path: m.open }));
   }
   disk() {
     try { const s = fs.statfsSync(this.d('zim')); return { free: s.bavail * s.bsize, total: s.blocks * s.bsize }; }
@@ -195,7 +231,7 @@ class Manager {
     const out = [];
     for (const m of this.mods) {
       const ins = this.installed(m), lat = this.latest(m);
-      const item = {}; for (const k of ['id', 'type', 'name', 'tagline', 'description', 'by', 'source', 'icon', 'color']) item[k] = m[k];
+      const item = {}; for (const k of ['id', 'type', 'name', 'tagline', 'description', 'by', 'source', 'icon', 'color', 'category', 'open']) if (m[k] !== undefined) item[k] = m[k];
       item.installed = !!ins; item.sizeClass = m.sizeClass;
       if (!ins) { const ks = this.knownSize(m); if (ks) item.size = ks; }
       if (ins) { item.version = ins.version; item.bytes = ins.bytes; item.updated = Math.floor(ins.updated); item.files = ins.files; }
@@ -222,7 +258,11 @@ class Manager {
         Object.assign(res, { file: files.join(', '), version: rel.tag.slice(1), bytes: files.reduce((a, n) => a + rel.assets[n], 0) });
       } else if (i.kind === 'maps') {
         Object.assign(res, { file: i.file, version: await this.protomapsBuild(), note: 'Size depends on the region; large regions can be tens of GB and take hours.' });
-      } else Object.assign(res, { file: 'kiwix-serve', version: null, note: 'A small program that lets the app show content packs.' });
+      } else if (i.kind === 'static-site') {
+        const r = await this.siteRelease(m, true);
+        Object.assign(res, { file: r.name, version: r.tag.replace(/^v/, ''), bytes: r.size });
+      } else if (i.kind === 'bundled') Object.assign(res, { file: 'built into the app', version: '1', bytes: 0, note: 'Nothing is downloaded.' });
+      else Object.assign(res, { file: 'kiwix-serve', version: null, note: 'A small program that lets the app show content packs.' });
     } catch (e) {
       if (e instanceof ApiError) throw e;
       if (e instanceof HttpError) throw new ApiError(502, 'The download server answered HTTP ' + e.status);
@@ -257,6 +297,7 @@ class Manager {
     };
     await Promise.all([worker(), worker(), worker(), worker()]);
     try { await this.latestRelease(true); } catch (e) { if (!(e instanceof HttpError)) throw e; }
+    for (const m of this.mods.filter((x) => x.install.kind === 'static-site')) { try { await this.siteRelease(m, true); } catch (e) { if (!(e instanceof HttpError) && !(e instanceof ApiError)) throw e; } }
   }
   sizesPending() { return this.sizes.running; }
 
@@ -279,7 +320,7 @@ class Manager {
           if (action === 'remove') await this.remove(m);
           else {
             if (m.type === 'content') await this.ensureReader(id);
-            await ({ zim: this.installZim, maps: this.installMaps, app: this.installApp, 'kiwix-tools': this.installReader })[m.install.kind].call(this, m);
+            await ({ zim: this.installZim, maps: this.installMaps, app: this.installApp, 'kiwix-tools': this.installReader, 'static-site': this.installSite, bundled: this.installBundled })[m.install.kind].call(this, m);
           }
           this.set(id, { state: 'done', percent: 100, message: action === 'remove' ? 'Removed' : 'Installed' });
         } catch (e) {
@@ -445,6 +486,25 @@ class Manager {
     } finally { fs.rmSync(tmp, { recursive: true, force: true }); }
     await this.restartLibrary();
   }
+  async installBundled(m) {          // ships inside the app: "installing" just switches it on
+    const dir = path.join(this.d('sites'), m.install.dir); fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(path.join(dir, '.installed'), JSON.stringify({ version: '1' }));
+  }
+  async installSite(m) {              // a static web app from a GitHub release (zip), served by the app and shared over Wi-Fi
+    const i = m.install, r = await this.siteRelease(m, true);
+    this.needSpace(r.size * 3);
+    const base = this.d('sites'), tmp = fs.mkdtempSync(path.join(base, '.dl-')), part = path.join(tmp, r.name);
+    try {
+      await this.download(m.id, r.url, part, r.sha, m.name + ': ');
+      this.set(m.id, { percent: 99, message: 'Unpacking…' });
+      const out = path.join(tmp, 'x'); unzip(fs.readFileSync(part), out);
+      let root = out; const top = fs.readdirSync(out);                      // a zip with one top folder: serve that folder
+      if (top.length === 1 && fs.statSync(path.join(out, top[0])).isDirectory()) root = path.join(out, top[0]);
+      if (!fs.readdirSync(root).some((f) => /\.html?$/i.test(f))) throw new ApiError(502, 'The download did not contain a web page');
+      fs.writeFileSync(path.join(root, '.installed'), JSON.stringify({ version: r.tag.replace(/^v/, '') }));
+      const dest = path.join(base, i.dir); fs.rmSync(dest, { recursive: true, force: true }); fs.renameSync(root, dest);
+    } finally { fs.rmSync(tmp, { recursive: true, force: true }); }
+  }
   async ensureReader(forId) {     // the first content pack pulls the reader in automatically
     const rm = this.byid.reader; if (!rm || this.installed(rm)) return;
     this.set(forId, { message: 'Installing the reader first…' });
@@ -454,6 +514,7 @@ class Manager {
     const ins = this.installed(m); if (!ins) throw new ApiError(404, 'Not installed');
     const k = m.install.kind;
     if (k === 'kiwix-tools') { fs.rmSync(path.join(this.cfg.dataDir, 'reader'), { recursive: true, force: true }); await this.restartLibrary(); return; }
+    if (k === 'static-site' || k === 'bundled') { fs.rmSync(path.join(this.d('sites'), m.install.dir), { recursive: true, force: true }); return; }
     const folder = { zim: 'zim', maps: 'maps', app: 'apps' }[k];
     for (const f of ins.files) fs.unlinkSync(path.join(this.d(folder), f));
     if (k === 'zim') await this.restartLibrary();

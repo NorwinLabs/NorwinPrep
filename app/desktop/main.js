@@ -81,11 +81,11 @@ async function startServer() {
   const env = process.env;
   const modules = new Manager({
     catalog: path.join(siteDir, 'catalog.json'), dataDir, onLibraryChange: () => reader.restart(),
-    kiwix: env.NORWINPREP_KIWIX_BASE || undefined, githubApi: env.NORWINPREP_API_BASE || undefined, githubDl: env.NORWINPREP_DL_BASE || undefined, protomaps: env.NORWINPREP_PROTOMAPS_BASE || undefined
+    bundledDir: siteDir, kiwix: env.NORWINPREP_KIWIX_BASE || undefined, githubApi: env.NORWINPREP_API_BASE || undefined, githubDl: env.NORWINPREP_DL_BASE || undefined, protomaps: env.NORWINPREP_PROTOMAPS_BASE || undefined
   });
   share = new Share({
     dataDir: app.getPath('userData'),
-    makeServer: () => createShare({ siteDir, mapsDir: path.join(dataDir, 'maps'), appsDir: path.join(dataDir, 'apps'), reader, getName: () => name, version: app.getVersion() })
+    makeServer: () => createShare({ siteDir, siteRoot: (d) => modules.siteRoot(d), siteList: () => modules.listSites(), mapsDir: path.join(dataDir, 'maps'), appsDir: path.join(dataDir, 'apps'), reader, getName: () => name, version: app.getVersion() })
   });
   // start with the device: on the very first run turn "launch at startup" on (the user can switch it off in the connections panel)
   const autostart = new Autostart({ platform: process.platform, exec: process.env.APPIMAGE || process.execPath, app, args: process.argv.slice(1).filter((a) => a === '--kiosk' || a === '--no-sandbox') });

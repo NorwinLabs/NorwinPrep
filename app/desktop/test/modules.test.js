@@ -16,15 +16,15 @@ function make(over) {
 async function done(mgr, id, ms) { const t0 = Date.now(); while (Date.now() - t0 < (ms || 30000)) { const j = mgr.jobs[id]; if (j && (j.state === 'done' || j.state === 'error')) return j; await sleep(40); } throw new Error('job ' + id + ' did not finish: ' + JSON.stringify(mgr.jobs[id])); }
 const mod = (mgr, id) => mgr.catalog().find((m) => m.id === id);
 async function settle(mgr) { for (let i = 0; i < 100 && mgr.sizesPending(); i++) await sleep(50); }
-const reset = () => { Object.assign(F, { shaOk: true, shaMissing: false, newZim: '2025-03', tag: 'v0.6.9', apkSumOk: true, readerListing: true }); delete process.env.FAKE_PM_FAIL; };
+const reset = () => { Object.assign(F, { shaOk: true, shaMissing: false, newZim: '2025-03', tag: 'v0.6.9', apkSumOk: true, readerListing: true, cyber: 'good', cyberDigest: true }); delete process.env.FAKE_PM_FAIL; };
 
 (async () => {
   await new Promise((r) => server.listen(0, '127.0.0.1', r));
-  let t, j, c;
+  let t, j, c, dir;
 
   // ---------- catalog ----------
   const forLinux = loadCatalog(CATALOG, 'linux'), forWin = loadCatalog(CATALOG, 'windows'), forAndroid = loadCatalog(CATALOG, 'android');
-  ok(forLinux.length === 41 && forLinux.some((m) => m.id === 'reader') && forWin.some((m) => m.type === 'maps'), 'desktop sees all 41 modules including the reader and maps');
+  ok(forLinux.length === 43 && forLinux.some((m) => m.id === 'reader') && forWin.some((m) => m.type === 'maps'), 'desktop sees all 43 modules including the reader and maps');
   ok(forAndroid.length > 25 && forAndroid.every((m) => m.type === 'content'), 'Android only sees content packs (' + forAndroid.length + ')');
   for (const bad of [{ id: '../x', type: 'content', sizeClass: 's', install: { kind: 'zim', subdir: 'a', prefix: 'b' } }, { id: 'ok1', type: 'content', sizeClass: 's', install: { kind: 'zim', subdir: '../etc', prefix: 'b' } },
     { id: 'ok2', type: 'content', sizeClass: 's', install: { kind: 'shell', cmd: 'rm -rf /' } }, { id: 'ok3', type: 'maps', sizeClass: 's', install: { kind: 'maps', file: '../x.pmtiles', maxzoom: 7 } },
@@ -99,6 +99,29 @@ const reset = () => { Object.assign(F, { shaOk: true, shaMissing: false, newZim:
   ({ mgr: t } = make({ kiwix: 'http://127.0.0.1:1' })); r = await t.handle('GET', '/info', new URLSearchParams('id=medicine'), null); ok(r.code === 502 && /Could not reach/.test(r.body.error), 'info while offline: clean 502');
   ok((await t.handle('POST', '/pin', new URLSearchParams(), {})).code === 200 && (await t.handle('GET', '/nope', new URLSearchParams(), null)).code === 404 && (await t.handle('POST', '/install', new URLSearchParams(), { id: '../../x' })).code === 404, 'API: pin ok, unknown route 404, hostile id 404');
   ({ mgr: t } = make()); ok((await t.handle('POST', '/refresh', new URLSearchParams(), {})).code === 200 && (await t.handle('POST', '/refresh', new URLSearchParams(), {})).code === 429, 'refresh is throttled');
+
+
+  // ---------- tools: CyberChef (a web app from a GitHub release) and Notes (built in) ----------
+  reset(); const bundled = fs.mkdtempSync(path.join(os.tmpdir(), 'npbundled-')); fs.mkdirSync(path.join(bundled, 'notes')); fs.writeFileSync(path.join(bundled, 'notes', 'index.html'), '<title>NOTES</title>');
+  ({ mgr: t, dir } = make({ bundledDir: bundled }));
+  r = await t.handle('GET', '/info', new URLSearchParams('id=cyberchef'), null); ok(r.code === 200 && r.body.file === 'CyberChef_v10.0.0.zip' && r.body.version === '10.0.0' && r.body.bytes > 100, 'CyberChef info: newest release asset, version and size');
+  ok(t.siteRoot('cyberchef') === null, 'not installed: nothing is served');
+  t.enqueue('cyberchef', 'install'); j = await done(t, 'cyberchef'); ok(j.state === 'done', 'CyberChef installs: ' + j.message);
+  const cc = t.siteRoot('cyberchef'); ok(cc && fs.existsSync(path.join(cc, 'CyberChef_v10.0.0.html')) && fs.existsSync(path.join(cc, 'assets', 'app.js')), 'its files were unpacked');
+  ok(mod(t, 'cyberchef').installed && mod(t, 'cyberchef').version === '10.0.0' && mod(t, 'cyberchef').open === '/tools/cyberchef/' && mod(t, 'cyberchef').category === 'tools', 'the store sees it installed, with its Open link and category');
+  ok(t.listSites().some((x) => x.id === 'cyberchef' && x.path === '/tools/cyberchef/'), 'it is offered to devices on the shared Wi-Fi');
+  t.enqueue('cyberchef', 'remove'); j = await done(t, 'cyberchef'); ok(j.state === 'done' && t.siteRoot('cyberchef') === null && !fs.existsSync(path.join(dir, 'sites', 'cyberchef')), 'remove deletes it');
+  F.cyber = 'folder'; t.enqueue('cyberchef', 'install'); j = await done(t, 'cyberchef'); ok(j.state === 'done' && fs.existsSync(path.join(t.siteRoot('cyberchef'), 'index.html')), 'a zip wrapped in one folder is served from inside that folder');
+  t.enqueue('cyberchef', 'remove'); await done(t, 'cyberchef');
+  F.cyber = 'evil'; t.enqueue('cyberchef', 'install'); j = await done(t, 'cyberchef');
+  ok(j.state === 'error' && /unsafe path/.test(j.message) && t.siteRoot('cyberchef') === null && !fs.existsSync(path.join(dir, 'sites', 'evil.txt')) && !fs.existsSync(path.join(dir, 'evil.txt')), 'a zip that tries to write outside its folder is refused and writes nothing: ' + j.message);
+  F.cyber = 'good'; F.cyberDigest = 'wrong'; t.enqueue('cyberchef', 'install'); j = await done(t, 'cyberchef'); ok(j.state === 'error' && /checksum|corrupt/i.test(j.message) && t.siteRoot('cyberchef') === null, 'a download that fails the published SHA-256 is rejected: ' + j.message);
+  F.cyberDigest = false; t.enqueue('cyberchef', 'install'); j = await done(t, 'cyberchef'); ok(j.state === 'done', 'without a published digest it still installs (HTTPS only)');
+  ok(t.siteRoot('notes') === null, 'Notes: off until installed');
+  t.enqueue('notes', 'install'); j = await done(t, 'notes'); ok(j.state === 'done' && t.siteRoot('notes') === path.join(bundled, 'notes') && mod(t, 'notes').installed, 'Notes: installing switches on the built-in page (nothing is downloaded)');
+  t.enqueue('notes', 'remove'); await done(t, 'notes'); ok(t.siteRoot('notes') === null && !mod(t, 'notes').installed, 'Notes: remove switches it off');
+  { const cat = JSON.parse(fs.readFileSync(CATALOG, 'utf8')), ids = new Set(cat.modules.map((m) => m.id)); ok(cat.tiers.length === 3 && cat.tiers.every((x) => x.modules.every((id) => ids.has(id))), 'every module named in the quick-setup tiers exists');
+    ok(cat.tiers[0].modules.length < cat.tiers[1].modules.length && cat.tiers[1].modules.length < cat.tiers[2].modules.length && cat.tiers[0].modules.every((id) => cat.tiers[1].modules.includes(id)), 'tiers grow: Essential is inside Standard, Standard has more'); }
 
   server.close(); console.log(fails ? fails + ' FAILED' : 'ALL PASSED'); process.exit(fails ? 1 : 0);
 })().catch((e) => { console.error('CRASH', e); process.exit(1); });

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Check every module in the catalog against the REAL download servers (needs internet). Exit 1 if any module would fail.
    python3 scripts/check-catalog.py [catalog.json]"""
-import json, re, sys, functools, urllib.parse, urllib.request, urllib.error
+import json, os, re, sys, functools, urllib.parse, urllib.request, urllib.error
 print = functools.partial(print, flush=True)
 
 CAT = sys.argv[1] if len(sys.argv) > 1 else "app/shared/site/catalog.json"
@@ -67,6 +67,21 @@ for m in mods:
             miss = [s for s in i["suffixes"] if not any(n.endswith("-" + s) for n in names)]
             report(m, not miss, "release %s%s" % (rel["tag_name"], " missing " + ",".join(miss) if miss else ""))
         except Exception as e: report(m, False, str(e))
+    elif k == "static-site":
+        try:
+            rel = json.loads(get("%s/repos/%s/releases/latest" % (GH, i["repo"]))[2])
+            a = [x for x in rel["assets"] if re.match(i["asset"], x["name"])]
+            if not a: report(m, False, "no release asset matches %s (assets: %s)" % (i["asset"], ", ".join(x["name"] for x in rel["assets"][:8]))); continue
+            import io, zipfile
+            req = urllib.request.Request(a[0]["browser_download_url"], headers=UA)
+            data = urllib.request.urlopen(req, timeout=120).read()
+            names = zipfile.ZipFile(io.BytesIO(data)).namelist()
+            tops = {n.split("/")[0] for n in names}; root = [n for n in names if n.count("/") == (1 if len(tops) == 1 and not any("." in t for t in tops) else 0)]
+            pages = [n for n in names if re.search(r"\.html?$", n) and n.count("/") <= 1]
+            report(m, bool(pages), "%s %d bytes, digest=%s, pages=%s, entries=%d" % (rel["tag_name"], len(data), a[0].get("digest", "none"), pages[:3], len(names)))
+        except Exception as e: report(m, False, str(e))
+    elif k == "bundled":
+        report(m, os.path.isdir("app/shared/site/" + i["dir"]) if "os" in globals() else True, "ships inside the app: " + i["dir"])
     elif k == "kiwix-tools":
         base = KIWIX + "/release/kiwix-tools/"; html = listing(base)
         for pat in ("linux-x86_64", "linux-aarch64", "linux-armhf", "win-i686", "macos-x86_64"):

@@ -34,6 +34,17 @@ disconnect you) and tells you how to start it later with `sudo /opt/norwinprep/s
 Change the Wi-Fi name/password in `/etc/norwinprep.conf` (defaults: `NorwinPrep` / `NORWINNOMAD`; existing installs keep the password already in their file), then rerun `setup-hotspot.sh`.
 Uninstall with `sudo /opt/norwinprep/scripts/uninstall.sh` (add `--purge` to delete downloaded content too).
 
+## Choosing what to install
+
+The store is grouped like Project NOMAD: **Library**, **Education**, **Maps**, **Tools** and **Apps**, with a **Quick setup** row at the top.
+Quick setup installs a whole set in one tap: **Essential** (medicine, water, food, first aid, a Wikipedia starter, a world map), **Standard**
+(adds repair, DIY, gardening, cooking, electronics, textbooks, travel guides and the tools) and **Comprehensive** (adds a large encyclopedia, books,
+Khan Academy, more textbooks and detailed maps). The dialog shows the modules, the download size and your free space first.
+
+Tools on desktop and Pi: **CyberChef** (GCHQ's data toolkit, downloaded from its GitHub release and run offline) and **Notes** (built in, stays on the device).
+Both open inside the app and are offered to devices that join your Wi-Fi share. Not built yet: Kolibri (full Khan Academy courses with progress tracking)
+and an offline AI assistant; each is a separate server program that needs its own installer, so they are future work.
+
 ## Install on any device, share over Wi-Fi
 
 The desktop app (Windows, Linux x64/arm64/armv7l incl. Raspberry Pi) is its own installer: the Module Store installs content, maps and the

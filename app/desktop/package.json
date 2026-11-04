@@ -27,6 +27,7 @@
       "local-server.js",
       "updater.js",
       "modules-manager.js",
+      "unzip.js",
       "reader.js",
       "share.js",
       "site/**",

@@ -71,6 +71,21 @@ const nm = (calls, ...a) => calls.filter((c) => c[0] === 'nmcli' && a.every((x, 
   ok(au.get() && /^Exec="\/opt\/Norwin Prep\/norwinprep" "--no-sandbox" "--kiosk"$/m.test(df) && /^Type=Application$/m.test(df), 'autostart writes a valid XDG entry (quoted path and flags)');
   au.set(false); ok(!au.get(), 'and removes it again');
   let bad = false; try { new Autostart({ platform: 'linux', home, exec: '/x\nExec=evil', args: [] }).set(true); } catch (e) { bad = true; } ok(bad, 'a program path with a newline is refused');
+
+  // ---------- tools served to devices that join (CyberChef, Notes) ----------
+  { const root = fs.mkdtempSync(path.join(os.tmpdir(), 'nptool-')); fs.mkdirSync(path.join(root, 'assets')); fs.writeFileSync(path.join(root, 'CyberChef_v1.html'), '<title>CC</title>'); fs.writeFileSync(path.join(root, 'assets', 'a.js'), 'var a=1'); fs.writeFileSync(path.join(root, '.installed'), '{}');
+    fs.writeFileSync(path.join(path.dirname(root), 'secret-' + path.basename(root)), 'SECRET');
+    const srv = createShare({ siteDir: site, mapsDir: root, appsDir: root, reader: null, getName: () => 'x', version: '1', siteRoot: (d) => (d === 'cyberchef' ? root : null), siteList: () => [{ id: 'cyberchef', name: 'CyberChef', path: '/tools/cyberchef/' }] });
+    const port = await srv.start([0], '127.0.0.1');
+    const nf = (pth) => new Promise((res) => http.get({ host: '127.0.0.1', port, path: pth }, (r) => { r.resume(); res({ code: r.statusCode, loc: r.headers.location, type: r.headers['content-type'] }); }));
+    let g = await nf('/tools/cyberchef'); ok(g.code === 302 && g.loc === '/tools/cyberchef/', 'a tool address without a slash redirects to the folder');
+    g = await nf('/tools/cyberchef/'); ok(g.code === 302 && g.loc === '/tools/cyberchef/CyberChef_v1.html', 'a folder with one web page opens that page');
+    g = await get(port, '/tools/cyberchef/CyberChef_v1.html'); ok(g.code === 200 && g.body.includes('<title>CC</title>'), 'the page itself is served');
+    g = await nf('/tools/cyberchef/assets/a.js'); ok(g.code === 200 && /javascript/.test(g.type), 'its scripts are served with the right type');
+    for (const bad of ['/tools/cyberchef/.installed', '/tools/nope/', '/tools/cyberchef/%2e%2e/secret-' + path.basename(root), '/tools/cyberchef/..%2fx', '/tools/cyberchef/assets/../../x']) { g = await nf(bad); ok(g.code === 404 || g.code === 400, 'refused: ' + bad + ' (' + g.code + ')'); }
+    const dev = JSON.parse((await get(port, '/api/device')).body); ok(dev.tools.length === 1 && dev.tools[0].path === '/tools/cyberchef/', 'the landing page is told which tools exist');
+    const post = await new Promise((res) => { const q = http.request({ host: '127.0.0.1', port, path: '/tools/cyberchef/x', method: 'POST' }, (r) => { r.resume(); res(r.statusCode); }); q.end(); }); ok(post === 405, 'tools are read-only for devices that join (POST refused)');
+    await srv.stop(); }
   // rapid toggles do not race
   ({ sh, calls } = harness()); await Promise.all([sh.set(true), sh.set(false), sh.set(true), sh.set(false)]); ok(!(await sh.status()).active && nm(calls, 'connection', 'up').length === nm(calls, 'connection', 'down').length, 'rapid on/off/on/off ends cleanly off');
   console.log(fails ? fails + ' FAILED' : 'ALL PASSED'); process.exit(fails ? 1 : 0);
