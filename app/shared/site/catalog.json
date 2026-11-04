@@ -1068,6 +1068,255 @@
         "app"
       ],
       "open": "/learn/"
+    },
+    {
+      "id": "ai-engine",
+      "type": "tool",
+      "category": "ai",
+      "name": "AI Engine",
+      "tagline": "Runs AI models on your own computer",
+      "description": "llama.cpp's llama-server: a small program that runs AI language models on your processor, with no internet and no account. It is installed automatically with your first model.",
+      "by": "GGML",
+      "source": "https://github.com/ggml-org/llama.cpp",
+      "icon": "chip",
+      "color": "#2b8fd9",
+      "sizeClass": "s",
+      "install": {
+        "kind": "llama-cpp",
+        "repo": "ggml-org/llama.cpp"
+      },
+      "platforms": [
+        "windows",
+        "linux",
+        "darwin"
+      ],
+      "hosts": [
+        "app"
+      ]
+    },
+    {
+      "id": "qwen25-05b",
+      "type": "model",
+      "category": "ai",
+      "name": "Qwen 2.5 0.5B",
+      "tagline": "Tiny and quick, for very small computers",
+      "description": "The smallest useful chat model. Short answers, simple questions; best on a Raspberry Pi or an old laptop. About 1 GB of memory.",
+      "by": "ALIBABA",
+      "source": "https://huggingface.co/Qwen/Qwen2.5-0.5B-Instruct-GGUF",
+      "icon": "chip",
+      "color": "#2b8fd9",
+      "sizeClass": "s",
+      "install": {
+        "kind": "gguf",
+        "repo": "Qwen/Qwen2.5-0.5B-Instruct-GGUF",
+        "file": "qwen2.5-0.5b-instruct-q4_k_m.gguf",
+        "minRamGB": 1
+      },
+      "platforms": [
+        "windows",
+        "linux",
+        "darwin"
+      ],
+      "hosts": [
+        "app"
+      ],
+      "open": "/ai/"
+    },
+    {
+      "id": "gemma3-1b",
+      "type": "model",
+      "category": "ai",
+      "name": "Gemma 3 1B",
+      "tagline": "Small and fluent",
+      "description": "Google's small model. Good everyday answers for its size. About 2 GB of memory.",
+      "by": "GOOGLE",
+      "source": "https://huggingface.co/ggml-org/gemma-3-1b-it-GGUF",
+      "icon": "chip",
+      "color": "#2b8fd9",
+      "sizeClass": "s",
+      "install": {
+        "kind": "gguf",
+        "repo": "ggml-org/gemma-3-1b-it-GGUF",
+        "file": "gemma-3-1b-it-Q4_K_M.gguf",
+        "minRamGB": 2
+      },
+      "platforms": [
+        "windows",
+        "linux",
+        "darwin"
+      ],
+      "hosts": [
+        "app"
+      ],
+      "open": "/ai/"
+    },
+    {
+      "id": "llama32-1b",
+      "type": "model",
+      "category": "ai",
+      "name": "Llama 3.2 1B",
+      "tagline": "A good first model",
+      "description": "Meta's 1 billion parameter model. Sensible answers on a Raspberry Pi 4/5 or any laptop. About 2 GB of memory.",
+      "by": "META",
+      "source": "https://huggingface.co/bartowski/Llama-3.2-1B-Instruct-GGUF",
+      "icon": "chip",
+      "color": "#2b8fd9",
+      "sizeClass": "m",
+      "install": {
+        "kind": "gguf",
+        "repo": "bartowski/Llama-3.2-1B-Instruct-GGUF",
+        "file": "Llama-3.2-1B-Instruct-Q4_K_M.gguf",
+        "minRamGB": 2
+      },
+      "platforms": [
+        "windows",
+        "linux",
+        "darwin"
+      ],
+      "hosts": [
+        "app"
+      ],
+      "open": "/ai/"
+    },
+    {
+      "id": "qwen25-15b",
+      "type": "model",
+      "category": "ai",
+      "name": "Qwen 2.5 1.5B",
+      "tagline": "Balanced",
+      "description": "Noticeably better than the 0.5B at reasoning and writing. About 3 GB of memory.",
+      "by": "ALIBABA",
+      "source": "https://huggingface.co/Qwen/Qwen2.5-1.5B-Instruct-GGUF",
+      "icon": "chip",
+      "color": "#2b8fd9",
+      "sizeClass": "m",
+      "install": {
+        "kind": "gguf",
+        "repo": "Qwen/Qwen2.5-1.5B-Instruct-GGUF",
+        "file": "qwen2.5-1.5b-instruct-q4_k_m.gguf",
+        "minRamGB": 3
+      },
+      "platforms": [
+        "windows",
+        "linux",
+        "darwin"
+      ],
+      "hosts": [
+        "app"
+      ],
+      "open": "/ai/"
+    },
+    {
+      "id": "llama32-3b",
+      "type": "model",
+      "category": "ai",
+      "name": "Llama 3.2 3B",
+      "tagline": "Better answers, needs a real computer",
+      "description": "Meta's 3 billion parameter model. Clearly stronger; wants a laptop with 8 GB of memory or a Raspberry Pi 5. About 4 GB of memory.",
+      "by": "META",
+      "source": "https://huggingface.co/bartowski/Llama-3.2-3B-Instruct-GGUF",
+      "icon": "chip",
+      "color": "#2b8fd9",
+      "sizeClass": "m",
+      "install": {
+        "kind": "gguf",
+        "repo": "bartowski/Llama-3.2-3B-Instruct-GGUF",
+        "file": "Llama-3.2-3B-Instruct-Q4_K_M.gguf",
+        "minRamGB": 4
+      },
+      "platforms": [
+        "windows",
+        "linux",
+        "darwin"
+      ],
+      "hosts": [
+        "app"
+      ],
+      "open": "/ai/"
+    },
+    {
+      "id": "qwen25-3b",
+      "type": "model",
+      "category": "ai",
+      "name": "Qwen 2.5 3B",
+      "tagline": "Strong at facts and instructions",
+      "description": "About 4 GB of memory.",
+      "by": "ALIBABA",
+      "source": "https://huggingface.co/Qwen/Qwen2.5-3B-Instruct-GGUF",
+      "icon": "chip",
+      "color": "#2b8fd9",
+      "sizeClass": "m",
+      "install": {
+        "kind": "gguf",
+        "repo": "Qwen/Qwen2.5-3B-Instruct-GGUF",
+        "file": "qwen2.5-3b-instruct-q4_k_m.gguf",
+        "minRamGB": 4
+      },
+      "platforms": [
+        "windows",
+        "linux",
+        "darwin"
+      ],
+      "hosts": [
+        "app"
+      ],
+      "open": "/ai/"
+    },
+    {
+      "id": "phi35-mini",
+      "type": "model",
+      "category": "ai",
+      "name": "Phi 3.5 mini",
+      "tagline": "Reasoning-focused",
+      "description": "Microsoft's 3.8 billion parameter model, good at step-by-step reasoning. About 5 GB of memory.",
+      "by": "MICROSOFT",
+      "source": "https://huggingface.co/bartowski/Phi-3.5-mini-instruct-GGUF",
+      "icon": "chip",
+      "color": "#2b8fd9",
+      "sizeClass": "m",
+      "install": {
+        "kind": "gguf",
+        "repo": "bartowski/Phi-3.5-mini-instruct-GGUF",
+        "file": "Phi-3.5-mini-instruct-Q4_K_M.gguf",
+        "minRamGB": 5
+      },
+      "platforms": [
+        "windows",
+        "linux",
+        "darwin"
+      ],
+      "hosts": [
+        "app"
+      ],
+      "open": "/ai/"
+    },
+    {
+      "id": "qwen25-7b",
+      "type": "model",
+      "category": "ai",
+      "name": "Qwen 2.5 7B",
+      "tagline": "The most capable here",
+      "description": "Best answers of this list. Needs a computer with 16 GB of memory and patience on a CPU. About 8 GB of memory.",
+      "by": "ALIBABA",
+      "source": "https://huggingface.co/bartowski/Qwen2.5-7B-Instruct-GGUF",
+      "icon": "chip",
+      "color": "#2b8fd9",
+      "sizeClass": "m",
+      "install": {
+        "kind": "gguf",
+        "repo": "bartowski/Qwen2.5-7B-Instruct-GGUF",
+        "file": "Qwen2.5-7B-Instruct-Q4_K_M.gguf",
+        "minRamGB": 8
+      },
+      "platforms": [
+        "windows",
+        "linux",
+        "darwin"
+      ],
+      "hosts": [
+        "app"
+      ],
+      "open": "/ai/"
     }
   ],
   "tiers": [
@@ -1153,7 +1402,9 @@
         "wikipedia-nopic",
         "khan",
         "map-usa",
-        "map-europe"
+        "map-europe",
+        "ai-engine",
+        "qwen25-05b"
       ]
     }
   ]

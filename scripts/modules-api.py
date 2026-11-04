@@ -80,7 +80,7 @@ def load_catalog(path):
         i = m.get("install", {})
         if not ID_RE.match(m.get("id", "")) or m["id"] in seen:
             raise ValueError("bad or duplicate module id: %r" % m.get("id"))
-        if m.get("type") not in ("content", "maps", "app", "tool"):
+        if m.get("type") not in ("content", "maps", "app", "tool", "model"):
             raise ValueError("bad type for %s" % m["id"])
         if m.get("sizeClass") not in ("s", "m", "l", "xl"):
             raise ValueError("bad sizeClass for %s" % m["id"])
@@ -95,7 +95,7 @@ def load_catalog(path):
                 p = [float(x) for x in i["bbox"].split(",")]
                 if len(p) != 4 or not (-180 <= p[0] < p[2] <= 180 and -90 <= p[1] < p[3] <= 90):
                     raise ValueError("bad bbox for %s" % m["id"])
-        elif k in ("kiwix-tools", "static-site", "bundled", "python-wheel"):
+        elif k in ("kiwix-tools", "static-site", "bundled", "python-wheel", "llama-cpp", "gguf"):
             pass                         # the app downloads this reader itself; the headless Pi already has kiwix-serve
         elif k == "app":
             if not i.get("suffixes") or not all(re.match(r"^[A-Za-z0-9._-]+$", s) for s in i["suffixes"]):

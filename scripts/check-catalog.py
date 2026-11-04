@@ -83,6 +83,23 @@ for m in mods:
             pages = [n for n in names if re.search(r"\.html?$", n) and n.count("/") <= 1]
             report(m, bool(pages), "%s %d bytes, digest=%s, pages=%s, entries=%d" % (rel["tag_name"], len(data), a[0].get("digest", "none"), pages[:3], len(names)))
         except Exception as e: report(m, False, str(e))
+    elif k == "llama-cpp":
+        try:
+            rel = json.loads(get("%s/repos/%s/releases/latest" % (GH, i["repo"]))[2]); bad_re = re.compile(r"cuda|vulkan|hip|sycl|opencl|rocm|openvino|cudart|kleidiai|musa|radeon|xcframework|android|ios|rpc|aclnn|cann|bf16", re.I)
+            for label, os_t, arch_t in (("linux-x64", ("ubuntu", "linux"), ("x64", "x86_64", "x86-64", "amd64")), ("linux-arm64", ("ubuntu", "linux"), ("arm64", "aarch64")), ("windows-x64", ("win", "windows"), ("x64", "x86_64", "amd64")), ("windows-arm64", ("win", "windows"), ("arm64", "aarch64")), ("macos-arm64", ("macos",), ("arm64", "aarch64")), ("macos-x64", ("macos",), ("x64", "x86_64"))):
+                hit = [x for x in rel["assets"] if x["name"].startswith("llama-") and re.search(r"\.(zip|tar\.gz|tgz)$", x["name"]) and not bad_re.search(x["name"])
+                       and any(w in os_t for w in re.split(r"[^a-z0-9_]+", x["name"].lower())) and any(w in arch_t for w in re.split(r"[^a-z0-9_]+", x["name"].lower()))]
+                hit.sort(key=lambda x: x["size"])
+                report(dict(id="ai-engine/" + label), bool(hit), "%s %s %s" % (rel["tag_name"], hit[0]["name"] if hit else "NO MATCHING BUILD (the app will say so)", hit[0]["size"] if hit else ""))
+            print("     all llama.cpp assets:", [x["name"] for x in rel["assets"]])
+        except Exception as e: report(m, False, str(e))
+    elif k == "gguf":
+        try:
+            tree = json.loads(get("https://huggingface.co/api/models/%s/tree/main" % i["repo"])[2]); f = [t for t in tree if t.get("path") == i["file"]]
+            if not f: report(m, False, "file %s not in %s (gguf files: %s)" % (i["file"], i["repo"], [t["path"] for t in tree if t["path"].endswith(".gguf")][:8])); continue
+            oid = (f[0].get("lfs") or {}).get("oid"); r = probe("https://huggingface.co/%s/resolve/main/%s" % (i["repo"], i["file"]))
+            report(m, bool(oid) and r is not None and not isinstance(r, str), "%d bytes sha256=%s... download=%s" % (f[0]["size"], (oid or "NONE")[:12], r))
+        except Exception as e: report(m, False, str(e))
     elif k == "bundled":
         report(m, os.path.isdir("app/shared/site/" + i["dir"]) if "os" in globals() else True, "ships inside the app: " + i["dir"])
     elif k == "kiwix-tools":

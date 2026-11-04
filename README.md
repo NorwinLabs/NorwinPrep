@@ -47,7 +47,11 @@ It is a Python program: the app downloads it from PyPI (checksum verified), runs
 It needs Python 3.6 to 3.14 installed (Raspberry Pi OS has it; on Windows install it from python.org). The first start takes a minute or two. Import courses
 (for example Khan Academy) inside Kolibri's own Device page, which needs internet. While Wi-Fi sharing is on, Kolibri also listens on the Wi-Fi so children can open it
 from the landing page and sign in with a learner account you create. Removing the module keeps your accounts and lessons.
-Not built yet: an offline AI assistant (a separate server plus multi-GB models).
+**AI assistant** (desktop and Pi; under AI in the store): the app runs llama.cpp's `llama-server` on your processor with a model you choose
+(Qwen 2.5 0.5B/1.5B/3B/7B, Llama 3.2 1B/3B, Gemma 3 1B, Phi 3.5 mini; 0.4 to 4.7 GB, downloaded from Hugging Face and checked against their SHA-256). The first
+model installs the engine for you. Chat opens at `/ai/` inside the app; the model loads on your first question and unloads after 15 quiet minutes. While Wi-Fi sharing is on,
+devices that join can chat too (they cannot switch models or reach anything else). It needs no internet once installed, but a small model on a CPU is slow and can be wrong.
+The engine ships ready-made CPU builds only for some computers; where there is none the store says so.
 
 ## Install on any device, share over Wi-Fi
 

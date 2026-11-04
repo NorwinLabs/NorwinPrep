@@ -1,0 +1,15 @@
+name: AI assistant on a real machine
+on:
+  workflow_dispatch:
+  push:
+    paths: ['app/desktop/ai.js', 'app/desktop/modules-manager.js', 'app/desktop/test/ai-real.js', '.github/workflows/ai-real.yml']
+jobs:
+  real:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - name: Install the real engine and a real small model, then ask it a question
+        run: node app/desktop/test/ai-real.js

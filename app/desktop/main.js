@@ -10,6 +10,7 @@ const { Reader } = require('./reader');
 const { Share } = require('./share');
 const { Autostart } = require('./autostart');
 const { Kolibri } = require('./kolibri');
+const { Llama } = require('./ai');
 const updaterLib = require('./updater');
 const { spawn, execFile } = require('child_process');
 
@@ -81,14 +82,15 @@ async function startServer() {
   reader = new Reader({ binDir: path.join(dataDir, 'reader'), zimDir: path.join(dataDir, 'zim') });
   const env = process.env;
   const kolibri = new Kolibri({ dataDir });
+  const ai = new Llama({ dataDir });
   const modules = new Manager({
-    pythonCheck: (requires) => kolibri.findPython(requires), onKolibriChange: () => kolibri.stop(),
+    pythonCheck: (requires) => kolibri.findPython(requires), onKolibriChange: () => kolibri.stop(), onAiChange: () => ai.stop(),
     catalog: path.join(siteDir, 'catalog.json'), dataDir, onLibraryChange: () => reader.restart(),
     bundledDir: siteDir, kiwix: env.NORWINPREP_KIWIX_BASE || undefined, githubApi: env.NORWINPREP_API_BASE || undefined, githubDl: env.NORWINPREP_DL_BASE || undefined, protomaps: env.NORWINPREP_PROTOMAPS_BASE || undefined
   });
   share = new Share({
     dataDir: app.getPath('userData'), onActive: (on) => kolibri.setShared(on),
-    makeServer: () => createShare({ siteDir, kolibriInfo: () => kolibri.info(), siteRoot: (d) => modules.siteRoot(d), siteList: () => modules.listSites(), mapsDir: path.join(dataDir, 'maps'), appsDir: path.join(dataDir, 'apps'), reader, getName: () => name, version: app.getVersion() })
+    makeServer: () => createShare({ siteDir, ai, kolibriInfo: () => kolibri.info(), siteRoot: (d) => modules.siteRoot(d), siteList: () => modules.listSites(), mapsDir: path.join(dataDir, 'maps'), appsDir: path.join(dataDir, 'apps'), reader, getName: () => name, version: app.getVersion() })
   });
   // start with the device: on the very first run turn "launch at startup" on (the user can switch it off in the connections panel)
   const autostart = new Autostart({ platform: process.platform, exec: process.env.APPIMAGE || process.execPath, app, args: process.argv.slice(1).filter((a) => a === '--kiosk' || a === '--no-sandbox') });
@@ -99,7 +101,7 @@ async function startServer() {
   reader.restart().catch(() => {});             // start the reader if a content pack is already installed
   share.resume().catch(() => {});               // and resume sharing over Wi-Fi if it was on when the app last ran
   server = create({
-    siteDir, filesDir, modules, kolibri, mapsDir: path.join(dataDir, 'maps'), appsDir: path.join(dataDir, 'apps'), reader, share, autostart,
+    siteDir, filesDir, modules, kolibri, ai, mapsDir: path.join(dataDir, 'maps'), appsDir: path.join(dataDir, 'apps'), reader, share, autostart,
     getName: () => name, setName: (n) => { name = n; saveName(n); },
     version: app.getVersion(), platform: process.platform === 'win32' ? 'windows' : process.platform,
     arch: ARCH, packaging: detectPackaging(), update: makeUpdater()
@@ -221,5 +223,5 @@ app.on('window-all-closed', () => app.quit());
 let quitting = false;
 app.on('before-quit', (e) => {      // bring the hotspot down and stop the reader before exiting, so Wi-Fi comes back
   if (quitting) return; quitting = true; e.preventDefault();
-  Promise.all([share ? share.shutdown().catch(() => {}) : null, reader ? reader.stop().catch(() => {}) : null, kolibri ? kolibri.stop().catch(() => {}) : null]).then(() => { try { server.stop(); } catch (x) { /* ignore */ } app.exit(0); });
+  Promise.all([share ? share.shutdown().catch(() => {}) : null, reader ? reader.stop().catch(() => {}) : null, kolibri ? kolibri.stop().catch(() => {}) : null, ai ? ai.stop().catch(() => {}) : null]).then(() => { try { server.stop(); } catch (x) { /* ignore */ } app.exit(0); });
 });

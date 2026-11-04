@@ -175,6 +175,7 @@
     <button class="sq mono" data-t="library">Library</button>
     <button class="sq mono" data-t="education">Education</button>
     <button class="sq mono" data-t="maps">Maps</button>
+    <button class="sq mono" data-t="ai">AI</button>
     <button class="sq mono" data-t="tools">Tools</button>
     <button class="sq mono" data-t="apps">Apps</button>
   </div>
@@ -296,9 +297,9 @@
     b.appendChild(bv); f.appendChild(b);
     return f;
   }
-  var CATS = ['library', 'education', 'maps', 'tools', 'apps'];
+  var CATS = ['library', 'education', 'maps', 'ai', 'tools', 'apps'];
   function catOf(m) { return CATS.indexOf(m.category) >= 0 ? m.category : (m.type === 'maps' ? 'maps' : m.type === 'app' ? 'apps' : m.type === 'tool' ? 'tools' : 'library'); }
-  function typeLabel(t) { return t === 'app' ? 'App' : t === 'maps' ? 'Map' : t === 'tool' ? 'Tool' : 'Content'; }
+  function typeLabel(t) { return t === 'model' ? 'AI model' : t === 'app' ? 'App' : t === 'maps' ? 'Map' : t === 'tool' ? 'Tool' : 'Content'; }
   function openHref(m) { return base + (/^\/tools\/[a-z0-9-]+\/$/.test(m.open || '') ? m.open : m.type === 'maps' ? '/maps/' : m.type === 'app' ? '/apps/' : '/wiki/'); }
   function active(m) { return m.job && (m.job.state === 'queued' || m.job.state === 'running'); }
 
@@ -432,7 +433,7 @@
       md.appendChild(el('h3', null, m.name));
       var mb = el('div', 'mb'); mb.appendChild(el('div', null, m.description));
       var dl = el('dl', 'kv'); dl.style.marginTop = '14px';
-      var rows = [['Type', typeLabel(m.type)], ['From', m.by], ['Status', m.installed ? 'Installed (v' + m.version + ')' : 'Not installed']];
+      var rows = [['Type', typeLabel(m.type)], ['From', m.by]].concat(m.minRamGB ? [['Memory needed', 'about ' + m.minRamGB + ' GB']] : []).concat([['Status', m.installed ? 'Installed (v' + m.version + ')' : 'Not installed']]);
       if (m.latest) rows.push(['Latest', 'v' + m.latest]);
       if (m.installed) rows.push(['Size on disk', human(m.bytes)], ['Files', (m.files || []).join(', ')]);
       rows.forEach(function (r) { dl.appendChild(el('dt', null, r[0])); dl.appendChild(el('dd', null, String(r[1]))); });

@@ -117,6 +117,15 @@ function create(opts) {
       if (req.url.split('?')[0] === '/learn') { res.writeHead(302, { Location: '/learn/' }); return res.end(); }
       return opts.kolibri.proxy(req, res);
     }
+    // The offline AI assistant: /ai/api/* goes to the runner. Chat needs the page's own origin; switching models also needs the app header.
+    if (opts.ai && /^\/ai\/api\//.test(req.url.split('?')[0])) {
+      const o = req.headers.origin;
+      if (o && !origins().includes(o)) return send(403, 'text/plain', 'Forbidden');
+      const route = req.url.split('?')[0].slice('/ai/api'.length);
+      if (req.method === 'POST' && route === '/select' && req.headers['x-norwinprep'] !== '1') return send(403, 'text/plain', 'Forbidden');
+      if (req.method !== 'GET' && req.method !== 'POST') return send(405, 'text/plain', 'Method not allowed');
+      return opts.ai.handle(req, res, route, true);
+    }
     const writes = req.method === 'PUT' || req.method === 'POST' || req.method === 'DELETE';
     if (writes) {
       const o = req.headers.origin;
@@ -290,17 +299,22 @@ function createShare(opts) {
   const server = http.createServer((req, res) => {
     const head = req.method === 'HEAD';
     const send = (code, type, body) => { res.writeHead(code, { 'Content-Type': type, 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff' }); res.end(head ? undefined : body); };
-    if (req.method !== 'GET' && !head) return send(405, 'text/plain', 'Method not allowed');
     let p; try { p = decodeURIComponent(new URL(req.url, 'http://x').pathname); } catch (e) { return send(400, 'text/plain', 'Bad request'); }
+    if (opts.ai && (p === '/ai/api/chat' || p === '/ai/api/status')) {            // the only things a device on the Wi-Fi may do besides reading
+      if ((p === '/ai/api/chat') !== (req.method === 'POST')) return send(405, 'text/plain', 'Method not allowed');
+      const o = req.headers.origin; if (o) { try { if (new URL(o).host !== req.headers.host) return send(403, 'text/plain', 'Forbidden'); } catch (e) { return send(403, 'text/plain', 'Forbidden'); } }
+      return opts.ai.handle(req, res, p.slice('/ai/api'.length), false);
+    }
+    if (req.method !== 'GET' && !head) return send(405, 'text/plain', 'Method not allowed');
     if (p.includes('\0') || p.includes('\\') || p.split('/').includes('..')) return send(400, 'text/plain', 'Bad request');
     if (p === '/api/device') {
       res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store', 'Access-Control-Allow-Origin': '*' });
       return res.end(head ? undefined : JSON.stringify({ name: opts.getName(), mode: 'pi', version: opts.version, share: true, modules: false, address: 'http://' + (req.headers.host || ''),
-        hasLibrary: !!(opts.reader && opts.reader.ready()), hasMaps: listDir(opts.mapsDir, TILE_RE).length > 0, hasApps: listDir(opts.appsDir, ASSET_FILE_RE).length > 0, tools: opts.siteList ? opts.siteList() : [], kolibri: opts.kolibriInfo ? opts.kolibriInfo() : null }));
+        hasLibrary: !!(opts.reader && opts.reader.ready()), hasMaps: listDir(opts.mapsDir, TILE_RE).length > 0, hasApps: listDir(opts.appsDir, ASSET_FILE_RE).length > 0, tools: opts.siteList ? opts.siteList() : [], kolibri: opts.kolibriInfo ? opts.kolibriInfo() : null, ai: opts.ai ? { ready: opts.ai.engineInstalled() && opts.ai.models().length > 0 } : null }));
     }
     if (serveContent(req, res, p, head, opts)) return;
     // only the portal and the map viewer are public; the store, settings and updates are not
-    const rel = p === '/' ? 'portal.html' : p.startsWith('/maps/') ? (p.endsWith('/') ? p.slice(1) + 'index.html' : p.slice(1)) : null;
+    const rel = p === '/' ? 'portal.html' : (p === '/ai/' && opts.ai) ? 'ai/index.html' : p.startsWith('/maps/') ? (p.endsWith('/') ? p.slice(1) + 'index.html' : p.slice(1)) : null;
     if (!rel) return send(404, 'text/plain', 'Not found');
     const full = path.join(opts.siteDir, rel);
     if (!full.startsWith(opts.siteDir + path.sep)) return send(400, 'text/plain', 'Bad request');

@@ -29,6 +29,7 @@
       "modules-manager.js",
       "unzip.js",
       "kolibri.js",
+      "ai.js",
       "reader.js",
       "share.js",
       "site/**",

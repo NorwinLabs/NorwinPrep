@@ -6,6 +6,7 @@
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
+const os = require('os');
 const http = require('http');
 const https = require('https');
 const { spawn } = require('child_process');
@@ -31,7 +32,7 @@ function loadCatalog(file, platform) {
   for (const m of data.modules) {
     const i = m.install || {};
     if (!ID_RE.test(m.id || '') || seen.has(m.id)) throw new Error('bad or duplicate module id: ' + m.id);
-    if (!['content', 'maps', 'app', 'tool'].includes(m.type)) throw new Error('bad type for ' + m.id);
+    if (!['content', 'maps', 'app', 'tool', 'model'].includes(m.type)) throw new Error('bad type for ' + m.id);
     if (!['s', 'm', 'l', 'xl'].includes(m.sizeClass)) throw new Error('bad sizeClass for ' + m.id);
     if (i.kind === 'zim') {
       if (!/^[a-z0-9_]+$/.test(i.subdir || '') || !/^[A-Za-z0-9_.-]+$/.test(i.prefix || '')) throw new Error('bad zim spec for ' + m.id);
@@ -46,6 +47,10 @@ function loadCatalog(file, platform) {
     } else if (i.kind === 'static-site') {
       if (!/^[A-Za-z0-9._-]+\/[A-Za-z0-9._-]+$/.test(i.repo || '') || !/^[a-z0-9-]+$/.test(i.dir || '') || typeof i.asset !== 'string' || i.asset.length > 120) throw new Error('bad static-site spec for ' + m.id);
       new RegExp(i.asset);
+    } else if (i.kind === 'llama-cpp') {
+      if (!/^[A-Za-z0-9._-]+\/[A-Za-z0-9._-]+$/.test(i.repo || '')) throw new Error('bad llama-cpp spec for ' + m.id);
+    } else if (i.kind === 'gguf') {
+      if (!/^[A-Za-z0-9._-]+\/[A-Za-z0-9._-]+$/.test(i.repo || '') || !/^[A-Za-z0-9][A-Za-z0-9._-]{0,120}\.gguf$/.test(i.file || '') || (i.minRamGB !== undefined && !(i.minRamGB > 0 && i.minRamGB < 512))) throw new Error('bad gguf spec for ' + m.id);
     } else if (i.kind === 'python-wheel') {
       if (!/^[a-z0-9][a-z0-9._-]{0,60}$/.test(i.package || '') || !/^[a-z0-9-]+$/.test(i.dir || '')) throw new Error('bad python-wheel spec for ' + m.id);
     } else if (i.kind === 'bundled') {
@@ -94,7 +99,7 @@ class Manager {
   constructor(cfg) {
     this.cfg = Object.assign({ timeout: 30000, kiwix: 'https://download.kiwix.org', githubApi: 'https://api.github.com', githubDl: 'https://github.com',
       protomaps: 'https://build.protomaps.com', protomapsMeta: null, slug: 'NorwinLabs/NorwinPrepDisk', pmtilesRepo: 'protomaps/go-pmtiles', platform: process.platform,
-      arch: process.arch, pypi: 'https://pypi.org', pythonCheck: async () => true, onKolibriChange: async () => true, bundledDir: path.join(__dirname, 'site'), onLibraryChange: async () => true, run: spawn }, cfg);
+      arch: process.arch, pypi: 'https://pypi.org', hf: 'https://huggingface.co', onAiChange: async () => true, ramBytes: os.totalmem(), pythonCheck: async () => true, onKolibriChange: async () => true, bundledDir: path.join(__dirname, 'site'), onLibraryChange: async () => true, run: spawn }, cfg);
     this.mods = loadCatalog(this.cfg.catalog, this.cfg.platform === 'win32' ? 'windows' : this.cfg.platform);
     this.byid = Object.fromEntries(this.mods.map((m) => [m.id, m]));
     this.jobs = {}; this.queue = []; this.working = false; this.cache = new Map();
@@ -162,6 +167,16 @@ class Manager {
       const st = fs.statSync(bin);
       return { version: ver, files: ['kiwix-serve'], bytes: dirSize(dir), updated: st.mtimeMs / 1000 };
     }
+    if (i.kind === 'gguf') {
+      const f = path.join(this.cfg.dataDir, 'ai', 'models', i.file);
+      try { const st = fs.statSync(f); return { version: ((/-(Q\d[A-Za-z0-9_]*)\.gguf$/i.exec(i.file) || [])[1] || 'GGUF').toUpperCase(), files: [i.file], bytes: st.size, updated: st.mtimeMs / 1000 }; } catch (e) { return null; }
+    }
+    if (i.kind === 'llama-cpp') {
+      const dir = path.join(this.cfg.dataDir, 'ai', 'engine'), bin = path.join(dir, this.plat === 'windows' ? 'llama-server.exe' : 'llama-server');
+      if (!fs.existsSync(bin)) return null;
+      let ver = '?'; try { ver = fs.readFileSync(path.join(dir, 'VERSION'), 'utf8').trim(); } catch (e) { /* unknown */ }
+      return { version: ver, files: ['llama-server'], bytes: dirSize(dir), updated: fs.statSync(bin).mtimeMs / 1000 };
+    }
     if (i.kind === 'python-wheel') {
       const dir = path.join(this.cfg.dataDir, i.dir, 'app');
       try { const meta = JSON.parse(fs.readFileSync(path.join(dir, '.installed'), 'utf8')), st = fs.statSync(path.join(dir, '.installed'));
@@ -190,6 +205,7 @@ class Manager {
     if (i.kind === 'app') { const r = this.peek(['release', this.releaseUrl()]); return r ? r.tag.slice(1) : null; }
     if (i.kind === 'static-site') { const r = this.peek(['site', i.repo]); return r ? r.tag.replace(/^v/, '') : null; }
     if (i.kind === 'python-wheel') { const r = this.peek(['pypi', i.package]); return r ? r.version : null; }
+    if (i.kind === 'llama-cpp') { const r = this.peek(['llama', i.repo]); return r ? r.tag : null; }
     return null;
   }
   knownSize(m) {
@@ -206,7 +222,32 @@ class Manager {
     }
     if (i.kind === 'static-site') { const r = this.peek(['site', i.repo]); return r ? r.size : null; }
     if (i.kind === 'python-wheel') { const r = this.peek(['pypi', i.package]); return r ? r.size : null; }
+    if (i.kind === 'llama-cpp') { const r = this.peek(['llama', i.repo]); return r ? r.size : null; }
+    if (i.kind === 'gguf') { const t = this.peek(['hf', i.repo]); return t && t[i.file] ? t[i.file].size : null; }
     return null;
+  }
+  // The newest llama.cpp release and the one ready-made CPU build that fits this computer (llama-server is inside it).
+  async llamaRelease(m, force) {
+    const i = m.install, osTok = { linux: ['ubuntu', 'linux'], win32: ['win', 'windows'], darwin: ['macos'] }[this.cfg.platform], archTok = { x64: ['x64', 'x86_64', 'x86-64', 'amd64'], arm64: ['arm64', 'aarch64'] }[this.cfg.arch];
+    return this.cached(['llama', i.repo], async () => {
+      if (!osTok || !archTok) throw new ApiError(412, 'There is no ready-made AI engine for this computer (' + this.cfg.platform + ' ' + this.cfg.arch + ').');
+      const j = JSON.parse(await this.text(this.cfg.githubApi + '/repos/' + i.repo + '/releases/latest')), bad = /cuda|vulkan|hip|sycl|opencl|rocm|openvino|cudart|kleidiai|musa|radeon|xcframework|android|ios|rpc|aclnn|cann|bf16/i;
+      const words = (n) => n.toLowerCase().split(/[^a-z0-9_]+/);
+      const c = (j.assets || []).filter((a) => /^llama-/.test(a.name) && /\.(zip|tar\.gz|tgz)$/.test(a.name) && /^[A-Za-z0-9._-]+$/.test(a.name) && !bad.test(a.name)
+        && words(a.name).some((w) => osTok.includes(w)) && words(a.name).some((w) => archTok.includes(w))).sort((a, b) => a.size - b.size);
+      if (!c.length) throw new ApiError(412, 'There is no ready-made AI engine for this computer (' + this.cfg.platform + ' ' + this.cfg.arch + ') in the latest llama.cpp release.');
+      const a = c[0], dg = /^sha256:([0-9a-f]{64})$/i.exec(a.digest || '');
+      if (!/^[A-Za-z0-9._-]+$/.test(j.tag_name || '')) throw new ApiError(502, 'unexpected release tag');
+      return { tag: j.tag_name, name: a.name, size: Number(a.size || 0), sha: dg ? dg[1].toLowerCase() : null, url: this.cfg.githubDl + '/' + i.repo + '/releases/download/' + j.tag_name + '/' + a.name };
+    }, 3600000, force);
+  }
+  // File list of a Hugging Face model repo: size and SHA-256 of each file (from its LFS record).
+  async hfFiles(repo, force) {
+    return this.cached(['hf', repo], async () => {
+      const list = JSON.parse(await this.text(this.cfg.hf + '/api/models/' + repo + '/tree/main')), out = {};
+      for (const f of list) if (f && f.type !== 'directory' && /\.gguf$/.test(f.path || '')) out[f.path] = { size: Number(f.size || 0), sha: f.lfs && /^[0-9a-f]{64}$/.test(f.lfs.oid || '') ? f.lfs.oid : null };
+      return out;
+    }, 3600000, force);
   }
   // the newest wheel of a pure-Python package on PyPI (Kolibri). Only files.pythonhosted.org is trusted as the download host.
   async pypiRelease(m, force) {
@@ -254,6 +295,7 @@ class Manager {
     for (const m of this.mods) {
       const ins = this.installed(m), lat = this.latest(m);
       const item = {}; for (const k of ['id', 'type', 'name', 'tagline', 'description', 'by', 'source', 'icon', 'color', 'category', 'open']) if (m[k] !== undefined) item[k] = m[k];
+      if (m.install.minRamGB) item.minRamGB = m.install.minRamGB;
       item.installed = !!ins; item.sizeClass = m.sizeClass;
       if (!ins) { const ks = this.knownSize(m); if (ks) item.size = ks; }
       if (ins) { item.version = ins.version; item.bytes = ins.bytes; item.updated = Math.floor(ins.updated); item.files = ins.files; }
@@ -283,6 +325,14 @@ class Manager {
       } else if (i.kind === 'static-site') {
         const r = await this.siteRelease(m, true);
         Object.assign(res, { file: r.name, version: r.tag.replace(/^v/, ''), bytes: r.size });
+      } else if (i.kind === 'llama-cpp') {
+        const r = await this.llamaRelease(m, true);
+        Object.assign(res, { file: r.name, version: r.tag, bytes: r.size, note: 'A small program that runs AI models on your processor. It is installed automatically with your first model.' });
+      } else if (i.kind === 'gguf') {
+        const t = await this.hfFiles(i.repo, true), f = t[i.file]; if (!f) throw new ApiError(404, i.file + ' was not found on Hugging Face');
+        const ram = this.cfg.ramBytes, need = (i.minRamGB || 0) * 1073741824;
+        Object.assign(res, { file: i.file, version: ((/-(Q\d[A-Za-z0-9_]*)\.gguf$/i.exec(i.file) || [])[1] || 'GGUF').toUpperCase(), bytes: f.size,
+          note: i.minRamGB ? 'Wants about ' + i.minRamGB + ' GB of free memory; this computer has ' + (ram / 1073741824).toFixed(1) + ' GB in total.' + (need > ram * 0.8 ? ' That is probably too little: it may be very slow or fail.' : '') : '' });
       } else if (i.kind === 'python-wheel') {
         const r = await this.pypiRelease(m, true);
         Object.assign(res, { file: r.name, version: r.version, bytes: r.size, note: 'Needs Python ' + (r.requires || '3') + ' on this computer. Unpacked it takes about 3 times the download.' });
@@ -322,6 +372,8 @@ class Manager {
     };
     await Promise.all([worker(), worker(), worker(), worker()]);
     try { await this.latestRelease(true); } catch (e) { if (!(e instanceof HttpError)) throw e; }
+    for (const r of new Set(this.mods.filter((x) => x.install.kind === 'gguf').map((x) => x.install.repo))) { try { await this.hfFiles(r, true); } catch (e) { if (!(e instanceof HttpError) && !(e instanceof ApiError)) throw e; } }
+    for (const m of this.mods.filter((x) => x.install.kind === 'llama-cpp')) { try { await this.llamaRelease(m, true); } catch (e) { if (!(e instanceof HttpError) && !(e instanceof ApiError)) throw e; } }
     for (const m of this.mods.filter((x) => x.install.kind === 'python-wheel')) { try { await this.pypiRelease(m, true); } catch (e) { if (!(e instanceof HttpError) && !(e instanceof ApiError)) throw e; } }
     for (const m of this.mods.filter((x) => x.install.kind === 'static-site')) { try { await this.siteRelease(m, true); } catch (e) { if (!(e instanceof HttpError) && !(e instanceof ApiError)) throw e; } }
   }
@@ -346,7 +398,8 @@ class Manager {
           if (action === 'remove') await this.remove(m);
           else {
             if (m.type === 'content') await this.ensureReader(id);
-            await ({ zim: this.installZim, maps: this.installMaps, app: this.installApp, 'kiwix-tools': this.installReader, 'static-site': this.installSite, 'python-wheel': this.installWheel, bundled: this.installBundled })[m.install.kind].call(this, m);
+            if (m.type === 'model') await this.ensureEngine(id);
+            await ({ zim: this.installZim, maps: this.installMaps, app: this.installApp, 'kiwix-tools': this.installReader, 'static-site': this.installSite, 'python-wheel': this.installWheel, 'llama-cpp': this.installLlama, gguf: this.installGguf, bundled: this.installBundled })[m.install.kind].call(this, m);
           }
           this.set(id, { state: 'done', percent: 100, message: action === 'remove' ? 'Removed' : 'Installed' });
         } catch (e) {
@@ -512,6 +565,37 @@ class Manager {
     } finally { fs.rmSync(tmp, { recursive: true, force: true }); }
     await this.restartLibrary();
   }
+  async installLlama(m, jid) {       // the AI engine: llama.cpp's llama-server and the libraries beside it
+    jid = jid || m.id; const r = await this.llamaRelease(m, true);
+    this.needSpace(r.size * 3);
+    const base = this.d('ai'), tmp = fs.mkdtempSync(path.join(base, '.dl-')), part = path.join(tmp, r.name);
+    try {
+      await this.download(jid, r.url, part, r.sha, 'AI engine: ');
+      this.set(jid, { percent: 99, message: 'Unpacking…' });
+      const out = path.join(tmp, 'x');
+      if (/\.zip$/.test(r.name)) unzip(fs.readFileSync(part), out, 1500 * 1024 * 1024); else await this.extract(part, out);
+      const bin = this.findFile(out, this.plat === 'windows' ? 'llama-server.exe' : 'llama-server');
+      if (!bin) throw new ApiError(502, 'llama-server was not in the download');
+      const dest = path.join(base, 'engine'); await this.cfg.onAiChange('stop'); fs.rmSync(dest, { recursive: true, force: true }); fs.mkdirSync(dest, { recursive: true });
+      for (const f of fs.readdirSync(path.dirname(bin))) { const s = path.join(path.dirname(bin), f); if (fs.statSync(s).isFile()) fs.copyFileSync(s, path.join(dest, f)); }
+      fs.chmodSync(path.join(dest, path.basename(bin)), 0o755); fs.writeFileSync(path.join(dest, 'VERSION'), r.tag + '\n');
+    } finally { fs.rmSync(tmp, { recursive: true, force: true }); }
+  }
+  async ensureEngine(forId) {          // the first model pulls the engine in automatically
+    const em = this.mods.find((x) => x.install.kind === 'llama-cpp'); if (!em || this.installed(em)) return;
+    this.set(forId, { message: 'Installing the AI engine first…' });
+    await this.installLlama(em, forId);
+  }
+  async installGguf(m) {              // one model file from Hugging Face, checked against the SHA-256 Hugging Face records for it
+    const i = m.install, t = await this.hfFiles(i.repo, true), f = t[i.file];
+    if (!f) throw new ApiError(404, i.file + ' was not found on Hugging Face');
+    if (!f.sha) throw new ApiError(502, 'Hugging Face published no checksum for ' + i.file);
+    const dir = path.join(this.d('ai'), 'models'); fs.mkdirSync(dir, { recursive: true });
+    const part = path.join(dir, '.' + i.file + '.part'); let have = 0; try { have = fs.statSync(part).size; } catch (e) { /* none */ }
+    this.needSpace(Math.max(0, f.size - have));
+    await this.download(m.id, this.cfg.hf + '/' + i.repo + '/resolve/main/' + i.file, part, f.sha, m.name + ': ');
+    fs.renameSync(part, path.join(dir, i.file));
+  }
   async installWheel(m) {            // Kolibri: needs Python on this computer; the wheel is unpacked and run in place
     const i = m.install, r = await this.pypiRelease(m, true);
     try { await this.cfg.pythonCheck(r.requires); } catch (e) { throw new ApiError(412, e.message); }
@@ -556,6 +640,8 @@ class Manager {
     const ins = this.installed(m); if (!ins) throw new ApiError(404, 'Not installed');
     const k = m.install.kind;
     if (k === 'kiwix-tools') { fs.rmSync(path.join(this.cfg.dataDir, 'reader'), { recursive: true, force: true }); await this.restartLibrary(); return; }
+    if (k === 'gguf') { await this.cfg.onAiChange('stop'); fs.unlinkSync(path.join(this.d('ai'), 'models', m.install.file)); return; }
+    if (k === 'llama-cpp') { await this.cfg.onAiChange('stop'); fs.rmSync(path.join(this.d('ai'), 'engine'), { recursive: true, force: true }); return; }
     if (k === 'python-wheel') {            // the program goes; accounts and lessons in <data>/<dir>/home stay
       await this.cfg.onKolibriChange('stop'); fs.rmSync(path.join(this.cfg.dataDir, m.install.dir, 'app'), { recursive: true, force: true }); return;
     }
