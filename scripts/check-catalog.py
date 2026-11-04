@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """Check every module in the catalog against the REAL download servers (needs internet). Exit 1 if any module would fail.
    python3 scripts/check-catalog.py [catalog.json]"""
-import json, re, sys, urllib.request, urllib.error
+import json, re, sys, functools, urllib.request, urllib.error
+print = functools.partial(print, flush=True)
 
 CAT = sys.argv[1] if len(sys.argv) > 1 else "app/shared/site/catalog.json"
 KIWIX, PM, GH = "https://download.kiwix.org", "https://build.protomaps.com", "https://api.github.com"
@@ -9,7 +10,7 @@ UA = {"User-Agent": "norwinprep-catalog-check"}
 
 def get(url, method="GET", n=None):
     req = urllib.request.Request(url, headers=UA, method=method)
-    with urllib.request.urlopen(req, timeout=60) as r:
+    with urllib.request.urlopen(req, timeout=20) as r:
         return r.status, dict(r.headers), (r.read(n).decode("utf-8", "replace") if method == "GET" else "")
 
 def probe(url):

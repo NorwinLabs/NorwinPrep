@@ -8,7 +8,8 @@ on:
 jobs:
   check:
     runs-on: ubuntu-latest
+    timeout-minutes: 8
     steps:
       - uses: actions/checkout@v4
       - name: Every module against the real download servers
-        run: python3 scripts/check-catalog.py
+        run: python3 -u scripts/check-catalog.py
