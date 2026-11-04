@@ -31,7 +31,7 @@ Options (append after `-s --` for the one-liner): `--content survival|small|medi
 set of a few GB), `--no-hotspot`. If the Pi is currently online through Wi-Fi, the installer skips starting the hotspot (it would
 disconnect you) and tells you how to start it later with `sudo /opt/norwinprep/scripts/setup-hotspot.sh`.
 
-Change the Wi-Fi name/password in `/etc/norwinprep.conf` (defaults: `NorwinPrep` / `prepared123`), then rerun `setup-hotspot.sh`.
+Change the Wi-Fi name/password in `/etc/norwinprep.conf` (defaults: `NorwinPrep` / `NORWINNOMAD`; existing installs keep the password already in their file), then rerun `setup-hotspot.sh`.
 Uninstall with `sudo /opt/norwinprep/scripts/uninstall.sh` (add `--purge` to delete downloaded content too).
 
 ## Install on any device, share over Wi-Fi
@@ -40,7 +40,7 @@ The desktop app (Windows, Linux x64/arm64/armv7l incl. Raspberry Pi) is its own 
 Content Reader **onto the device you are using** (default connection: "This device"). No Pi and no PIN are needed. Connecting to a headless
 Pi (PIN-protected) is optional.
 
-- **Share over Wi-Fi** (connections icon): turns this device's Wi-Fi into a hotspot (`NorwinPrep`, random password shown in the app,
+- **Share over Wi-Fi** (connections icon): turns this device's Wi-Fi into a hotspot (`NorwinPrep`, password `NORWINNOMAD`,
   Linux/NetworkManager only; refused if Wi-Fi is your only internet link unless you force it) and starts a read-only server. Devices that join
   open `http://10.42.0.1:<port>` and get a landing page with the library, maps and hosted apps. Nothing there can install or change anything.
 - Content packs are read through a Kiwix reader (`kiwix-tools`), downloaded on demand as the "Content Reader" tool.

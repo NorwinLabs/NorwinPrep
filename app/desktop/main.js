@@ -8,6 +8,7 @@ const { create, createShare, NAME_RE } = require('./local-server');
 const { Manager } = require('./modules-manager');
 const { Reader } = require('./reader');
 const { Share } = require('./share');
+const { Autostart } = require('./autostart');
 const updaterLib = require('./updater');
 const { spawn, execFile } = require('child_process');
 
@@ -86,10 +87,16 @@ async function startServer() {
     dataDir: app.getPath('userData'),
     makeServer: () => createShare({ siteDir, mapsDir: path.join(dataDir, 'maps'), appsDir: path.join(dataDir, 'apps'), reader, getName: () => name, version: app.getVersion() })
   });
+  // start with the device: on the very first run turn "launch at startup" on (the user can switch it off in the connections panel)
+  const autostart = new Autostart({ platform: process.platform, exec: process.env.APPIMAGE || process.execPath, app, args: process.argv.slice(1).filter((a) => a === '--kiosk' || a === '--no-sandbox') });
+  if (!SELFTEST && !process.env.NORWINPREP_NO_AUTOSTART) {
+    const mark = path.join(app.getPath('userData'), 'autostart-initialised');
+    if (!fs.existsSync(mark)) { try { autostart.set(true); fs.writeFileSync(mark, '1'); } catch (e) { /* not fatal */ } }
+  }
   reader.restart().catch(() => {});             // start the reader if a content pack is already installed
   share.resume().catch(() => {});               // and resume sharing over Wi-Fi if it was on when the app last ran
   server = create({
-    siteDir, filesDir, modules, mapsDir: path.join(dataDir, 'maps'), appsDir: path.join(dataDir, 'apps'), reader, share,
+    siteDir, filesDir, modules, mapsDir: path.join(dataDir, 'maps'), appsDir: path.join(dataDir, 'apps'), reader, share, autostart,
     getName: () => name, setName: (n) => { name = n; saveName(n); },
     version: app.getVersion(), platform: process.platform === 'win32' ? 'windows' : process.platform,
     arch: ARCH, packaging: detectPackaging(), update: makeUpdater()

@@ -25,7 +25,7 @@ const nm = (calls, ...a) => calls.filter((c) => c[0] === 'nmcli' && a.every((x, 
   let { sh, calls, st, dir } = harness();
   let s = await sh.status(); ok(s.supported && !s.active, 'supported on Linux with a Wi-Fi adapter');
   s = await sh.set(true);
-  ok(s.active && s.ssid === 'NorwinPrep' && /^[A-Za-z0-9]{10}$/.test(s.password) && s.url.startsWith('http://10.42.0.1'), 'turning sharing on: hotspot + random password + address ' + s.url);
+  ok(s.active && s.ssid === 'NorwinPrep' && s.password === 'NORWINNOMAD' && s.url.startsWith('http://10.42.0.1'), 'turning sharing on: hotspot + the NORWINNOMAD password + address ' + s.url);
   const add = nm(calls, 'connection', 'add')[0];
   ok(add && add.includes('wlan0') && add.includes('ipv4.method') && add[add.indexOf('ipv4.method') + 1] === 'shared' && add[add.indexOf('802-11-wireless.mode') + 1] === 'ap' && add[add.indexOf('wifi-sec.key-mgmt') + 1] === 'wpa-psk' && add[add.indexOf('autoconnect') + 1] === 'no', 'the hotspot is WPA2, shared-mode, not auto-connecting at boot');
   ok(nm(calls, 'connection', 'up').length === 1 && (await get(sh.port, '/')).body.includes('PORTAL'), 'brought up, and the share server answers for devices that join');
@@ -51,12 +51,26 @@ const nm = (calls, ...a) => calls.filter((c) => c[0] === 'nmcli' && a.every((x, 
   // hostile saved settings are ignored, never passed to nmcli
   ({ sh, calls, st, dir } = harness({})); fs.writeFileSync(path.join(dir, 'share.json'), JSON.stringify({ on: false, ssid: 'x"; rm -rf /', password: 'a b' }));
   sh = new Share({ dataDir: dir, platform: 'linux', exec: sh.o.exec, makeServer: sh.o.makeServer, ports: [0] }); s = await sh.set(true);
-  ok(s.ssid === 'NorwinPrep' && /^[A-Za-z0-9]{10}$/.test(s.password), 'tampered ssid/password in the saved file are replaced by safe defaults'); await sh.set(false);
+  ok(s.ssid === 'NorwinPrep' && s.password === 'NORWINNOMAD', 'tampered ssid/password in the saved file are replaced by safe defaults'); await sh.set(false);
 
   // resume / shutdown
   ({ sh, calls, st, dir } = harness()); await sh.set(true); await sh.shutdown(); ok(!(await sh.status()).active && JSON.parse(fs.readFileSync(path.join(dir, 'share.json'))).on === true, 'quitting the app stops the hotspot but remembers you wanted sharing');
   const sh2 = new Share({ dataDir: dir, platform: 'linux', exec: sh.o.exec, makeServer: sh.o.makeServer, ports: [0] }); await sh2.resume(); ok((await sh2.status()).active, 'next launch resumes sharing automatically'); await sh2.set(false);
   ok(JSON.parse(fs.readFileSync(path.join(dir, 'share.json'))).on === false, 'turning it off yourself is remembered');
+  // start with the app: the Wi-Fi comes up by itself (default), unless switched off or it would cut the internet
+  ({ sh, calls, st, dir } = harness()); s = await sh.status(); ok(s.auto === true, 'start-Wi-Fi-at-launch is on by default');
+  await sh.resume(); ok((await sh.status()).active && nm(calls, 'connection', 'up').length === 1, 'a fresh launch starts the hotspot with no clicks'); await sh.shutdown();
+  await sh.set(false); await sh.setAuto(false); const sh3 = new Share({ dataDir: dir, platform: 'linux', exec: sh.o.exec, makeServer: sh.o.makeServer, ports: [0] }); await sh3.resume();
+  ok(!(await sh3.status()).active && (await sh3.status()).auto === false, 'with the option off, launching does not start it');
+  ({ sh, calls, st } = harness()); st.route = 'wlan0'; await sh.resume(); ok(!(await sh.status()).active && nm(calls, 'connection', 'add').length === 0, 'the automatic start never takes over a Wi-Fi internet link');
+  // launch the app when the device starts
+  const { Autostart } = require('../autostart'); const home = fs.mkdtempSync(path.join(os.tmpdir(), 'nphome-'));
+  const au = new Autostart({ platform: 'linux', home, exec: '/opt/Norwin Prep/norwinprep', args: ['--no-sandbox', '--kiosk'] });
+  ok(au.get() === false, 'autostart starts off'); au.set(true);
+  const df = fs.readFileSync(path.join(home, '.config/autostart/norwinprep.desktop'), 'utf8');
+  ok(au.get() && /^Exec="\/opt\/Norwin Prep\/norwinprep" "--no-sandbox" "--kiosk"$/m.test(df) && /^Type=Application$/m.test(df), 'autostart writes a valid XDG entry (quoted path and flags)');
+  au.set(false); ok(!au.get(), 'and removes it again');
+  let bad = false; try { new Autostart({ platform: 'linux', home, exec: '/x\nExec=evil', args: [] }).set(true); } catch (e) { bad = true; } ok(bad, 'a program path with a newline is refused');
   // rapid toggles do not race
   ({ sh, calls } = harness()); await Promise.all([sh.set(true), sh.set(false), sh.set(true), sh.set(false)]); ok(!(await sh.status()).active && nm(calls, 'connection', 'up').length === nm(calls, 'connection', 'down').length, 'rapid on/off/on/off ends cleanly off');
   console.log(fails ? fails + ' FAILED' : 'ALL PASSED'); process.exit(fails ? 1 : 0);

@@ -118,6 +118,16 @@
       .then(function (j) { shareState = j; shareMsg = ''; refreshUi(); })
       .catch(function (e) { shareMsg = e.message; shareState = Object.assign({}, shareState); shareState.needForce = /online through its Wi-Fi/.test(e.message); refreshUi(); });
   }
+  function setPref(body) {
+    return jf('/api/share', { method: 'POST', headers: Object.assign({ 'Content-Type': 'application/json' }, H), body: JSON.stringify(body) })
+      .then(function (j) { shareState = j; refreshUi(); }).catch(function (e) { shareMsg = e.message; refreshUi(); });
+  }
+  function prefRow(label, on, key) {
+    var row = el('label', 'note'); row.style.cssText = 'display:flex;gap:8px;align-items:center;margin-top:8px;cursor:pointer';
+    var cb = document.createElement('input'); cb.type = 'checkbox'; cb.checked = !!on; cb.setAttribute('data-pref', key);
+    cb.addEventListener('change', function () { var b = {}; b[key] = cb.checked; setPref(b); });
+    row.appendChild(cb); row.appendChild(document.createTextNode(label)); return row;
+  }
   function shareSection() {
     var st = shareState;
     if (!st || (!st.supported && !(dev0 && dev0.platform === 'linux'))) return null;
@@ -134,7 +144,10 @@
     var b = el('button', 'btn sm ' + (st.active ? '' : 'solid'), st.active ? 'Stop sharing' : 'Start sharing'); b.type = 'button';
     b.addEventListener('click', function () { setShare(!st.active, false); }); row.appendChild(b);
     if (st.needForce && !st.active) { var f = el('button', 'btn sm warn', 'Share anyway'); f.type = 'button'; f.addEventListener('click', function () { setShare(true, true); }); row.appendChild(f); }
-    box.appendChild(row); return box;
+    box.appendChild(row);
+    box.appendChild(prefRow('Start the Wi-Fi automatically when the app opens', st.auto, 'auto'));
+    if (st.launchAtStartup !== undefined) box.appendChild(prefRow('Open this app when the device starts', st.launchAtStartup, 'launchAtStartup'));
+    return box;
   }
 
   function buildPanel(box) {

@@ -134,12 +134,16 @@ function create(opts) {
     // ---- share over Wi-Fi (start / stop the hotspot and the read-only content server) ----
     if (p === '/api/share') {
       if (!opts.share) return json(200, { supported: false });
-      if (!writes) return void opts.share.status().then((r) => json(200, r), () => json(500, { error: 'Server error' }));
+      const withLaunch = (r) => Object.assign({}, r, opts.autostart ? { launchAtStartup: opts.autostart.get() } : {});
+      if (!writes) return void opts.share.status().then((r) => json(200, withLaunch(r)), () => json(500, { error: 'Server error' }));
       let body = '';
       req.on('data', (c) => { body += c; if (body.length > 1024) req.destroy(); });
       req.on('end', () => {
         let b; try { b = JSON.parse(body || '{}'); } catch (e) { return json(400, { error: 'invalid JSON' }); }
-        opts.share.set(!!b.on, !!b.force).then((r) => json(200, r), (e) => json(e.code || 500, { error: e.message || 'Server error' }));
+        try { if (typeof b.launchAtStartup === 'boolean' && opts.autostart) opts.autostart.set(b.launchAtStartup); } catch (e) { return json(500, { error: 'Could not change the startup setting' }); }
+        const done = (r) => json(200, withLaunch(r)), bad = (e) => json(e.code || 500, { error: e.message || 'Server error' });
+        if (typeof b.auto === 'boolean') opts.share.setAuto(b.auto);
+        if (typeof b.on === 'boolean') opts.share.set(b.on, !!b.force).then(done, bad); else opts.share.status().then(done, bad);
       });
       return;
     }
