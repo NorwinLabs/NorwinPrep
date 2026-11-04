@@ -70,6 +70,9 @@ for m in mods:
     elif k == "static-site":
         try:
             rel = json.loads(get("%s/repos/%s/releases/latest" % (GH, i["repo"]))[2])
+            print("     latest release of %s: tag=%r name=%r assets=%s" % (i["repo"], rel.get("tag_name"), rel.get("name"), [(x["name"], x.get("size"), x.get("digest")) for x in rel["assets"]]))
+            for r2 in json.loads(get("%s/repos/%s/releases?per_page=6" % (GH, i["repo"]))[2]):
+                print("     release %r prerelease=%s assets=%s" % (r2.get("tag_name"), r2.get("prerelease"), [x["name"] for x in r2["assets"]]))
             a = [x for x in rel["assets"] if re.match(i["asset"], x["name"])]
             if not a: report(m, False, "no release asset matches %s (assets: %s)" % (i["asset"], ", ".join(x["name"] for x in rel["assets"][:8]))); continue
             import io, zipfile
