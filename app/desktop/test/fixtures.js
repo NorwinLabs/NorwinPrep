@@ -45,10 +45,10 @@ const server = http.createServer((q, r) => {
     return out(200, JSON.stringify({ tag_name: 'v10.0.0', assets: [{ name: 'other.txt', size: 1 }, { name: 'CyberChef_v10.0.0.zip', size: z.length, digest: F.cyberDigest ? 'sha256:' + (F.cyberDigest === 'wrong' ? '0'.repeat(64) : sha(z)) : undefined }] }));
   }
   if (p === '/gchq/CyberChef/releases/download/v10.0.0/CyberChef_v10.0.0.zip') return out(200, F.cyber === 'evil' ? ZIP_EVIL : F.cyber === 'folder' ? ZIP_FOLDER : ZIP_GOOD);
-  if (p === '/repos/ggml-org/llama.cpp/releases/latest') {
+  if (p === '/repos/ggml-org/llama.cpp/releases') {            // newest first; the repo's newest release is a nightly stub with no binaries, the build is the one before it
     const t = 'b9999', mk = (n, size, z) => ({ name: n, size: size || (z || LLAMA_ZIP).length, digest: F.llamaSha === 'none' ? undefined : 'sha256:' + (F.llamaSha === 'bad' ? '2'.repeat(64) : sha(z || LLAMA_ZIP)) });
-    return out(200, JSON.stringify({ tag_name: t, assets: [mk('llama-' + t + '-bin-ubuntu-vulkan-x64.zip', 900000000, Buffer.from('v')), mk('llama-' + t + '-bin-ubuntu-x64.zip'), mk('llama-' + t + '-bin-win-cuda-12.4-x64.zip', 800000000, Buffer.from('c')),
-      mk('llama-' + t + '-bin-win-cpu-x64.zip'), mk('llama-' + t + '-bin-macos-arm64.zip'), mk('cudart-llama-bin-win-cuda-12.4-x64.zip', 400000000, Buffer.from('r')), mk('llama-' + t + '-xcframework.zip', 100, Buffer.from('i'))] }));
+    return out(200, JSON.stringify([{ tag_name: 'v0.9.0', assets: [{ name: 'nightly-tag.txt', size: 7 }] }, { tag_name: 'b9998', prerelease: true, assets: [mk('llama-b9998-bin-ubuntu-x64.zip')] }, { tag_name: t, assets: [mk('llama-' + t + '-bin-ubuntu-vulkan-x64.zip', 900000000, Buffer.from('v')), mk('llama-' + t + '-bin-ubuntu-x64.zip'), mk('llama-' + t + '-bin-win-cuda-12.4-x64.zip', 800000000, Buffer.from('c')),
+      mk('llama-' + t + '-bin-win-cpu-x64.zip'), mk('llama-' + t + '-bin-macos-arm64.zip'), mk('cudart-llama-bin-win-cuda-12.4-x64.zip', 400000000, Buffer.from('r')), mk('llama-' + t + '-xcframework.zip', 100, Buffer.from('i'))] }]));
   }
   m = p.match(/^\/ggml-org\/llama\.cpp\/releases\/download\/b9999\/(llama-b9999-bin-(?:ubuntu-x64|win-cpu-x64|macos-arm64)\.zip)$/); if (m) return out(200, LLAMA_ZIP);
   if (p === '/api/models/Qwen/Qwen2.5-0.5B-Instruct-GGUF/tree/main') return out(200, JSON.stringify([{ type: 'file', path: 'README.md', size: 10 }, { type: 'file', path: 'qwen2.5-0.5b-instruct-q4_k_m.gguf', size: GGUF.length, lfs: { oid: F.ggufSha === 'nolfs' ? undefined : sha(GGUF), size: GGUF.length } }]));

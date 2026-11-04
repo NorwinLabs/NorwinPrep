@@ -85,7 +85,9 @@ for m in mods:
         except Exception as e: report(m, False, str(e))
     elif k == "llama-cpp":
         try:
-            rel = json.loads(get("%s/repos/%s/releases/latest" % (GH, i["repo"]))[2]); bad_re = re.compile(r"cuda|vulkan|hip|sycl|opencl|rocm|openvino|cudart|kleidiai|musa|radeon|xcframework|android|ios|rpc|aclnn|cann|bf16", re.I)
+            allr = json.loads(get("%s/repos/%s/releases?per_page=20" % (GH, i["repo"]))[2])
+            print("     recent releases:", [(r["tag_name"], r.get("prerelease"), len(r["assets"])) for r in allr[:6]])
+            rel = [r for r in allr if not r.get("draft") and not r.get("prerelease") and re.match(r"^b\d+$", r["tag_name"]) and any(x["name"].startswith("llama-") and re.search(r"\.(zip|tar\.gz|tgz)$", x["name"]) for x in r["assets"])][0]; bad_re = re.compile(r"cuda|vulkan|hip|sycl|opencl|rocm|openvino|cudart|kleidiai|musa|radeon|xcframework|android|ios|rpc|aclnn|cann|bf16", re.I)
             for label, os_t, arch_t in (("linux-x64", ("ubuntu", "linux"), ("x64", "x86_64", "x86-64", "amd64")), ("linux-arm64", ("ubuntu", "linux"), ("arm64", "aarch64")), ("windows-x64", ("win", "windows"), ("x64", "x86_64", "amd64")), ("windows-arm64", ("win", "windows"), ("arm64", "aarch64")), ("macos-arm64", ("macos",), ("arm64", "aarch64")), ("macos-x64", ("macos",), ("x64", "x86_64"))):
                 hit = [x for x in rel["assets"] if x["name"].startswith("llama-") and re.search(r"\.(zip|tar\.gz|tgz)$", x["name"]) and not bad_re.search(x["name"])
                        and any(w in os_t for w in re.split(r"[^a-z0-9_]+", x["name"].lower())) and any(w in arch_t for w in re.split(r"[^a-z0-9_]+", x["name"].lower()))]
@@ -171,7 +173,8 @@ for mdl in ("llama3.2:1b", "llama3.2:3b", "qwen2.5:0.5b", "qwen2.5:1.5b", "qwen2
 
 # ---- facts for a leaner AI engine: llama.cpp's llama-server + GGUF models straight from Hugging Face (informational) ----
 try:
-    rel = json.loads(get("%s/repos/ggml-org/llama.cpp/releases/latest" % GH)[2])
+    rel = json.loads(get("%s/repos/ggml-org/llama.cpp/releases?per_page=20" % GH)[2])
+    rel = [r for r in rel if re.match(r"^b\d+$", r["tag_name"]) and r["assets"]][0]
     print("\n--- llama.cpp %s ---" % rel.get("tag_name"))
     for x in rel["assets"]: print("  asset %-60s %11d  %s" % (x["name"], x["size"], x.get("digest")))
 except Exception as e: print("llama.cpp release probe failed:", e)

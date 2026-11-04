@@ -231,8 +231,11 @@ class Manager {
     const i = m.install, osTok = { linux: ['ubuntu', 'linux'], win32: ['win', 'windows'], darwin: ['macos'] }[this.cfg.platform], archTok = { x64: ['x64', 'x86_64', 'x86-64', 'amd64'], arm64: ['arm64', 'aarch64'] }[this.cfg.arch];
     return this.cached(['llama', i.repo], async () => {
       if (!osTok || !archTok) throw new ApiError(412, 'There is no ready-made AI engine for this computer (' + this.cfg.platform + ' ' + this.cfg.arch + ').');
-      const j = JSON.parse(await this.text(this.cfg.githubApi + '/repos/' + i.repo + '/releases/latest')), bad = /cuda|vulkan|hip|sycl|opencl|rocm|openvino|cudart|kleidiai|musa|radeon|xcframework|android|ios|rpc|aclnn|cann|bf16/i;
+      // "latest" is not the build release here (it is a nightly stub); the binaries are in the newest bNNNN release that has them
+      const all = JSON.parse(await this.text(this.cfg.githubApi + '/repos/' + i.repo + '/releases?per_page=20')), bad = /cuda|vulkan|hip|sycl|opencl|rocm|openvino|cudart|kleidiai|musa|radeon|xcframework|android|ios|rpc|aclnn|cann|bf16/i;
       const words = (n) => n.toLowerCase().split(/[^a-z0-9_]+/);
+      const j = (Array.isArray(all) ? all : []).filter((r) => r && !r.draft && !r.prerelease && /^b\d+$/.test(r.tag_name || '') && (r.assets || []).some((a) => /^llama-/.test(a.name || '') && /\.(zip|tar\.gz|tgz)$/.test(a.name || '')))[0];
+      if (!j) throw new ApiError(502, 'No llama.cpp build release was found');
       const c = (j.assets || []).filter((a) => /^llama-/.test(a.name) && /\.(zip|tar\.gz|tgz)$/.test(a.name) && /^[A-Za-z0-9._-]+$/.test(a.name) && !bad.test(a.name)
         && words(a.name).some((w) => osTok.includes(w)) && words(a.name).some((w) => archTok.includes(w))).sort((a, b) => a.size - b.size);
       if (!c.length) throw new ApiError(412, 'There is no ready-made AI engine for this computer (' + this.cfg.platform + ' ' + this.cfg.arch + ') in the latest llama.cpp release.');
