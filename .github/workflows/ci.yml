@@ -149,10 +149,11 @@ jobs:
         run: |
           mkdir -p /tmp/jt
           M=app/android/app/src/main/java/com/norwinlabs/norwinprep; T=app/android/app/src/test/java/com/norwinlabs/norwinprep
-          javac -d /tmp/jt $M/LocalServer.java $M/ReleaseClient.java $M/MiniJson.java $M/ModuleManager.java $T/LocalServerTest.java $T/ReleaseClientTest.java $T/ModuleManagerTest.java
+          javac -d /tmp/jt $M/LocalServer.java $M/ReleaseClient.java $M/MiniJson.java $M/ModuleManager.java $M/ShareServer.java $T/LocalServerTest.java $T/ReleaseClientTest.java $T/ModuleManagerTest.java $T/ShareServerTest.java
           java -cp /tmp/jt com.norwinlabs.norwinprep.LocalServerTest
           java -cp /tmp/jt com.norwinlabs.norwinprep.ReleaseClientTest
           java -cp /tmp/jt com.norwinlabs.norwinprep.ModuleManagerTest
+          java -cp /tmp/jt com.norwinlabs.norwinprep.ShareServerTest
       - name: Build signed release APK
         env:
           # optional repository secrets; without them the checked-in keystore (app/android/norwinprep.keystore) is used

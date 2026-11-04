@@ -145,6 +145,16 @@ public class ModuleManagerTest {
         LocalServer srv = new LocalServer(p -> { throw new java.io.FileNotFoundException(p); }, dev, files, null, mm, f -> { opened.add(f); return null; });
         int port = srv.start(0);
 
+        ok(call(port, "GET", "/api/share", null)[1].contains("\"supported\":false"), "no sharing attached: the panel hides the Share box");
+        final boolean[] on = {false};
+        srv.setSharing(new LocalServer.Sharing() {
+            public String statusJson() { return "{\"supported\":true,\"active\":" + on[0] + "}"; }
+            public String set(boolean v) throws java.io.IOException { if (v && !on[0] && opened.contains("fail")) throw new java.io.IOException("Turn off tethering"); on[0] = v; return statusJson(); }
+        });
+        ok(call(port, "POST", "/api/share", "{\"on\":true}")[1].contains("\"active\":true") && call(port, "GET", "/api/share", null)[1].contains("\"active\":true"), "POST /api/share {on:true} starts sharing");
+        ok(call(port, "POST", "/api/share", "{\"on\":false}")[1].contains("\"active\":false"), "and {on:false} stops it");
+        ok(call(port, "POST", "/api/share", "{}")[0].equals("400"), "a share request without on is a 400");
+
         String cat = call(port, "GET", "/api/modules/catalog", null)[1];
         ok(cat.contains("\"id\":\"water\"") && cat.contains("\"id\":\"ghost\"") && !cat.contains("map-world") && !cat.contains("\"reader\"") && !cat.contains("desk-only"), "Android lists only content packs meant for it (no maps, reader, desktop-only)");
         ok(cat.contains("Ghost \\\"Pack\\\"") && MiniJson.parse(cat) != null, "the catalog answer is valid JSON even with quotes in names");

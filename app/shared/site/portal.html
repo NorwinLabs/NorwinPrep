@@ -45,7 +45,8 @@
     box.appendChild(card('/wiki/', 'Library', 'Encyclopedias, medical and survival guides, how-tos.', !!d.hasLibrary));
     box.appendChild(card('/maps/', 'Maps', 'Offline street maps. Zoom and pan; no signal needed.', !!d.hasMaps));
     box.appendChild(card('/apps/', 'Apps', 'Install NorwinPrep on your own phone or computer.', !!d.hasApps));
-    if (!d.hasLibrary && !d.hasMaps && !d.hasApps) { var e = document.createElement('div'); e.className = 'empty'; e.textContent = 'Nothing has been added to this device yet.'; box.appendChild(e); }
+    if (d.hasPacks) box.appendChild(card('/packs/', 'Content packs', 'Download guides and encyclopedias to read in the Kiwix app (' + d.packCount + ' available).', true));
+    if (!d.hasLibrary && !d.hasMaps && !d.hasApps && !d.hasPacks) { var e = document.createElement('div'); e.className = 'empty'; e.textContent = 'Nothing has been added to this device yet.'; box.appendChild(e); }
   }).catch(function () { document.getElementById('cards').textContent = 'Could not load.'; });
 })();
 </script>

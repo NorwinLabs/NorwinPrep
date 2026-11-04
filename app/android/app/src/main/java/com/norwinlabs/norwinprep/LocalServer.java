@@ -70,6 +70,15 @@ public class LocalServer {
         java.util.List<String> installedFiles();
     }
 
+    /** Share over Wi-Fi (this phone's hotspot + the read-only ShareServer). */
+    public interface Sharing {
+        /** JSON like the desktop one: {supported, active, auto, ssid, password, url, reason}. */
+        String statusJson();
+
+        /** Starts or stops sharing; returns the status JSON, or throws IOException with a message for the user. */
+        String set(boolean on) throws IOException;
+    }
+
     /** Opens an installed content pack in another app (Android has no embedded reader). Returns null on success, else a message. */
     public interface Opener {
         String open(String file);
@@ -85,6 +94,7 @@ public class LocalServer {
     private final Updater updater;
     private final Modules modules;
     private final Opener opener;
+    private volatile Sharing sharing;
     private ServerSocket socket;
     private ExecutorService pool;
     private volatile int port;
@@ -108,6 +118,11 @@ public class LocalServer {
 
     public int port() {
         return port;
+    }
+
+    /** Attached after construction because the sharing code needs the activity (permissions, hotspot). */
+    public void setSharing(Sharing s) {
+        this.sharing = s;
     }
 
     /** Starts on {@code preferred}; if that port is taken, picks a free one. Returns the port in use. */
@@ -287,6 +302,27 @@ public class LocalServer {
             String route = path.length() > 12 ? path.substring(12) : "/";
             Result r = modules.handle(writes ? "POST" : "GET", route, qs, body);
             respond(out, r.code, "application/json; charset=utf-8", r.json, head);
+            return;
+        }
+        if (path.equals("/api/share")) {
+            Sharing sh = sharing;
+            if (sh == null) {
+                respond(out, 200, "application/json; charset=utf-8", "{\"supported\":false}", head);
+            } else if (!writes) {
+                respond(out, 200, "application/json; charset=utf-8", sh.statusJson(), head);
+            } else {
+                String body = new String(readBody(req, 1024), StandardCharsets.UTF_8);
+                java.util.regex.Matcher om = Pattern.compile("\"on\"\\s*:\\s*(true|false)").matcher(body);
+                if (!om.find()) {
+                    respond(out, 400, "application/json; charset=utf-8", "{\"error\":\"missing on\"}", head);
+                } else {
+                    try {
+                        respond(out, 200, "application/json; charset=utf-8", sh.set(om.group(1).equals("true")), head);
+                    } catch (IOException e) {
+                        respond(out, 409, "application/json; charset=utf-8", "{\"error\":" + jsonStr(String.valueOf(e.getMessage())) + "}", head);
+                    }
+                }
+            }
             return;
         }
         if (path.equals("/api/open") && req.method.equals("POST")) {
@@ -528,6 +564,10 @@ public class LocalServer {
         STATUS.put(405, "Method Not Allowed");
         STATUS.put(411, "Length Required");
         STATUS.put(413, "Payload Too Large");
+        STATUS.put(206, "Partial Content");
+        STATUS.put(416, "Range Not Satisfiable");
+        STATUS.put(429, "Too Many Requests");
+        STATUS.put(507, "Insufficient Storage");
         STATUS.put(500, "Internal Server Error");
     }
 
@@ -537,16 +577,16 @@ public class LocalServer {
         out.write(h.getBytes(StandardCharsets.ISO_8859_1));
     }
 
-    private static void respond(OutputStream out, int code, String type, String body, boolean head) throws IOException {
+    static void respond(OutputStream out, int code, String type, String body, boolean head) throws IOException {
         respond(out, code, type, body.getBytes(StandardCharsets.UTF_8), head);
     }
 
-    private static void respond(OutputStream out, int code, String type, byte[] body, boolean head) throws IOException {
+    static void respond(OutputStream out, int code, String type, byte[] body, boolean head) throws IOException {
         writeHeaders(out, code, type, body.length);
         if (!head) out.write(body);
     }
 
-    private static String typeFor(String name) {
+    static String typeFor(String name) {
         String n = name.toLowerCase(Locale.ROOT);
         if (n.endsWith(".html")) return "text/html; charset=utf-8";
         if (n.endsWith(".js")) return "text/javascript; charset=utf-8";
@@ -572,11 +612,11 @@ public class LocalServer {
         return b.append('"').toString();
     }
 
-    private static String html(String s) {
+    static String html(String s) {
         return s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("\"", "&quot;").replace("'", "&#39;");
     }
 
-    private static String urlEnc(String s) {
+    static String urlEnc(String s) {
         try {
             return java.net.URLEncoder.encode(s, "UTF-8").replace("+", "%20");
         } catch (java.io.UnsupportedEncodingException e) {

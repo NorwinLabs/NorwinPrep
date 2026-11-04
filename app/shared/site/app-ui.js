@@ -133,7 +133,7 @@
     if (!st || (!st.supported && !(dev0 && dev0.platform === 'linux'))) return null;
     var box = el('div', 'sumbox'); box.appendChild(el('div', 'mono', 'Share over Wi-Fi'));
     if (!st.supported) { box.appendChild(el('div', 'note', st.reason || 'Not available on this device.')); return box; }
-    box.appendChild(el('div', 'note', 'Turn this device into a Wi-Fi hotspot. Other devices join it and read your library, maps and apps, with no internet needed.'));
+    box.appendChild(el('div', 'note', st.note || 'Turn this device into a Wi-Fi hotspot. Other devices join it and read your library, maps and apps, with no internet needed.'));
     if (st.active) {
       var dl = el('dl', 'kv'); dl.style.marginTop = '10px';
       [['Wi-Fi name', st.ssid], ['Password', st.password], ['Then open', st.url]].forEach(function (r) { dl.appendChild(el('dt', null, r[0])); var dd = el('dd', null, String(r[1])); dd.style.fontFamily = 'var(--mono)'; dl.appendChild(dd); });
@@ -145,7 +145,7 @@
     b.addEventListener('click', function () { setShare(!st.active, false); }); row.appendChild(b);
     if (st.needForce && !st.active) { var f = el('button', 'btn sm warn', 'Share anyway'); f.type = 'button'; f.addEventListener('click', function () { setShare(true, true); }); row.appendChild(f); }
     box.appendChild(row);
-    box.appendChild(prefRow('Start the Wi-Fi automatically when the app opens', st.auto, 'auto'));
+    if (st.canAuto !== false) box.appendChild(prefRow('Start the Wi-Fi automatically when the app opens', st.auto, 'auto'));
     if (st.launchAtStartup !== undefined) box.appendChild(prefRow('Open this app when the device starts', st.launchAtStartup, 'launchAtStartup'));
     return box;
   }

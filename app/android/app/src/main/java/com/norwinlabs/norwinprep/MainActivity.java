@@ -34,6 +34,7 @@ public class MainActivity extends Activity {
 
     private WebView web;
     private LocalServer server;
+    private PhoneShare share;
     private String home;
     private ConnectivityManager cm;
     private ConnectivityManager.NetworkCallback wifiCallback;
@@ -174,8 +175,11 @@ public class MainActivity extends Activity {
         File filesDir = new File(base, "files");
         filesDir.mkdirs();
 
+        final File zimDir = new File(base, "library/zim");
+        final ModuleManager mods = makeModules(zimDir);
+        final LocalServer.Source siteSource = path -> getAssets().open("site/" + path);
         server = new LocalServer(
-                path -> getAssets().open("site/" + path),
+                siteSource,
                 new LocalServer.Device() {
                     @Override
                     public String name() {
@@ -210,8 +214,10 @@ public class MainActivity extends Activity {
                 },
                 filesDir,
                 new AppUpdater(this),
-                makeModules(new File(base, "library/zim")),
+                mods,
                 this::openInKiwix);
+        share = new PhoneShare(this, siteSource, zimDir, mods, prefs.getString("name", defaultName));
+        server.setSharing(share);
         home = "http://127.0.0.1:" + server.start(PORT) + "/";
     }
 
@@ -277,6 +283,7 @@ public class MainActivity extends Activity {
         } catch (RuntimeException ignored) {
         }
         if (web != null) web.destroy();
+        if (share != null) share.stop();
         if (server != null) server.stop();
         super.onDestroy();
     }
