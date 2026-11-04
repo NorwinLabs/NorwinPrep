@@ -172,6 +172,7 @@
   </button>
   <div class="chips" role="group" aria-label="Filter by type" id="chips">
     <button class="sq mono on" data-t="all">All</button>
+    <button class="sq mono" data-t="installed" id="chipInstalled">Installed</button>
     <button class="sq mono" data-t="library">Library</button>
     <button class="sq mono" data-t="education">Education</button>
     <button class="sq mono" data-t="maps">Maps</button>
@@ -523,7 +524,7 @@
   function visible() {
     var q = state.q.trim().toLowerCase();
     var list = state.mods.filter(function (m) {
-      if (state.type !== 'all' && catOf(m) !== state.type) return false;
+      if (state.type === 'installed') { if (!m.installed) return false; } else if (state.type !== 'all' && catOf(m) !== state.type) return false;
       return !q || (m.name + ' ' + m.tagline + ' ' + m.description + ' ' + m.by + ' ' + typeLabel(m.type)).toLowerCase().indexOf(q) >= 0;
     });
     var by = {
@@ -535,9 +536,12 @@
     return list.sort(by);
   }
 
-  function section(label, count, mods, installedSection, main, hid) {
-    if (!mods.length) return;
-    var s = el('div', 'section mono'); s.textContent = label + '  '; s.appendChild(el('b', null, String(count))); main.appendChild(s);
+  function section(label, count, mods, installedSection, main, hid, emptyNote) {
+    if (!mods.length && !emptyNote) return;
+    var s = el('div', 'section mono'); s.textContent = label + '  '; s.appendChild(el('b', null, String(count)));
+    if (installedSection && mods.length) { var tot = 0; mods.forEach(function (m) { tot += m.bytes || 0; }); if (tot) s.appendChild(document.createTextNode('  \u00b7  ' + human(tot) + ' on this device')); }
+    main.appendChild(s);
+    if (!mods.length) { var n = el('div', 'note', emptyNote); n.style.cssText = 'color:var(--mut);padding:6px 2px 4px'; main.appendChild(n); return; }
     var g = el('div', 'grid' + (state.view === 'list' ? ' list' : ''));
     mods.forEach(function (m) { g.appendChild(card(m, installedSection, hid)); });
     main.appendChild(g);
@@ -605,13 +609,20 @@
     var list = visible();
     var shown = list.filter(function (m) { return !isHidden(m.id); }), hid = list.filter(function (m) { return isHidden(m.id); });
     var inst = shown.filter(function (m) { return m.installed; }), not = shown.filter(function (m) { return !m.installed; });
+    var nInst = state.mods.filter(function (m) { return m.installed; }).length;
+    $('chipInstalled').textContent = nInst ? 'Installed ' + nInst : 'Installed';
+    if (state.type === 'installed' && !shown.length && !state.q.trim() && !(state.showHidden && hid.length)) {
+      var e0 = el('div', 'empty'); e0.appendChild(el('h2', null, 'Nothing is installed yet')); e0.appendChild(el('div', null, 'Install a module and it will show up here, ready to use with no internet.'));
+      var go = btn('Browse modules', 'solid', function () { state.type = 'all'; Array.prototype.forEach.call($('chips').children, function (x) { x.classList.toggle('on', x.dataset.t === 'all'); }); render(); }); go.style.marginTop = '14px'; e0.appendChild(go);
+      main.appendChild(e0); state.sig = signature(); return;
+    }
     if (!shown.length && !(state.showHidden && hid.length)) {
       var e = el('div', 'empty'); e.appendChild(el('h2', null, 'No modules match'));
       e.appendChild(el('div', null, hid.length ? hid.length + ' matching module' + (hid.length === 1 ? ' is' : 's are') + ' hidden. Use the Hidden button to show them.' : 'Try a different search or filter.'));
       main.appendChild(e); state.sig = signature(); return;
     }
     renderTiers(main);
-    section('Installed', inst.length, inst, true, main);
+    section('Installed', inst.length, inst, true, main, undefined, (state.q.trim() || state.type === 'installed') ? '' : 'Nothing installed yet. Install a module below and it will appear here.');
     section('Not installed', not.length, not, false, main);
     if (state.showHidden) section('Hidden', hid.length, hid, null, main, true);
     state.sig = signature();
