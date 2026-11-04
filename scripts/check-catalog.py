@@ -133,7 +133,7 @@ def add(u, where):
 for m in mods: add(m.get("source", ""), "catalog:" + m["id"]) if m.get("source", "").startswith("http") else None
 files = ["README.md", "install.sh", "get.sh", "uninstall.sh"] + glob.glob("scripts/*.sh") + glob.glob("scripts/*.py") + glob.glob("app/desktop/scripts/*.js") + glob.glob("app/shared/site/*.html") + glob.glob("app/shared/site/*.js") + glob.glob("app/desktop/*.js")
 for f in files:
-    if os.path.basename(f) == "check-catalog.py": continue
+    if os.path.basename(f) in ("check-catalog.py", "import-nomad.py"): continue      # these hold URL patterns, not links
     for u in re.findall(r"https?://[A-Za-z0-9._~:/?#@!&*+,;=%-]+", open(f, encoding="utf-8", errors="replace").read()): add(u, f)
 for p in ("maplibre-gl@4.7.1/dist/maplibre-gl.js", "maplibre-gl@4.7.1/dist/maplibre-gl.css", "pmtiles@3.2.1/dist/pmtiles.js", "@protomaps/basemaps@5.0.0/dist/basemaps.js"):
     add("https://cdn.jsdelivr.net/npm/" + p, "scripts/fetch-web-assets.sh")

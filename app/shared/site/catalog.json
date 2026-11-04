@@ -1346,33 +1346,6 @@
       "approxMB": 16
     },
     {
-      "id": "fas-military-medicine-en",
-      "type": "content",
-      "category": "library",
-      "topic": "medicine",
-      "name": "Military Medicine",
-      "tagline": "Tactical and field medicine manuals",
-      "description": "Tactical and field medicine manuals (Curated by Project NOMAD.)",
-      "by": "KIWIX",
-      "source": "https://library.kiwix.org/",
-      "icon": "cross",
-      "color": "#d9534f",
-      "sizeClass": "s",
-      "install": {
-        "kind": "zim",
-        "subdir": "zimit",
-        "prefix": "fas-military-medicine_en"
-      },
-      "platforms": [
-        "windows",
-        "linux",
-        "darwin",
-        "android"
-      ],
-      "origin": "project-nomad",
-      "approxMB": 78
-    },
-    {
       "id": "wwwnc-cdc-gov-en-all",
       "type": "content",
       "category": "library",
@@ -4115,7 +4088,6 @@
           "modules": [
             "medicine",
             "nhs-uk-en-medicines",
-            "fas-military-medicine-en",
             "wwwnc-cdc-gov-en-all"
           ]
         },
@@ -4127,7 +4099,6 @@
           "modules": [
             "medicine",
             "nhs-uk-en-medicines",
-            "fas-military-medicine-en",
             "wwwnc-cdc-gov-en-all",
             "medlineplus-gov-en-all"
           ]
@@ -4140,7 +4111,6 @@
           "modules": [
             "medicine",
             "nhs-uk-en-medicines",
-            "fas-military-medicine-en",
             "wwwnc-cdc-gov-en-all",
             "medlineplus-gov-en-all",
             "wikipedia-en-medicine-maxi",

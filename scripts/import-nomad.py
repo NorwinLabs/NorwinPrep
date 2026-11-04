@@ -21,6 +21,8 @@ def uniq(base):
     i, n = base, 2
     while i in ids: i = (base[:38] + "-" + str(n)); n += 1
     return i
+# NOMAD lists these but Kiwix no longer serves them (found by scripts/check-catalog.py); leave them out
+DEAD = {"fas-military-medicine_en"}
 added, topics, skipped = [], [], []
 
 # ---- Kiwix categories -> zim modules + topics (each tier lists everything it includes) ----
@@ -31,6 +33,7 @@ for c in kw["categories"]:
     for t in c["tiers"]:
         mine = []
         for r in t["resources"]:
+            if r["id"] in DEAD: skipped.append((r["id"], "no longer on the Kiwix server")); continue
             if r.get("type") == "dataset": skipped.append((r["id"], "dataset, not a Kiwix pack")); continue
             m = re.match(r"^https://download\.kiwix\.org/zim/([a-z0-9_]+)/([A-Za-z0-9_.-]+)_(\d{4}-\d{2})\.zim$", r["url"])
             if not m: skipped.append((r["id"], "unrecognised url " + r["url"])); continue
