@@ -49,6 +49,11 @@ function setup(models) { const d = fs.mkdtempSync(path.join(os.tmpdir(), 'npai-'
   g = await chat((await create({ siteDir: data, filesDir: data, getName: () => 'x', setName: () => {}, version: '1', platform: 'linux', ai: new Llama({ dataDir: fs.mkdtempSync(path.join(os.tmpdir(), 'npai1-')) }) }).start(0)), { messages: [{ role: 'user', content: 'x' }] });
   ok(g.code === 409 && /not installed/.test(JSON.parse(g.body).error), 'no engine: 409 "not installed"'); await app2.stop();
 
+  // ---------- power saving: on battery (eco) it uses fewer threads and a smaller context ----------
+  { const eco = new Llama({ dataDir: data, eco: () => true, cpus: 8 }), ea = create({ siteDir: data, filesDir: data, getName: () => 'x', setName: () => {}, version: '1', platform: 'linux', ai: eco }), ep = await ea.start(0);
+    g = await chat(ep, { messages: [{ role: 'user', content: 'hi' }] }); ok(/--threads 4/.test(g.body) && /-c 2048/.test(g.body), 'eco mode: half the CPU threads and a 2048 context'); await eco.stop(); await ea.stop();
+    const full = new Llama({ dataDir: data, eco: () => false, cpus: 8 }), fa = create({ siteDir: data, filesDir: data, getName: () => 'x', setName: () => {}, version: '1', platform: 'linux', ai: full }), fp = await fa.start(0);
+    g = await chat(fp, { messages: [{ role: 'user', content: 'hi' }] }); ok(!/--threads/.test(g.body) && /-c 4096/.test(g.body), 'on mains power: the engine decides the threads, full context'); await full.stop(); await fa.stop(); }
   // ---------- devices on the Wi-Fi share: chat yes, anything else no ----------
   fs.mkdirSync(path.join(data, 'ai-site'), { recursive: true }); const site = fs.mkdtempSync(path.join(os.tmpdir(), 'npaisite-')); fs.mkdirSync(path.join(site, 'ai')); fs.writeFileSync(path.join(site, 'ai', 'index.html'), '<title>CHAT</title>'); fs.writeFileSync(path.join(site, 'portal.html'), '<title>PORTAL</title>');
   const ai2 = new Llama({ dataDir: data, idleMs: 60000 });

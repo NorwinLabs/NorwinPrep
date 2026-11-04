@@ -57,6 +57,9 @@ function installFake(dir) { const app = path.join(dir, 'kolibri', 'app', 'kolibr
   g = await get(k.port, '/learn/'); ok(/LISTEN_ADDRESS = 0\.0\.0\.0/.test(g.body) && k.info().shared, 'while Wi-Fi sharing is on it listens on all interfaces (so children can open it)');
   await k.setShared(false); for (let i = 0; i < 60 && !k.ready(); i++) await sleep(100);
   g = await get(k.port, '/learn/'); ok(/LISTEN_ADDRESS = 127\.0\.0\.1/.test(g.body) && !k.info().shared, 'and back to this device only when sharing stops');
+  { const q = new Kolibri({ dataDir: data, candidates: [[FAKE_PY]], startTimeout: 15000, idleMs: 700 }); await q.start(); ok(q.ready(), 'idle test: started');
+    for (let i = 0; i < 40 && q.ready(); i++) await sleep(100); ok(!q.ready(), 'power saving: Kolibri stops by itself when nobody has used it');
+    await q.setShared(true); await q.start(); await sleep(1500); ok(q.ready(), 'but never while it is shared over Wi-Fi (children connect to it directly)'); await q.stop(); }
   await k.stop(); await app.stop();
 
   // ---- failure shown to the user ----

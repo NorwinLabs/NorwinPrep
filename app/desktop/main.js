@@ -82,7 +82,7 @@ async function startServer() {
   reader = new Reader({ binDir: path.join(dataDir, 'reader'), zimDir: path.join(dataDir, 'zim') });
   const env = process.env;
   const kolibri = new Kolibri({ dataDir });
-  const ai = new Llama({ dataDir });
+  const ai = new Llama({ dataDir, eco: () => { try { return require('electron').powerMonitor.isOnBatteryPower(); } catch (e) { return false; } } });
   const modules = new Manager({
     pythonCheck: (requires) => kolibri.findPython(requires), onKolibriChange: () => kolibri.stop(), onAiChange: () => ai.stop(),
     catalog: path.join(siteDir, 'catalog.json'), dataDir, onLibraryChange: () => reader.restart(),

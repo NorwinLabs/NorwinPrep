@@ -2,6 +2,7 @@
 // Offline AI assistant: runs llama.cpp's `llama-server` (CPU) on loopback with one downloaded GGUF model, and lets the app's pages talk to it
 // through a small allow-list (chat, model list, health). Started on first use, stopped after a quiet spell to free memory.
 // Only chat requests are forwarded, rebuilt from a fixed set of fields, so nothing else of llama-server's API is reachable.
+const os = require('os');
 const fs = require('fs');
 const path = require('path');
 const net = require('net');
@@ -13,7 +14,7 @@ const freePort = () => new Promise((resolve, reject) => { const s = net.createSe
 
 class Llama {
   constructor(o) {   // o: dataDir (library folder), platform, spawn, idleMs, startTimeout, ctx
-    this.o = Object.assign({ platform: process.platform, spawn, idleMs: 15 * 60000, startTimeout: 180000, ctx: 4096 }, o);
+    this.o = Object.assign({ platform: process.platform, spawn, idleMs: 15 * 60000, startTimeout: 180000, ctx: 4096, eco: () => false, cpus: os.cpus().length }, o);
     this.base = path.join(this.o.dataDir, 'ai'); this.engineDir = path.join(this.base, 'engine'); this.modelDir = path.join(this.base, 'models');
     this.child = null; this.port = 0; this.up = false; this.starting = null; this.lastError = ''; this.model = null; this.idle = null; this.log = '';
   }
@@ -32,7 +33,8 @@ class Llama {
   status() {
     return { engine: this.engineInstalled(), models: this.models(), active: this.active(), running: this.up, starting: !!this.starting, error: this.starting ? '' : this.lastError };
   }
-  touch() { clearTimeout(this.idle); this.idle = setTimeout(() => { this.stop().catch(() => {}); }, this.o.idleMs); if (this.idle.unref) this.idle.unref(); }
+  touch() { clearTimeout(this.idle); const eco = this.isEco(); this.idle = setTimeout(() => { this.stop().catch(() => {}); }, eco ? Math.min(this.o.idleMs, 5 * 60000) : this.o.idleMs); if (this.idle.unref) this.idle.unref(); }
+  isEco() { try { return !!this.o.eco(); } catch (e) { return false; } }   // eco: on battery power, use fewer CPU threads, a smaller context and stop sooner
   start() {
     if (this.up) return Promise.resolve(true);
     if (this.starting) return this.starting;
@@ -42,7 +44,8 @@ class Llama {
       const model = this.active(); if (!model) throw new Error('No AI model is installed yet.');
       this.model = model; this.port = await freePort();
       const env = { PATH: process.env.PATH, HOME: process.env.HOME, USERPROFILE: process.env.USERPROFILE, SYSTEMROOT: process.env.SYSTEMROOT, TEMP: process.env.TEMP, TMPDIR: process.env.TMPDIR, LD_LIBRARY_PATH: this.engineDir, DYLD_LIBRARY_PATH: this.engineDir };
-      const args = ['-m', path.join(this.modelDir, model), '--host', '127.0.0.1', '--port', String(this.port), '-c', String(this.o.ctx)];
+      const args = ['-m', path.join(this.modelDir, model), '--host', '127.0.0.1', '--port', String(this.port), '-c', String(this.isEco() ? Math.min(this.o.ctx, 2048) : this.o.ctx)];
+      if (this.isEco()) args.push('--threads', String(Math.max(1, Math.floor(this.o.cpus / 2))));
       const child = this.child = this.o.spawn(this.binary(), args, { env, cwd: this.engineDir, stdio: ['ignore', 'pipe', 'pipe'], windowsHide: true }); this.log = '';
       const keep = (d) => { this.log = (this.log + d).slice(-4000); };
       child.stdout && child.stdout.on('data', keep); child.stderr && child.stderr.on('data', keep);

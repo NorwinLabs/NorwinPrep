@@ -28,7 +28,7 @@ const runOut = (cmd, args) => new Promise((resolve, reject) => execFile(cmd, arg
 
 class Kolibri {
   constructor(o) {   // o: dataDir (the library folder), platform, candidates, spawn, startTimeout
-    this.o = Object.assign({ platform: process.platform, spawn, startTimeout: 240000 }, o);
+    this.o = Object.assign({ platform: process.platform, spawn, startTimeout: 240000, idleMs: 30 * 60000 }, o);
     this.base = path.join(this.o.dataDir, 'kolibri'); this.appDir = path.join(this.base, 'app'); this.home = path.join(this.base, 'home');
     this.child = null; this.port = 0; this.zip = 0; this.up = false; this.starting = null; this.lastError = ''; this.stopping = false; this.shared = false; this.log = '';
   }
@@ -75,7 +75,7 @@ class Kolibri {
       const t0 = Date.now();
       while (Date.now() - t0 < this.o.startTimeout) {
         if (!this.child || this.child !== child) throw new Error(this.lastError || 'Kolibri did not start');
-        if (await this.probe()) { this.up = true; return true; }
+        if (await this.probe()) { this.up = true; this.touch(); return true; }
         await new Promise((r) => setTimeout(r, 700));
       }
       throw new Error('Kolibri took too long to start');
@@ -89,10 +89,14 @@ class Kolibri {
       r.on('error', () => resolve(false)); r.on('timeout', () => { r.destroy(); resolve(false); });
     });
   }
-  killChild() { const c = this.child; this.child = null; this.up = false; if (c) { try { c.kill('SIGTERM'); } catch (e) { /* gone */ } setTimeout(() => { try { c.kill('SIGKILL'); } catch (e) { /* gone */ } }, 4000).unref(); } }
+  touch() {                               // power saving: stop Kolibri when nobody has used it for a while (never while it is shared over Wi-Fi: children talk to it directly)
+    clearTimeout(this.idleT); if (this.shared || !this.o.idleMs) return;
+    this.idleT = setTimeout(() => { if (!this.shared) this.stop().catch(() => {}); }, this.o.idleMs); if (this.idleT.unref) this.idleT.unref();
+  }
+  killChild() { clearTimeout(this.idleT); const c = this.child; this.child = null; this.up = false; if (c) { try { c.kill('SIGTERM'); } catch (e) { /* gone */ } setTimeout(() => { try { c.kill('SIGKILL'); } catch (e) { /* gone */ } }, 4000).unref(); } }
   async stop() { this.stopping = true; this.killChild(); await new Promise((r) => setTimeout(r, 50)); this.stopping = false; }
   async setShared(on) {                    // listen on all interfaces only while Wi-Fi sharing is on, so children can open it
-    on = !!on; if (on === this.shared) return; this.shared = on;
+    on = !!on; if (on === this.shared) return; this.shared = on; if (on) clearTimeout(this.idleT);
     if (this.up || this.starting) { await this.stop(); this.start().catch(() => {}); } else if (on && this.installed()) this.start().catch(() => {});   // so a child can open it at once
   }
   info() { return this.installed() ? { port: this.port || 0, running: this.up, shared: this.shared } : null; }
@@ -108,6 +112,7 @@ class Kolibri {
       if (!this.starting) this.start().catch(() => {});
       return page(503, shell('<h1>Starting Kolibri&hellip;</h1><p style="color:#8b92a3">The first start sets up its database and can take a minute or two. This page refreshes by itself.</p>', true));
     }
+    this.touch();
     const headers = Object.assign({}, req.headers); delete headers.connection; delete headers['keep-alive']; delete headers['proxy-connection']; delete headers.upgrade;
     const up = http.request({ host: '127.0.0.1', port: this.port, method: req.method, path: req.url, headers }, (r) => {
       const h = Object.assign({}, r.headers); delete h.connection; delete h['transfer-encoding'];

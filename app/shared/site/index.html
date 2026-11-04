@@ -151,14 +151,27 @@
   #ver:hover{color:#fff;border-color:#fff} #ver.new{color:var(--green);border-color:var(--green)}
   #upd{position:fixed;right:12px;bottom:48px;z-index:45;width:min(92vw,350px);display:none;background:#12151c;border:1px solid var(--line2);border-radius:var(--r);padding:14px 16px;box-shadow:0 8px 28px #000b}
   #upd .bar{height:8px;margin-top:10px} #upd .bar i{transition:width .3s}
+  body.home .toolbar{display:none}
+  .hero{text-align:center;padding:18px 0 6px} .hero h1{margin:0;font-size:28px;letter-spacing:-.01em} .hero p{margin:6px 0 0;color:var(--mut)}
+  .big{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));margin-top:18px}
+  .tile{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;min-height:150px;padding:18px 12px;border:1px solid var(--line2);border-radius:var(--r);background:#0f1218;color:inherit;text-decoration:none;cursor:pointer;text-align:center;font:inherit}
+  .tile:hover,.tile:focus-visible{border-color:#fff;outline:0}
+  .tile svg{width:38px;height:38px} .tile b{font-size:18px} .tile small{color:var(--mut);font-size:13px}
+  .tile.off{opacity:.55} .tile.off small{color:var(--green)}
+  .addbar{display:flex;justify-content:center;margin:22px 0 4px}
+  .addbar .btn{font-size:16px;padding:12px 26px}
+  .topics{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(250px,1fr))}
+  .topic{border:1px solid var(--line);border-radius:var(--r);background:#0f1218;padding:16px;display:flex;flex-direction:column;gap:8px}
+  .topic h3{margin:0;font-size:16px} .topic p{margin:0;color:var(--mut);font-size:13px}
+  .topic .row{display:flex;gap:8px;flex-wrap:wrap;margin-top:auto}
   @media (max-width:440px){ .grid{grid-template-columns:1fr} .sub{display:none} .sortlbl{display:none} }
   @media (max-width:760px){ .list .card{flex-direction:column;align-items:stretch} .list .top{width:auto;flex-direction:row;border-right:0;border-bottom:1px solid var(--line);height:42px;align-items:center} .list .actions,.list .facts{flex:1 1 auto} }
 </style>
 </head>
 <body>
 <header>
-  <a class="brand" href="/" aria-label="NorwinPrep home"><i></i>NORWINPREP</a>
-  <div class="sub mono">Module Store</div>
+  <a class="brand" href="/" id="brand" aria-label="NorwinPrep home"><i></i>NORWINPREP</a>
+  <div class="sub mono" id="where">Home</div>
   <div class="spacer"></div>
   <div id="hdrTools"></div>
   <button class="iconbtn" id="gear" aria-label="Settings" title="Settings">
@@ -212,8 +225,10 @@
   var devPlatform = '';   // windows / linux / darwin / android, when running inside an app
   function pinKey() { return 'norwinprep.pin' + (base ? '@' + base : ''); }
   var H = { 'X-NorwinPrep': '1' };
-  var state = { mods: [], disk: null, type: 'all', sort: 'name', q: '', view: 'grid', sig: '', showHidden: false, pending: false, sizeTries: 0 };
+  var state = { mods: [], disk: null, type: 'all', sort: 'name', q: '', view: 'grid', sig: '', home: true, topics: [], showHidden: false, pending: false, sizeTries: 0 };
   var pollTimer = null;
+  // power saving: a hidden window or tab does not poll; it catches up the moment it is shown again
+  function tick() { if (document.hidden) { document.addEventListener('visibilitychange', function w() { if (!document.hidden) { document.removeEventListener('visibilitychange', w); load(); } }); } else load(); }
   function store(k, v) { try { if (v === undefined) return localStorage.getItem(k); if (v === null) localStorage.removeItem(k); else localStorage.setItem(k, v); } catch (e) { return null; } }
 
   // ---------- icons ----------
@@ -552,6 +567,61 @@
   state.tiers = [];
   function tierMods(t) { return t.modules.map(function (id) { return state.mods.filter(function (m) { return m.id === id; })[0]; }).filter(Boolean); }
   function tierNeed(list) { var n = 0, exact = true; list.forEach(function (m) { var s = sizeInfo(m); if (s.exact !== null) n += s.exact; else { exact = false; n += s.cls ? s.cls.min : 0; } }); return { bytes: n, exact: exact }; }
+  // ---------- simple home: a few big buttons ----------
+  var ICON = {
+    library: '<path d="M4 5a2 2 0 0 1 2-2h12v16H6a2 2 0 0 0-2 2z"/><path d="M4 19V5M8 7h6M8 11h6"/>',
+    maps: '<path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2z"/><path d="M9 4v14M15 6v14"/>',
+    learn: '<path d="m2 9 10-5 10 5-10 5z"/><path d="M6 11.5V16c0 1.5 3 3 6 3s6-1.500 6-3v-4.500"/>',
+    ai: '<rect x="4" y="6" width="16" height="12" rx="3"/><path d="M12 3v3M9 12h.01M15 12h.01M9 15.500h6"/>',
+    tools: '<path d="M14.500 6.500a4 4 0 0 0-5 5L3 18l3 3 6.500-6.500a4 4 0 0 0 5-5l-2.500 2.500-2-.5-.5-2z"/>',
+    installed: '<path d="M12 3v12m0 0-4-4m4 4 4-4M4 19h16"/>'
+  };
+  function tileIcon(k) { var d = document.createElement('div'); d.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + ICON[k] + '</svg>'; return d.firstChild; }
+  function goStore(type) {
+    state.home = false; state.type = type; state.q = ''; $('q').value = ''; document.body.classList.remove('home');
+    Array.prototype.forEach.call($('chips').children, function (x) { x.classList.toggle('on', x.dataset.t === type); });
+    state.sig = ''; $('where').textContent = 'Add content'; render(); window.scrollTo(0, 0);
+  }
+  function goHome() { $('where').textContent = 'Home'; state.home = true; document.body.classList.add('home'); state.sig = ''; render(); window.scrollTo(0, 0); }
+  function instCount(fn) { return state.mods.filter(function (m) { return m.installed && fn(m); }).length; }
+  function renderHome(main) {
+    var hero = el('div', 'hero'); hero.appendChild(el('h1', null, 'What do you need?')); hero.appendChild(el('p', null, 'Everything here works with no internet.')); main.appendChild(hero);
+    var g = el('div', 'big');
+    function tile(k, title, on, sub, href, store) {
+      var t = el(href && on ? 'a' : 'button', 'tile' + (on ? '' : ' off')); if (href && on) t.href = href; else t.type = 'button';
+      t.appendChild(tileIcon(k)); t.appendChild(el('b', null, title)); t.appendChild(el('small', null, on ? sub : 'Tap to add'));
+      if (!(href && on)) t.addEventListener('click', function () { goStore(store); });
+      g.appendChild(t);
+    }
+    var nLib = instCount(function (m) { return m.type === 'content' && (m.category === 'library' || m.category === 'education'); });
+    tile('library', 'Library', nLib > 0, nLib + ' installed', base + '/wiki/', 'library');
+    var nMap = instCount(function (m) { return m.type === 'maps'; });
+    tile('maps', 'Maps', nMap > 0, nMap === 1 ? 'Ready' : nMap + ' installed', base + '/maps/', 'maps');
+    var kol = state.mods.filter(function (m) { return m.id === 'kolibri'; })[0];
+    if (kol) tile('learn', 'Learn', !!kol.installed, 'Courses and lessons', base + '/learn/', 'education');
+    var nAi = instCount(function (m) { return m.type === 'model'; });
+    if (state.mods.some(function (m) { return m.type === 'model'; })) tile('ai', 'Ask AI', nAi > 0, 'Plain-language answers', base + '/ai/', 'ai');
+    var tools = state.mods.filter(function (m) { return m.installed && m.type === 'tool' && m.id !== 'kolibri' && /^\/tools\/[a-z0-9-]+\/$/.test(m.open || ''); });
+    tile('tools', 'Tools', tools.length > 0, tools.length === 1 ? tools[0].name : tools.length + ' tools', tools.length === 1 ? base + tools[0].open : null, 'tools');
+    var nAll = instCount(function () { return true; });
+    var it = el('button', 'tile'); it.type = 'button'; it.appendChild(tileIcon('installed')); it.appendChild(el('b', null, 'My downloads')); it.appendChild(el('small', null, nAll ? nAll + ' installed' : 'Nothing yet')); it.addEventListener('click', function () { goStore('installed'); }); g.appendChild(it);
+    main.appendChild(g);
+    var ab = el('div', 'addbar'); ab.appendChild(btn(browse || offline ? 'Browse modules' : 'Add content', 'solid', function () { goStore('all'); })); main.appendChild(ab);
+    if (!state.topics.length) return;
+    var s = el('div', 'section mono'); s.textContent = 'Easy setup by topic'; main.appendChild(s);
+    var tg = el('div', 'topics');
+    state.topics.forEach(function (t) {
+      var c = el('div', 'topic'); c.appendChild(el('h3', null, t.name)); c.appendChild(el('p', null, t.description));
+      var row = el('div', 'row'), any = false;
+      t.tiers.forEach(function (tr) {
+        var all = tierMods(tr), missing = all.filter(function (m) { return !m.installed; }); if (!all.length) return; any = true;
+        var b = btn(missing.length ? tr.name : tr.name + ' \u2713', tr.recommended && missing.length ? 'solid sm' : 'sm', function () { startTier({ id: tr.id, name: t.name + ' \u2013 ' + tr.name }, missing); });
+        b.disabled = !missing.length; row.appendChild(b);
+      });
+      if (any) { c.appendChild(row); tg.appendChild(c); }
+    });
+    if (tg.children.length) main.appendChild(tg);
+  }
   function renderTiers(main) {
     if (state.type !== 'all' || state.q.trim() || !state.tiers.length) return;
     var s = el('div', 'section mono'); s.textContent = 'Quick setup'; main.appendChild(s);
@@ -607,6 +677,7 @@
   function render() {
     var main = $('main'); main.textContent = ''; fitColumns();
     updateHiddenBtn();
+    if (state.home) { renderHome(main); state.sig = signature(); return; }
     var list = visible();
     var shown = list.filter(function (m) { return !isHidden(m.id); }), hid = list.filter(function (m) { return isHidden(m.id); });
     var inst = shown.filter(function (m) { return m.installed; }), not = shown.filter(function (m) { return !m.installed; });
@@ -630,7 +701,7 @@
   }
   function signature() {
     return state.mods.map(function (m) { return [m.id, m.installed, m.version, m.updateAvailable, m.size || '', m.bytes || '', m.job ? m.job.state : '', m.job && m.job.state === 'error' ? m.job.message : ''].join('|'); }).join(';')
-      + (state.tiers.length) + state.type + state.sort + state.q + state.view + '|' + browse + offline + base + '|' + hiddenIds().join(',') + state.showHidden + '|' + (state.disk ? state.disk.free : '') + state.pending;
+      + (state.tiers.length) + (state.topics.length) + state.home + state.type + state.sort + state.q + state.view + '|' + browse + offline + base + '|' + hiddenIds().join(',') + state.showHidden + '|' + (state.disk ? state.disk.free : '') + state.pending;
   }
   function patchProgress() {   // update running bars in place so they don't flicker
     state.mods.forEach(function (m) {
@@ -645,8 +716,8 @@
 
   function schedulePoll() {
     clearTimeout(pollTimer);
-    if (state.mods.some(active)) pollTimer = setTimeout(load, 1000);
-    else if (state.pending && state.sizeTries < 40) { state.sizeTries++; pollTimer = setTimeout(load, 2000); }   // exact sizes are still being looked up
+    if (state.mods.some(active)) pollTimer = setTimeout(tick, 1000);
+    else if (state.pending && state.sizeTries < 40) { state.sizeTries++; pollTimer = setTimeout(tick, 2000); }   // exact sizes are still being looked up
   }
   function connLabel() { return (window.NPApp && window.NPApp.label) ? window.NPApp.label() : (base || 'this device'); }
   function showConn() {
@@ -699,6 +770,8 @@
   $('vgrid').addEventListener('click', function () { setView('grid'); });
   $('vlist').addEventListener('click', function () { setView('list'); });
   $('gear').addEventListener('click', showSettings);
+  $('brand').addEventListener('click', function (e) { e.preventDefault(); goHome(); });
+  document.body.classList.add('home');
   $('hiddenBtn').addEventListener('click', function () { state.showHidden = !state.showHidden; render(); });
   $('refresh').addEventListener('click', function () {
     if (browse || offline) return needConnection();
@@ -725,6 +798,8 @@
   fetch('catalog.json', { cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : {}; }).then(function (j) {
     state.tiers = (Array.isArray(j.tiers) ? j.tiers : []).filter(function (t) { return t && typeof t.id === 'string' && typeof t.name === 'string' && typeof t.blurb === 'string' && Array.isArray(t.modules); })
       .map(function (t) { return { id: t.id.slice(0, 20), name: t.name.slice(0, 30), blurb: t.blurb.slice(0, 300), modules: t.modules.filter(function (x) { return typeof x === 'string'; }) }; });
+    state.topics = (Array.isArray(j.topics) ? j.topics : []).filter(function (t) { return t && typeof t.id === 'string' && typeof t.name === 'string' && Array.isArray(t.tiers); })
+      .map(function (t) { return { id: t.id.slice(0, 30), name: t.name.slice(0, 40), description: String(t.description || '').slice(0, 200), tiers: t.tiers.filter(function (x) { return x && typeof x.name === 'string' && Array.isArray(x.modules); }).map(function (x) { return { id: String(x.id || '').slice(0, 40), name: x.name.slice(0, 20), recommended: !!x.recommended, modules: x.modules.filter(function (q) { return typeof q === 'string'; }) }; }) }; });
     state.sig = ''; if (state.mods.length) render();
   }).catch(function () { /* no quick setup row */ });
   // Who is serving this page? An app's local instance (mode "local") or a NorwinPrep device itself (mode "pi").

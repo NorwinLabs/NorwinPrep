@@ -201,6 +201,15 @@ For anything near 512GB, mount a USB SSD at `/srv/norwinprep/content`.
 ## Status
 Untested on hardware: written without access to a Pi. Expect to tune filenames in `fetch-content.sh`.
 
+## Simple home screen and power saving
+
+The app opens on a home screen with big buttons (Library, Maps, Learn, Ask AI, Tools, My downloads) and **Add content**, plus *Easy setup by topic* (Medicine, Survival, Education, Repair, ...) with Essential / Standard / Comprehensive sizes. Tap the NorwinPrep name to come back to it.
+
+Power saving, all automatic:
+- the AI engine starts only when asked and stops after 15 minutes (5 on battery); **on battery power it uses half the CPU threads and a smaller context**;
+- Kolibri stops after 30 idle minutes (never while Wi-Fi sharing is on, because children connect to it directly);
+- a hidden window stops polling.
+
 ## Credits
 
 The extra content packs, topics and US state maps are adapted from [Project NOMAD](https://github.com/Crosstalk-Solutions/project-nomad) (Apache-2.0). See `NOTICE` and `third_party/project-nomad/`.

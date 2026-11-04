@@ -11,7 +11,7 @@ require('http').createServer((q, r) => {
       if (!j.stream) { r.writeHead(200, { 'Content-Type': 'application/json' }); return r.end(JSON.stringify({ choices: [{ message: { content: 'ECHO ' + b } }] })); }
       r.writeHead(200, { 'Content-Type': 'text/event-stream' });
       const chunk = (c) => r.write('data: ' + JSON.stringify({ choices: [{ delta: { content: c } }] }) + '\n\n');
-      chunk('MODEL=' + require('path').basename(model) + ' HOST=' + host + ' '); setTimeout(() => { chunk('BODY=' + b); r.write('data: [DONE]\n\n'); r.end(); }, 30);
+      chunk('MODEL=' + require('path').basename(model) + ' HOST=' + host + ' ARGS=' + a.join(' ') + ' '); setTimeout(() => { chunk('BODY=' + b); r.write('data: [DONE]\n\n'); r.end(); }, 30);
     }); return;
   }
   r.writeHead(404); r.end('nope');
