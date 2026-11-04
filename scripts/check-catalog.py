@@ -137,4 +137,18 @@ for u, where in sorted(found.items()):
     print(("ok   " if good else "WARN " if blocked else "FAIL ") + "%s  [%s]  (%s)" % (u, code, where))
     if not good and not blocked: other_bad.append(u)
 bad += other_bad
+
+# ---- facts for the offline AI assistant (Ollama): release assets and real model sizes from the registry (informational) ----
+try:
+    rel = json.loads(get("%s/repos/ollama/ollama/releases/latest" % GH)[2])
+    print("\n--- ollama %s ---" % rel.get("tag_name"))
+    for x in rel["assets"]: print("  asset %-44s %12d  %s" % (x["name"], x["size"], x.get("digest")))
+except Exception as e: print("ollama release probe failed:", e)
+for mdl in ("llama3.2:1b", "llama3.2:3b", "qwen2.5:0.5b", "qwen2.5:1.5b", "qwen2.5:3b", "qwen2.5:7b", "gemma3:1b", "gemma3:4b", "smollm2:1.7b", "phi3.5:3.8b", "llama3.1:8b", "qwen3:1.7b", "qwen3:4b"):
+    name, tag = mdl.split(":")
+    try:
+        req = urllib.request.Request("https://registry.ollama.ai/v2/library/%s/manifests/%s" % (name, tag), headers=dict(UA, Accept="application/vnd.docker.distribution.manifest.v2+json"))
+        mf = json.loads(urllib.request.urlopen(req, timeout=20).read())
+        print("  model %-14s layers=%d total=%d bytes media=%s" % (mdl, len(mf["layers"]), sum(l["size"] for l in mf["layers"]) + mf["config"]["size"], sorted({l["mediaType"].split(".")[-1] for l in mf["layers"]})))
+    except Exception as e: print("  model %-14s MISSING (%s)" % (mdl, e))
 print("\n%d problem(s)" % len(bad)); sys.exit(1 if bad else 0)
