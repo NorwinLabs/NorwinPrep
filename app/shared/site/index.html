@@ -33,8 +33,8 @@
   .sq:hover{border-color:#6b7488}
   .sq.on{background:#fff;color:#0d0f14;border-color:#fff}
   .sq svg{width:16px;height:16px}
-  .chips{display:flex;gap:3px;padding:3px;border:1px solid var(--line2);border-radius:var(--r-md);background:#10131a}
-  .chips .sq{border:0;border-radius:9px;height:28px;min-width:0;padding:0 13px;letter-spacing:.14em}
+  .chips{max-width:100%;overflow-x:auto;scrollbar-width:none;display:flex;gap:3px;padding:3px;border:1px solid var(--line2);border-radius:var(--r-md);background:#10131a}
+  .chips .sq{flex:none;border:0;border-radius:9px;height:28px;min-width:0;padding:0 13px;letter-spacing:.14em}
   .chips .sq:hover{background:#1a1f2a}
   .chips .sq.on:hover{background:#fff}
   .sortlbl{color:var(--mut);margin-left:auto}
@@ -45,7 +45,7 @@
   .spin svg{animation:spin 1s linear infinite}
   @keyframes spin{to{transform:rotate(360deg)}}
 
-  main{padding:0 16px 64px}
+  main{padding:0 16px 64px;margin:0 auto}   /* width is set in fitColumns() to a whole number of columns, so the space left over is equal on both sides */
   .tiers{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(250px,1fr))}
   .tier{border:1px solid var(--line);border-radius:var(--r);background:#0f1218;padding:16px;display:flex;flex-direction:column;gap:8px}
   .tier h3{margin:0;font-size:18px}
@@ -591,8 +591,16 @@
     hb.style.display = n ? 'inline-flex' : 'none'; $('hiddenCount').textContent = n;
     hb.classList.toggle('on', state.showHidden); hb.setAttribute('aria-pressed', state.showHidden ? 'true' : 'false');
   }
+  // Cards are a fixed 376px wide. Make the page exactly as wide as a whole number of columns and centre it, so the margins match on both sides.
+  function fitColumns() {
+    var main = $('main'), avail = document.documentElement.clientWidth - 32, W = 376, G = 16;
+    if (avail < W + 8) { main.style.maxWidth = ''; return; }                      // phones: one fluid column, full width
+    var cols = Math.max(1, Math.floor((avail + G) / (W + G)));
+    main.style.maxWidth = (cols * W + (cols - 1) * G + 32) + 'px';
+  }
+  window.addEventListener('resize', fitColumns);
   function render() {
-    var main = $('main'); main.textContent = '';
+    var main = $('main'); main.textContent = ''; fitColumns();
     updateHiddenBtn();
     var list = visible();
     var shown = list.filter(function (m) { return !isHidden(m.id); }), hid = list.filter(function (m) { return isHidden(m.id); });
