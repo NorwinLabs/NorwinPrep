@@ -28,6 +28,7 @@
       "updater.js",
       "modules-manager.js",
       "unzip.js",
+      "autostart.js",
       "kolibri.js",
       "ai.js",
       "reader.js",
