@@ -151,4 +151,20 @@ for mdl in ("llama3.2:1b", "llama3.2:3b", "qwen2.5:0.5b", "qwen2.5:1.5b", "qwen2
         mf = json.loads(urllib.request.urlopen(req, timeout=20).read())
         print("  model %-14s layers=%d total=%d bytes media=%s" % (mdl, len(mf["layers"]), sum(l["size"] for l in mf["layers"]) + mf["config"]["size"], sorted({l["mediaType"].split(".")[-1] for l in mf["layers"]})))
     except Exception as e: print("  model %-14s MISSING (%s)" % (mdl, e))
+
+# ---- facts for a leaner AI engine: llama.cpp's llama-server + GGUF models straight from Hugging Face (informational) ----
+try:
+    rel = json.loads(get("%s/repos/ggml-org/llama.cpp/releases/latest" % GH)[2])
+    print("\n--- llama.cpp %s ---" % rel.get("tag_name"))
+    for x in rel["assets"]: print("  asset %-60s %11d  %s" % (x["name"], x["size"], x.get("digest")))
+except Exception as e: print("llama.cpp release probe failed:", e)
+for repo, pat in (("bartowski/Llama-3.2-1B-Instruct-GGUF", "Q4_K_M"), ("bartowski/Llama-3.2-3B-Instruct-GGUF", "Q4_K_M"), ("Qwen/Qwen2.5-0.5B-Instruct-GGUF", "q4_k_m"), ("Qwen/Qwen2.5-1.5B-Instruct-GGUF", "q4_k_m"), ("Qwen/Qwen2.5-3B-Instruct-GGUF", "q4_k_m"),
+                  ("bartowski/Qwen2.5-7B-Instruct-GGUF", "Q4_K_M"), ("ggml-org/gemma-3-1b-it-GGUF", "Q4_K_M"), ("ggml-org/gemma-3-4b-it-GGUF", "Q4_K_M"), ("bartowski/Phi-3.5-mini-instruct-GGUF", "Q4_K_M"), ("bartowski/SmolLM2-1.7B-Instruct-GGUF", "Q4_K_M")):
+    try:
+        info = json.loads(get("https://huggingface.co/api/models/%s" % repo)[2]); tree = json.loads(get("https://huggingface.co/api/models/%s/tree/main" % repo)[2])
+        hits = [t for t in tree if pat in t["path"] and t["path"].endswith(".gguf")]
+        print("  hf %-40s gated=%s license=%s files=%s" % (repo, info.get("gated"), (info.get("cardData") or {}).get("license"), [(t["path"], t.get("size"), (t.get("lfs") or {}).get("oid")) for t in hits]))
+        if hits:
+            r = probe("https://huggingface.co/%s/resolve/main/%s" % (repo, hits[0]["path"])); print("     resolve ->", r)
+    except Exception as e: print("  hf %-40s MISSING (%s)" % (repo, e))
 print("\n%d problem(s)" % len(bad)); sys.exit(1 if bad else 0)
