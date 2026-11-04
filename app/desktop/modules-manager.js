@@ -85,7 +85,7 @@ function readText(res, max) {
 class Manager {
   constructor(cfg) {
     this.cfg = Object.assign({ timeout: 30000, kiwix: 'https://download.kiwix.org', githubApi: 'https://api.github.com', githubDl: 'https://github.com',
-      protomaps: 'https://build.protomaps.com', slug: 'NorwinLabs/NorwinPrepDisk', pmtilesRepo: 'protomaps/go-pmtiles', platform: process.platform,
+      protomaps: 'https://build.protomaps.com', protomapsMeta: null, slug: 'NorwinLabs/NorwinPrepDisk', pmtilesRepo: 'protomaps/go-pmtiles', platform: process.platform,
       arch: process.arch, onLibraryChange: async () => true, run: spawn }, cfg);
     this.mods = loadCatalog(this.cfg.catalog, this.cfg.platform === 'win32' ? 'windows' : this.cfg.platform);
     this.byid = Object.fromEntries(this.mods.map((m) => [m.id, m]));
@@ -124,7 +124,7 @@ class Manager {
     return this.cached(['size', url], async () => { const r = await request(url, { method: 'HEAD', timeout: this.cfg.timeout }); r.resume(); const n = r.headers['content-length']; return n && /^\d+$/.test(n) ? Number(n) : null; });
   }
   async protomapsBuild(force) {
-    const url = this.cfg.protomaps + '/builds.json';
+    const url = (this.cfg.protomapsMeta || (this.cfg.protomaps === 'https://build.protomaps.com' ? 'https://build-metadata.protomaps.dev' : this.cfg.protomaps)) + '/builds.json';   // the build list moved off build.protomaps.com; the downloads did not
     const txt = await this.cached(['pm', url], () => this.text(url), 3600000, force);
     const b = (txt.match(/\d{8}(?=\.pmtiles)/g) || []).sort();
     if (!b.length) throw new ApiError(502, 'could not find a Protomaps build');
@@ -360,11 +360,12 @@ class Manager {
     const bin = path.join(await this.toolDir(), name + (this.plat === 'windows' ? '.exe' : ''));
     if (fs.existsSync(bin)) return bin;
     const archMap = { x64: 'x86_64', arm64: 'arm64', arm: 'armv6' }, os = { linux: 'Linux', darwin: 'Darwin', windows: 'Windows' }[this.plat], a = archMap[this.cfg.arch];
+    if (a === 'armv6') throw new ApiError(500, 'Offline maps need a 64-bit system: the map tool has no 32-bit Raspberry Pi build. Content packs still work.');
     if (!os || !a || (os === 'Windows' && a !== 'x86_64')) throw new ApiError(500, 'The map tool is not available for this computer (' + this.plat + ' ' + this.cfg.arch + ')');
     const j = JSON.parse(await this.text(this.cfg.githubApi + '/repos/' + this.cfg.pmtilesRepo + '/releases/latest'));
     const tag = j.tag_name, ver = String(tag).replace(/^v/, '');
     if (!/^v?\d+\.\d+\.\d+$/.test(tag)) throw new ApiError(502, 'unexpected map tool release');
-    const file = 'go-pmtiles_' + ver + '_' + os + '_' + a + (os === 'Windows' ? '.zip' : '.tar.gz'), base = this.cfg.githubDl + '/' + this.cfg.pmtilesRepo + '/releases/download/' + tag + '/';
+    const file = (os === 'Darwin' ? 'go-pmtiles-' : 'go-pmtiles_') + ver + '_' + os + '_' + a + (os === 'Windows' ? '.zip' : '.tar.gz'), base = this.cfg.githubDl + '/' + this.cfg.pmtilesRepo + '/releases/download/' + tag + '/';
     const tmp = fs.mkdtempSync(path.join(await this.toolDir(), 'dl-')), part = path.join(tmp, file);
     try {
       let sha = null;

@@ -63,6 +63,7 @@ def make_config(env=None):
         "github_api": env.get("NORWINPREP_API_BASE", "https://api.github.com").rstrip("/"),
         "github_dl": env.get("NORWINPREP_DL_BASE", "https://github.com").rstrip("/"),
         "protomaps": env.get("NORWINPREP_PROTOMAPS_BASE", "https://build.protomaps.com").rstrip("/"),
+        "protomaps_meta": env.get("NORWINPREP_PROTOMAPS_META") or ("https://build-metadata.protomaps.dev" if not env.get("NORWINPREP_PROTOMAPS_BASE") else env["NORWINPREP_PROTOMAPS_BASE"].rstrip("/")),
         "slug": env.get("NORWINPREP_SLUG", "NorwinLabs/NorwinPrepDisk"),
         "pmtiles": env.get("NORWINPREP_PMTILES", "/usr/local/bin/pmtiles"),
         "restart_cmd": env.get("NORWINPREP_RESTART_CMD", "sudo -n systemctl restart norwinprep-kiwix.service"),
@@ -183,7 +184,7 @@ class Manager:
         return self.cached(("release", url), fetch, force=force)
 
     def protomaps_build(self, force=False):
-        url = "%s/builds.json" % self.cfg["protomaps"]
+        url = "%s/builds.json" % self.cfg["protomaps_meta"]
         txt = self.cached(("pm", url), lambda: self.text(url), force=force)
         builds = re.findall(r"(\d{8})\.pmtiles", txt)
         if not builds:

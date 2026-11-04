@@ -23,18 +23,14 @@ survival=(
   "other zimgit-water_en"
   "other zimgit-post-disaster_en"
   "other zimgit-food-preparation_en"
-  "wikem wikem_en_all_maxi"
-  "stack_exchange survival.stackexchange.com_en_all"
   "stack_exchange outdoors.stackexchange.com_en_all"
-  "stack_exchange health.stackexchange.com_en_all"
   "other appropedia_en_all_maxi"
   "wikipedia wikipedia_en_top_nopic"
 )
 small=(
   "wikipedia wikipedia_en_top_maxi"
-  "wikihow wikihow_en_maxi"
   "ifixit ifixit_en_all"
-  "mdwiki mdwiki_en_all_maxi"
+  "other mdwiki_en_all_maxi"
   "stack_exchange diy.stackexchange.com_en_all"
   "stack_exchange gardening.stackexchange.com_en_all"
   "stack_exchange cooking.stackexchange.com_en_all"
@@ -46,7 +42,7 @@ medium=(
   "wikibooks wikibooks_en_all_maxi"
   "wikivoyage wikivoyage_en_all_maxi"
   "wikiversity wikiversity_en_all_maxi"
-  "wiktionary wiktionary_en_all_maxi"
+  "wiktionary wiktionary_en_all_nopic"
   "gutenberg gutenberg_en_all"
   "phet phet_en_all"
   "libretexts libretexts.org_en_med"
@@ -57,8 +53,8 @@ medium=(
 large=(
   "wikipedia wikipedia_en_all_maxi"
   "wikisource wikisource_en_all_maxi"
-  "khan_academy khan_academy_en_all"
-  "wikinews wikinews_en_all_maxi"
+  "other khanacademy_en_all"
+  "wikinews wikinews_en_all_nopic"
 )
 case "$tier" in
   survival) items=("${survival[@]}") ;;

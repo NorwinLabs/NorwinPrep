@@ -6,6 +6,7 @@ print = functools.partial(print, flush=True)
 
 CAT = sys.argv[1] if len(sys.argv) > 1 else "app/shared/site/catalog.json"
 KIWIX, PM, GH = "https://download.kiwix.org", "https://build.protomaps.com", "https://api.github.com"
+PM_META = "https://build-metadata.protomaps.dev"
 UA = {"User-Agent": "norwinprep-catalog-check"}
 
 def get(url, method="GET", n=None):
@@ -51,13 +52,15 @@ for m in mods:
             report(m, False, "no file %s_YYYY-MM.zim in %s (similar: %s)" % (i["prefix"], base, ", ".join(near) or "none")); continue
         r = probe("%s%s_%s.zim" % (base, i["prefix"], vs[-1])); report(m, r is not None and not isinstance(r, str), "%s %s" % (vs[-1], r))
     elif k == "maps":
-        t = listing(PM + "/builds.json")
+        t = listing(PM_META + "/builds.json")
         if not re.search(r"\d{8}(?=\.pmtiles)", t):
             for alt in ("https://build-metadata.protomaps.dev/builds.json",):
                 t2 = listing(alt); print("     builds.json head:", t[:200].replace("\n", " "), "| alt", alt, "->", t2[:200].replace("\n", " "))
                 if re.search(r"\d{8}", t2): t = t2
         b = sorted(re.findall(r"\d{8}(?=\.pmtiles)", t))
-        report(m, bool(b), "latest build %s" % (b[-1] if b else "none found (builds.json unreadable)"))
+        if b:
+            r = probe("%s/%s.pmtiles" % (PM, b[-1])); report(m, r is not None and not isinstance(r, str), "build %s file %s" % (b[-1], r))
+        else: report(m, False, "no build list readable")
     elif k == "app":
         try:
             rel = json.loads(get("%s/repos/NorwinLabs/NorwinPrepDisk/releases/latest" % GH)[2]); names = [a["name"] for a in rel["assets"]]
@@ -73,7 +76,7 @@ for m in mods:
 # pmtiles tool for map installs
 try:
     j = json.loads(get("%s/repos/protomaps/go-pmtiles/releases/latest" % GH)[2]); names = [a["name"] for a in j["assets"]]
-    for need in ("Linux_x86_64.tar.gz", "Linux_arm64.tar.gz", "Linux_armv6.tar.gz", "Windows_x86_64.zip"):
+    for need in ("Linux_x86_64.tar.gz", "Linux_arm64.tar.gz", "Windows_x86_64.zip"):   # no 32-bit ARM build exists
         report(dict(id="pmtiles/" + need), any(n.endswith(need) for n in names), j["tag_name"])
     print("pmtiles assets:", ", ".join(names))
 except Exception as e: report(dict(id="pmtiles"), False, str(e))

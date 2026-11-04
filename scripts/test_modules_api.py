@@ -168,7 +168,7 @@ class ContentTests(Base):
         s, i = self.get("/api/modules/info?id=medicine"); self.assertEqual(s, 200)
         self.assertEqual((i["file"], i["version"], i["bytes"]), ("zimgit-medicine_en_2025-03.zim", "2025.03", len(ZIM))); self.assertGreater(i["free"], 0)
         self.assertEqual(self.get("/api/modules/info?id=nope")[0], 404)
-        s, i = self.get("/api/modules/info?id=survival-se"); self.assertEqual(s, 404); self.assertIn("not found in the Kiwix library", i["error"])
+        s, i = self.get("/api/modules/info?id=gardening"); self.assertEqual(s, 404); self.assertIn("not found in the Kiwix library", i["error"])
     def test_info_when_kiwix_unreachable(self):
         self.mgr.cfg["kiwix"] = "http://127.0.0.1:1"; s, i = self.get("/api/modules/info?id=medicine"); self.assertEqual(s, 502); self.assertIn("Could not reach", i["error"])
     def test_install_verifies_and_replaces_old(self):
@@ -203,7 +203,7 @@ class ContentTests(Base):
         self.post("/api/modules/install", {"id": "medicine"}); j = self.wait("medicine"); self.assertEqual(j["state"], "error"); self.assertIn("Not enough free space", j["message"])
         self.assertTrue(not os.path.exists(self.zim) or os.listdir(self.zim) == [])
     def test_not_in_library(self):
-        self.post("/api/modules/install", {"id": "survival-se"}); j = self.wait("survival-se"); self.assertEqual(j["state"], "error"); self.assertIn("not found", j["message"])
+        self.post("/api/modules/install", {"id": "gardening"}); j = self.wait("gardening"); self.assertEqual(j["state"], "error"); self.assertIn("not found", j["message"])
     def test_remove(self):
         self.post("/api/modules/install", {"id": "water"}); self.wait("water")
         self.assertEqual(self.post("/api/modules/remove", {"id": "water"})[0], 202); self.assertEqual(self.wait("water")["state"], "done")
@@ -295,7 +295,7 @@ class SizeTests(Base):
         self.assertEqual(by["medicine"]["size"], len(ZIM)); self.assertEqual(by["water"]["size"], len(WATER))
         self.assertEqual(by["app-android"]["size"], len(APK)); self.assertEqual(by["app-windows"]["size"], len(EXE) + len(PORT_EXE))
         self.assertNotIn("size", by["map-world"], "map size depends on the region, so no exact number is claimed")
-        self.assertNotIn("size", by["survival-se"], "not in the library -> no size")
+        self.assertNotIn("size", by["gardening"], "not in the library -> no size")
         self.assertEqual(by["medicine"]["latest"], "2025.03", "the same lookup also tells us the newest version")
     def test_installed_module_reports_its_size_on_disk(self):
         os.makedirs(self.zim); open(os.path.join(self.zim, "zimgit-medicine_en_2024-06.zim"), "wb").write(b"x" * 4321)

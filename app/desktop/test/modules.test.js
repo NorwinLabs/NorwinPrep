@@ -24,8 +24,8 @@ const reset = () => { Object.assign(F, { shaOk: true, shaMissing: false, newZim:
 
   // ---------- catalog ----------
   const forLinux = loadCatalog(CATALOG, 'linux'), forWin = loadCatalog(CATALOG, 'windows'), forAndroid = loadCatalog(CATALOG, 'android');
-  ok(forLinux.length === 46 && forLinux.some((m) => m.id === 'reader') && forWin.some((m) => m.type === 'maps'), 'desktop sees all 46 modules including the reader and maps');
-  ok(forAndroid.length > 30 && forAndroid.every((m) => m.type === 'content'), 'Android only sees content packs (' + forAndroid.length + ')');
+  ok(forLinux.length === 42 && forLinux.some((m) => m.id === 'reader') && forWin.some((m) => m.type === 'maps'), 'desktop sees all 42 modules including the reader and maps');
+  ok(forAndroid.length > 25 && forAndroid.every((m) => m.type === 'content'), 'Android only sees content packs (' + forAndroid.length + ')');
   for (const bad of [{ id: '../x', type: 'content', sizeClass: 's', install: { kind: 'zim', subdir: 'a', prefix: 'b' } }, { id: 'ok1', type: 'content', sizeClass: 's', install: { kind: 'zim', subdir: '../etc', prefix: 'b' } },
     { id: 'ok2', type: 'content', sizeClass: 's', install: { kind: 'shell', cmd: 'rm -rf /' } }, { id: 'ok3', type: 'maps', sizeClass: 's', install: { kind: 'maps', file: '../x.pmtiles', maxzoom: 7 } },
     { id: 'ok4', type: 'maps', sizeClass: 's', install: { kind: 'maps', file: 'a.pmtiles', maxzoom: 7, bbox: '1,2,3' } }, { id: 'ok5', type: 'app', sizeClass: 's', install: { kind: 'app', suffixes: ['a/../b'] } },
@@ -60,7 +60,7 @@ const reset = () => { Object.assign(F, { shaOk: true, shaMissing: false, newZim:
   let dup; try { t.enqueue('water', 'install'); } catch (e) { dup = e; } ok(dup && dup.code === 409, 'a second request for the same module is refused (409)');
   ok((await done(t, 'medicine')).state === 'done' && (await done(t, 'water')).state === 'done', 'queued installs run one after the other');
   reset(); ({ mgr: t } = make()); t.disk = () => ({ free: 1000, total: 1e9 }); t.enqueue('water', 'install'); j = await done(t, 'water'); ok(j.state === 'error' && /Not enough free space/.test(j.message), 'full disk is reported before downloading');
-  reset(); ({ mgr: t } = make()); t.enqueue('survival-se', 'install'); j = await done(t, 'survival-se'); ok(j.state === 'error' && /not found/.test(j.message), 'not in the Kiwix library: clear message');
+  reset(); ({ mgr: t } = make()); t.enqueue('gardening', 'install'); j = await done(t, 'gardening'); ok(j.state === 'error' && /not found/.test(j.message), 'not in the Kiwix library: clear message');
   reset(); ({ mgr: t, calls: c } = make()); t.enqueue('water', 'install'); await done(t, 'water'); const before = c.restarts;
   t.enqueue('water', 'remove'); ok((await done(t, 'water')).state === 'done' && !mod(t, 'water').installed && c.restarts > before, 'remove deletes it and restarts the reader');
   t.enqueue('water', 'remove'); ok((await done(t, 'water')).state === 'error', 'removing something not installed is an error');
@@ -74,7 +74,7 @@ const reset = () => { Object.assign(F, { shaOk: true, shaMissing: false, newZim:
   // ---------- sizes ----------
   reset(); ({ mgr: t } = make()); t.catalog(); await settle(t); let cat = Object.fromEntries(t.catalog().map((m) => [m.id, m]));
   ok(cat.medicine.size === ZIM.length && cat.water.size === WATER.length && cat['app-android'].size === APK.length && cat['app-windows'].size === EXE.length + PEXE.length, 'exact sizes are looked up in the background');
-  ok(cat['map-world'].size === undefined && cat['survival-se'].size === undefined && cat.medicine.latest === '2025.03', 'maps have no exact size; missing items have none; versions learned too');
+  ok(cat['map-world'].size === undefined && cat['gardening'].size === undefined && cat.medicine.latest === '2025.03', 'maps have no exact size; missing items have none; versions learned too');
   reset(); ({ mgr: t } = make({ kiwix: 'http://127.0.0.1:1' })); t.catalog(); await settle(t); ok(t.sizes.fail > 0, 'offline: the size lookup gives up quietly'); t.catalog(); ok(!t.sizesPending(), '...and does not retry straight away');
 
   // ---------- maps (downloads the pmtiles tool on first use) ----------
@@ -95,7 +95,7 @@ const reset = () => { Object.assign(F, { shaOk: true, shaMissing: false, newZim:
   // ---------- info / API ----------
   reset(); ({ mgr: t } = make()); const i1 = await t.info('medicine'); ok(i1.file === 'zimgit-medicine_en_2025-03.zim' && i1.bytes === ZIM.length && i1.free > 0, 'info: file, version, size, free space');
   let e1; try { await t.info('nope'); } catch (e) { e1 = e; } ok(e1 && e1.code === 404, 'info: unknown module is 404');
-  r = await t.handle('GET', '/info', new URLSearchParams('id=survival-se'), null); ok(r.code === 404 && /not found in the Kiwix library/.test(r.body.error), 'info through the API: missing item explained');
+  r = await t.handle('GET', '/info', new URLSearchParams('id=gardening'), null); ok(r.code === 404 && /not found in the Kiwix library/.test(r.body.error), 'info through the API: missing item explained');
   ({ mgr: t } = make({ kiwix: 'http://127.0.0.1:1' })); r = await t.handle('GET', '/info', new URLSearchParams('id=medicine'), null); ok(r.code === 502 && /Could not reach/.test(r.body.error), 'info while offline: clean 502');
   ok((await t.handle('POST', '/pin', new URLSearchParams(), {})).code === 200 && (await t.handle('GET', '/nope', new URLSearchParams(), null)).code === 404 && (await t.handle('POST', '/install', new URLSearchParams(), { id: '../../x' })).code === 404, 'API: pin ok, unknown route 404, hostile id 404');
   ({ mgr: t } = make()); ok((await t.handle('POST', '/refresh', new URLSearchParams(), {})).code === 200 && (await t.handle('POST', '/refresh', new URLSearchParams(), {})).code === 429, 'refresh is throttled');
