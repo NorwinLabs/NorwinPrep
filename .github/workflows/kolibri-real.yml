@@ -1,0 +1,17 @@
+name: Kolibri on a real machine
+on:
+  workflow_dispatch:
+  push:
+    paths: ['app/desktop/kolibri.js', 'app/desktop/modules-manager.js', 'app/desktop/unzip.js', 'app/desktop/test/kolibri-real.js', '.github/workflows/kolibri-real.yml']
+jobs:
+  real:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.12' }
+      - name: Install and run the real Kolibri through the app's own code
+        run: node app/desktop/test/kolibri-real.js

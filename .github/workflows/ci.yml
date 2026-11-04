@@ -58,6 +58,7 @@ jobs:
           node test/modules.test.js
           node test/reader.test.js
           node test/share.test.js
+          node test/kolibri.test.js
       - name: Smoke test (source)
         run: xvfb-run -a ./node_modules/electron/dist/electron . --no-sandbox --selftest
       - name: Build AppImage + deb for x64, arm64, armv7l

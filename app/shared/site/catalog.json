@@ -1041,6 +1041,33 @@
         "app"
       ],
       "open": "/tools/notes/"
+    },
+    {
+      "id": "kolibri",
+      "type": "tool",
+      "category": "education",
+      "name": "Kolibri",
+      "tagline": "A full offline school: courses, quizzes, progress",
+      "description": "Learning Equality's offline learning platform. Teachers and learners get accounts, lessons and progress tracking. Import courses (such as Khan Academy) inside Kolibri. Needs Python 3 on this computer.",
+      "by": "LEARNING EQUALITY",
+      "source": "https://learningequality.org/kolibri/",
+      "icon": "book",
+      "color": "#7b5cd6",
+      "sizeClass": "s",
+      "install": {
+        "kind": "python-wheel",
+        "package": "kolibri",
+        "dir": "kolibri"
+      },
+      "platforms": [
+        "windows",
+        "linux",
+        "darwin"
+      ],
+      "hosts": [
+        "app"
+      ],
+      "open": "/learn/"
     }
   ],
   "tiers": [

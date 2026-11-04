@@ -109,6 +109,14 @@ function create(opts) {
 
     // Defend against DNS-rebinding and cross-site requests to this loopback server
     if (!hostOk(req.headers.host)) return send(403, 'text/plain', 'Forbidden');
+    // Kolibri (the offline school platform) runs behind /learn/. It has its own login, so it does not use the app's X-NorwinPrep header;
+    // writes only need to come from this page's own origin.
+    if (opts.kolibri && /^\/learn(\/|$)/.test(req.url.split('?')[0])) {
+      const o = req.headers.origin;
+      if (o && !origins().includes(o)) return send(403, 'text/plain', 'Forbidden');
+      if (req.url.split('?')[0] === '/learn') { res.writeHead(302, { Location: '/learn/' }); return res.end(); }
+      return opts.kolibri.proxy(req, res);
+    }
     const writes = req.method === 'PUT' || req.method === 'POST' || req.method === 'DELETE';
     if (writes) {
       const o = req.headers.origin;
@@ -288,7 +296,7 @@ function createShare(opts) {
     if (p === '/api/device') {
       res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store', 'Access-Control-Allow-Origin': '*' });
       return res.end(head ? undefined : JSON.stringify({ name: opts.getName(), mode: 'pi', version: opts.version, share: true, modules: false, address: 'http://' + (req.headers.host || ''),
-        hasLibrary: !!(opts.reader && opts.reader.ready()), hasMaps: listDir(opts.mapsDir, TILE_RE).length > 0, hasApps: listDir(opts.appsDir, ASSET_FILE_RE).length > 0, tools: opts.siteList ? opts.siteList() : [] }));
+        hasLibrary: !!(opts.reader && opts.reader.ready()), hasMaps: listDir(opts.mapsDir, TILE_RE).length > 0, hasApps: listDir(opts.appsDir, ASSET_FILE_RE).length > 0, tools: opts.siteList ? opts.siteList() : [], kolibri: opts.kolibriInfo ? opts.kolibriInfo() : null }));
     }
     if (serveContent(req, res, p, head, opts)) return;
     // only the portal and the map viewer are public; the store, settings and updates are not

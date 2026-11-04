@@ -46,6 +46,8 @@ function loadCatalog(file, platform) {
     } else if (i.kind === 'static-site') {
       if (!/^[A-Za-z0-9._-]+\/[A-Za-z0-9._-]+$/.test(i.repo || '') || !/^[a-z0-9-]+$/.test(i.dir || '') || typeof i.asset !== 'string' || i.asset.length > 120) throw new Error('bad static-site spec for ' + m.id);
       new RegExp(i.asset);
+    } else if (i.kind === 'python-wheel') {
+      if (!/^[a-z0-9][a-z0-9._-]{0,60}$/.test(i.package || '') || !/^[a-z0-9-]+$/.test(i.dir || '')) throw new Error('bad python-wheel spec for ' + m.id);
     } else if (i.kind === 'bundled') {
       if (!/^[a-z0-9-]+$/.test(i.dir || '')) throw new Error('bad bundled spec for ' + m.id);
     } else if (i.kind !== 'kiwix-tools') throw new Error('unknown install kind for ' + m.id);
@@ -92,7 +94,7 @@ class Manager {
   constructor(cfg) {
     this.cfg = Object.assign({ timeout: 30000, kiwix: 'https://download.kiwix.org', githubApi: 'https://api.github.com', githubDl: 'https://github.com',
       protomaps: 'https://build.protomaps.com', protomapsMeta: null, slug: 'NorwinLabs/NorwinPrepDisk', pmtilesRepo: 'protomaps/go-pmtiles', platform: process.platform,
-      arch: process.arch, bundledDir: path.join(__dirname, 'site'), onLibraryChange: async () => true, run: spawn }, cfg);
+      arch: process.arch, pypi: 'https://pypi.org', pythonCheck: async () => true, onKolibriChange: async () => true, bundledDir: path.join(__dirname, 'site'), onLibraryChange: async () => true, run: spawn }, cfg);
     this.mods = loadCatalog(this.cfg.catalog, this.cfg.platform === 'win32' ? 'windows' : this.cfg.platform);
     this.byid = Object.fromEntries(this.mods.map((m) => [m.id, m]));
     this.jobs = {}; this.queue = []; this.working = false; this.cache = new Map();
@@ -160,6 +162,11 @@ class Manager {
       const st = fs.statSync(bin);
       return { version: ver, files: ['kiwix-serve'], bytes: dirSize(dir), updated: st.mtimeMs / 1000 };
     }
+    if (i.kind === 'python-wheel') {
+      const dir = path.join(this.cfg.dataDir, i.dir, 'app');
+      try { const meta = JSON.parse(fs.readFileSync(path.join(dir, '.installed'), 'utf8')), st = fs.statSync(path.join(dir, '.installed'));
+        return { version: String(meta.version || '?').slice(0, 20), files: [i.dir], bytes: dirSize(dir), updated: st.mtimeMs / 1000 }; } catch (e) { return null; }
+    }
     if (i.kind === 'static-site' || i.kind === 'bundled') {
       const dir = path.join(this.d('sites'), i.dir);
       try {
@@ -182,6 +189,7 @@ class Manager {
     if (i.kind === 'zim') { const html = this.peek(['list', this.zimBase(m)]); if (html === undefined) return null; const vs = this.zimVersions(html, i.prefix); return vs.length ? vs[vs.length - 1].replace('-', '.') : null; }
     if (i.kind === 'app') { const r = this.peek(['release', this.releaseUrl()]); return r ? r.tag.slice(1) : null; }
     if (i.kind === 'static-site') { const r = this.peek(['site', i.repo]); return r ? r.tag.replace(/^v/, '') : null; }
+    if (i.kind === 'python-wheel') { const r = this.peek(['pypi', i.package]); return r ? r.version : null; }
     return null;
   }
   knownSize(m) {
@@ -197,7 +205,21 @@ class Manager {
       return files.length === i.suffixes.length ? files.reduce((a, n) => a + r.assets[n], 0) : null;
     }
     if (i.kind === 'static-site') { const r = this.peek(['site', i.repo]); return r ? r.size : null; }
+    if (i.kind === 'python-wheel') { const r = this.peek(['pypi', i.package]); return r ? r.size : null; }
     return null;
+  }
+  // the newest wheel of a pure-Python package on PyPI (Kolibri). Only files.pythonhosted.org is trusted as the download host.
+  async pypiRelease(m, force) {
+    const i = m.install;
+    return this.cached(['pypi', i.package], async () => {
+      const j = JSON.parse(await this.text(this.cfg.pypi + '/pypi/' + i.package + '/json'));
+      const w = (j.urls || []).filter((u) => u.packagetype === 'bdist_wheel' && /-(py3|py2\.py3)-none-any\.whl$/.test(u.filename || ''))[0];
+      if (!w) throw new ApiError(404, 'PyPI has no pure-Python download of ' + i.package);
+      const url = new URL(w.url);
+      if (!this.cfg.pypiFilesAny && !(url.protocol === 'https:' && url.hostname === 'files.pythonhosted.org')) throw new ApiError(502, 'unexpected download address for ' + i.package);
+      const sha = String((w.digests && w.digests.sha256) || '').toLowerCase(); if (!/^[0-9a-f]{64}$/.test(sha)) throw new ApiError(502, 'PyPI published no checksum for ' + i.package);
+      return { version: String(j.info.version).slice(0, 20), requires: String(j.info.requires_python || '').slice(0, 40), url: w.url, name: w.filename, size: Number(w.size || 0), sha };
+    }, 3600000, force);
   }
   // the newest release of a static web app on GitHub (e.g. CyberChef) and the one asset we install
   async siteRelease(m, force) {
@@ -261,6 +283,9 @@ class Manager {
       } else if (i.kind === 'static-site') {
         const r = await this.siteRelease(m, true);
         Object.assign(res, { file: r.name, version: r.tag.replace(/^v/, ''), bytes: r.size });
+      } else if (i.kind === 'python-wheel') {
+        const r = await this.pypiRelease(m, true);
+        Object.assign(res, { file: r.name, version: r.version, bytes: r.size, note: 'Needs Python ' + (r.requires || '3') + ' on this computer. Unpacked it takes about 3 times the download.' });
       } else if (i.kind === 'bundled') Object.assign(res, { file: 'built into the app', version: '1', bytes: 0, note: 'Nothing is downloaded.' });
       else Object.assign(res, { file: 'kiwix-serve', version: null, note: 'A small program that lets the app show content packs.' });
     } catch (e) {
@@ -297,6 +322,7 @@ class Manager {
     };
     await Promise.all([worker(), worker(), worker(), worker()]);
     try { await this.latestRelease(true); } catch (e) { if (!(e instanceof HttpError)) throw e; }
+    for (const m of this.mods.filter((x) => x.install.kind === 'python-wheel')) { try { await this.pypiRelease(m, true); } catch (e) { if (!(e instanceof HttpError) && !(e instanceof ApiError)) throw e; } }
     for (const m of this.mods.filter((x) => x.install.kind === 'static-site')) { try { await this.siteRelease(m, true); } catch (e) { if (!(e instanceof HttpError) && !(e instanceof ApiError)) throw e; } }
   }
   sizesPending() { return this.sizes.running; }
@@ -320,7 +346,7 @@ class Manager {
           if (action === 'remove') await this.remove(m);
           else {
             if (m.type === 'content') await this.ensureReader(id);
-            await ({ zim: this.installZim, maps: this.installMaps, app: this.installApp, 'kiwix-tools': this.installReader, 'static-site': this.installSite, bundled: this.installBundled })[m.install.kind].call(this, m);
+            await ({ zim: this.installZim, maps: this.installMaps, app: this.installApp, 'kiwix-tools': this.installReader, 'static-site': this.installSite, 'python-wheel': this.installWheel, bundled: this.installBundled })[m.install.kind].call(this, m);
           }
           this.set(id, { state: 'done', percent: 100, message: action === 'remove' ? 'Removed' : 'Installed' });
         } catch (e) {
@@ -486,6 +512,22 @@ class Manager {
     } finally { fs.rmSync(tmp, { recursive: true, force: true }); }
     await this.restartLibrary();
   }
+  async installWheel(m) {            // Kolibri: needs Python on this computer; the wheel is unpacked and run in place
+    const i = m.install, r = await this.pypiRelease(m, true);
+    try { await this.cfg.pythonCheck(r.requires); } catch (e) { throw new ApiError(412, e.message); }
+    this.needSpace(r.size * 4);
+    const base = path.join(this.cfg.dataDir, i.dir); fs.mkdirSync(base, { recursive: true });
+    const tmp = fs.mkdtempSync(path.join(base, '.dl-')), part = path.join(tmp, r.name);
+    try {
+      await this.download(m.id, r.url, part, r.sha, m.name + ': ');
+      this.set(m.id, { percent: 99, message: 'Unpacking…' });
+      const out = path.join(tmp, 'app'); unzip(fs.readFileSync(part), out, 1200 * 1024 * 1024);
+      if (!fs.existsSync(path.join(out, i.package, '__init__.py'))) throw new ApiError(502, 'The download did not contain ' + i.package);
+      fs.writeFileSync(path.join(out, '.installed'), JSON.stringify({ version: r.version, requires: r.requires }));
+      await this.cfg.onKolibriChange('stop');
+      const dest = path.join(base, 'app'); fs.rmSync(dest, { recursive: true, force: true }); fs.renameSync(out, dest);
+    } finally { fs.rmSync(tmp, { recursive: true, force: true }); }
+  }
   async installBundled(m) {          // ships inside the app: "installing" just switches it on
     const dir = path.join(this.d('sites'), m.install.dir); fs.mkdirSync(dir, { recursive: true });
     fs.writeFileSync(path.join(dir, '.installed'), JSON.stringify({ version: '1' }));
@@ -514,6 +556,9 @@ class Manager {
     const ins = this.installed(m); if (!ins) throw new ApiError(404, 'Not installed');
     const k = m.install.kind;
     if (k === 'kiwix-tools') { fs.rmSync(path.join(this.cfg.dataDir, 'reader'), { recursive: true, force: true }); await this.restartLibrary(); return; }
+    if (k === 'python-wheel') {            // the program goes; accounts and lessons in <data>/<dir>/home stay
+      await this.cfg.onKolibriChange('stop'); fs.rmSync(path.join(this.cfg.dataDir, m.install.dir, 'app'), { recursive: true, force: true }); return;
+    }
     if (k === 'static-site' || k === 'bundled') { fs.rmSync(path.join(this.d('sites'), m.install.dir), { recursive: true, force: true }); return; }
     const folder = { zim: 'zim', maps: 'maps', app: 'apps' }[k];
     for (const f of ins.files) fs.unlinkSync(path.join(this.d(folder), f));

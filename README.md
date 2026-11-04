@@ -42,8 +42,12 @@ Quick setup installs a whole set in one tap: **Essential** (medicine, water, foo
 Khan Academy, more textbooks and detailed maps). The dialog shows the modules, the download size and your free space first.
 
 Tools on desktop and Pi: **CyberChef** (GCHQ's data toolkit, downloaded from its GitHub release and run offline) and **Notes** (built in, stays on the device).
-Both open inside the app and are offered to devices that join your Wi-Fi share. Not built yet: Kolibri (full Khan Academy courses with progress tracking)
-and an offline AI assistant; each is a separate server program that needs its own installer, so they are future work.
+Both open inside the app and are offered to devices that join your Wi-Fi share. **Kolibri** (Learning Equality's offline school platform: courses, quizzes, learner accounts and progress) is under Education on desktop and Pi.
+It is a Python program: the app downloads it from PyPI (checksum verified), runs it on your computer only, and opens it at `/learn/` inside the app.
+It needs Python 3.6 to 3.14 installed (Raspberry Pi OS has it; on Windows install it from python.org). The first start takes a minute or two. Import courses
+(for example Khan Academy) inside Kolibri's own Device page, which needs internet. While Wi-Fi sharing is on, Kolibri also listens on the Wi-Fi so children can open it
+from the landing page and sign in with a learner account you create. Removing the module keeps your accounts and lessons.
+Not built yet: an offline AI assistant (a separate server plus multi-GB models).
 
 ## Install on any device, share over Wi-Fi
 

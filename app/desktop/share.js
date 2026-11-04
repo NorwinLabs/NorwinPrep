@@ -65,6 +65,7 @@ class Share {
       throw fail(500, 'Could not start the Wi-Fi hotspot: ' + String(e.stderr || e.message).trim().split('\n')[0].slice(0, 160));
     }
     this.iface = iface; this.active = true; this.cfg.on = true; this.save();
+    if (this.o.onActive) { try { this.o.onActive(true); } catch (e) { /* not fatal */ } }
     return this.status();
   }
   async stop(keepPreference) {
@@ -73,6 +74,7 @@ class Share {
     try { await this.o.exec('nmcli', ['connection', 'delete', CON]); } catch (e) { /* already gone */ }
     if (this.server) { await this.server.stop(); this.server = null; }
     this.active = false; if (!keepPreference) this.cfg.on = false; this.save();
+    if (this.o.onActive) { try { this.o.onActive(false); } catch (e) { /* not fatal */ } }
     return this.status();
   }
   // at app start: share again if it was on when the app last ran, or if "start the Wi-Fi when the app opens" is set (the default).

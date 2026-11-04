@@ -28,6 +28,7 @@
       "updater.js",
       "modules-manager.js",
       "unzip.js",
+      "kolibri.js",
       "reader.js",
       "share.js",
       "site/**",
