@@ -14,7 +14,7 @@ BIN=/usr/local/bin/pmtiles
 
 command -v pmtiles >/dev/null || "$(dirname "$0")/install-pmtiles.sh"
 
-build="$(curl -fsSL https://build.protomaps.com/builds.json | grep -oE '[0-9]{8}\.pmtiles' | sort | tail -1)"
+build="$(curl -fsSL https://build-metadata.protomaps.dev/builds.json | grep -oE '[0-9]{8}\.pmtiles' | sort | tail -1)"
 [ -n "$build" ] || { echo "Could not determine latest Protomaps build"; exit 1; }
 SRC="https://build.protomaps.com/$build"
 echo "Using $SRC"

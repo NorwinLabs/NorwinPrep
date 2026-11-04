@@ -4,7 +4,7 @@ on:
   schedule:
     - cron: '17 6 * * 1'
   push:
-    paths: ['app/shared/site/catalog.json', 'scripts/check-catalog.py', '.github/workflows/check-catalog.yml']
+    paths: ['app/shared/site/catalog.json', 'scripts/**', 'README.md', 'install.sh', 'get.sh', '.github/workflows/check-catalog.yml']
 jobs:
   check:
     runs-on: ubuntu-latest

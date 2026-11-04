@@ -81,4 +81,39 @@ try:
     print("pmtiles assets:", ", ".join(names))
 except Exception as e: report(dict(id="pmtiles"), False, str(e))
 top = re.findall(r'href="([^"/]+)/\"', listing(KIWIX + "/zim/")); print("zim folders:", ", ".join(top))
+# ---- every other link in the repo: catalog "source" pages, README, install/fetch scripts, CDN files ----
+import glob, os
+SKIP = re.compile(r"(127\.0\.0\.1|localhost|^http://10\.|example\.|norwinprep\.local|0\.0\.0\.0|schemas\.android|^http://x$|github\.com/x/y|github\.com/bot|\.\.\.|\$|^http://$|/releases/download/)")
+found = {}
+def add(u, where):
+    u = u.rstrip(".,;:)'\"`>]"); u = re.sub(r"\.git$", "", u)
+    if len(u) > 12 and not SKIP.search(u): found.setdefault(u, where)
+for m in mods: add(m.get("source", ""), "catalog:" + m["id"]) if m.get("source", "").startswith("http") else None
+files = ["README.md", "install.sh", "get.sh", "uninstall.sh"] + glob.glob("scripts/*.sh") + glob.glob("scripts/*.py") + glob.glob("app/desktop/scripts/*.js") + glob.glob("app/shared/site/*.html") + glob.glob("app/shared/site/*.js") + glob.glob("app/desktop/*.js")
+for f in files:
+    if os.path.basename(f) == "check-catalog.py": continue
+    for u in re.findall(r"https?://[A-Za-z0-9._~:/?#@!&*+,;=%-]+", open(f, encoding="utf-8", errors="replace").read()): add(u, f)
+for p in ("maplibre-gl@4.7.1/dist/maplibre-gl.js", "maplibre-gl@4.7.1/dist/maplibre-gl.css", "pmtiles@3.2.1/dist/pmtiles.js", "@protomaps/basemaps@5.0.0/dist/basemaps.js"):
+    add("https://cdn.jsdelivr.net/npm/" + p, "scripts/fetch-web-assets.sh")
+add("https://github.com/protomaps/go-pmtiles/releases/latest", "scripts/install-pmtiles.sh")
+print("\n--- %d other links ---" % len(found))
+other_bad = []
+for u, where in sorted(found.items()):
+    code = None
+    for method in ("HEAD", "GET"):
+        try:
+            req = urllib.request.Request(u, method=method, headers={"User-Agent": "Mozilla/5.0 (norwinprep-link-check)", "Range": "bytes=0-0"} if method == "GET" else UA)
+            with urllib.request.urlopen(req, timeout=20) as r: code = r.status
+            break
+        except urllib.error.HTTPError as e:
+            code = e.code
+            if method == "HEAD" and e.code in (400, 403, 405, 501): continue
+            break
+        except Exception as e:
+            code = str(e)[:60]; break
+    good = isinstance(code, int) and code < 400
+    blocked = code in (401, 403, 429, 999)
+    print(("ok   " if good else "WARN " if blocked else "FAIL ") + "%s  [%s]  (%s)" % (u, code, where))
+    if not good and not blocked: other_bad.append(u)
+bad += other_bad
 print("\n%d problem(s)" % len(bad)); sys.exit(1 if bad else 0)
