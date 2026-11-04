@@ -1,7 +1,7 @@
 'use strict';
 // Run on a clean machine with internet (see .github/workflows/ai-real.yml): installs the REAL llama.cpp engine and a real small model with the
 // app's own installer, starts the app's own runner, asks a question through the app's own server, and checks that an answer streams back.
-const fs = require('fs'), os = require('os'), path = require('path'), http = require('http');
+const fs = require('fs'), os = require('os'), path = require('path'), http = require('http'), https = require('https');
 const { Manager } = require('../modules-manager');
 const { Llama } = require('../ai');
 const { create } = require('../local-server');
@@ -9,6 +9,13 @@ let fails = 0; const ok = (c, m) => { if (!c) { fails++; console.error('FAIL ' +
 (async () => {
   const data = fs.mkdtempSync(path.join(os.tmpdir(), 'npaireal-')), ai = new Llama({ dataDir: data, startTimeout: 420000 });
   const mgr = new Manager({ catalog: path.join(__dirname, '..', '..', 'shared', 'site', 'catalog.json'), dataDir: data, platform: process.platform, arch: process.arch, onAiChange: () => ai.stop() });
+  // facts: what does llama.cpp really publish? (printed so a failed match can be fixed from evidence)
+  try {
+    const rels = await new Promise((resolve, reject) => { https.get({ host: 'api.github.com', path: '/repos/ggml-org/llama.cpp/releases?per_page=12', headers: { 'User-Agent': 'norwinprep-check' } }, (r) => { let d = ''; r.on('data', (c) => d += c); r.on('end', () => { try { resolve(JSON.parse(d)); } catch (e) { reject(e); } }); }).on('error', reject); });
+    console.log('RELEASES:', rels.map((r) => r.tag_name + (r.prerelease ? '(pre)' : '') + ':' + (r.assets || []).length).join(' '));
+    const withBins = rels.filter((r) => (r.assets || []).some((a) => /^llama-/.test(a.name)))[0] || rels[1] || rels[0];
+    if (withBins) console.log('ASSETS of ' + withBins.tag_name + ':\n  ' + withBins.assets.map((a) => a.name + ' ' + a.size).join('\n  '));
+  } catch (e) { console.log('release probe failed:', e.message); }
   for (const id of ['ai-engine', 'qwen25-05b']) { const r = await mgr.handle('GET', '/info', new URLSearchParams('id=' + id), null); console.log('info', id, JSON.stringify(r.body)); ok(r.code === 200, id + ' is found on the real servers'); }
   const t0 = Date.now(); mgr.enqueue('qwen25-05b', 'install'); let j; for (let i = 0; i < 3600; i++) { j = mgr.jobs['qwen25-05b']; if (j.state === 'done' || j.state === 'error') break; await new Promise((r) => setTimeout(r, 500)); }
   ok(j.state === 'done', 'engine + model installed (' + Math.round((Date.now() - t0) / 1000) + 's): ' + j.message); if (j.state !== 'done') process.exit(1);
