@@ -87,7 +87,7 @@ for m in mods:
         try:
             allr = json.loads(get("%s/repos/%s/releases?per_page=20" % (GH, i["repo"]))[2])
             print("     recent releases:", [(r["tag_name"], r.get("prerelease"), len(r["assets"])) for r in allr[:6]])
-            rel = [r for r in allr if not r.get("draft") and not r.get("prerelease") and re.match(r"^b\d+$", r["tag_name"]) and any(x["name"].startswith("llama-") and re.search(r"\.(zip|tar\.gz|tgz)$", x["name"]) for x in r["assets"])][0]; bad_re = re.compile(r"cuda|vulkan|hip|sycl|opencl|rocm|openvino|cudart|kleidiai|musa|radeon|xcframework|android|ios|rpc|aclnn|cann|bf16", re.I)
+            rel = [r for r in allr if not r.get("draft") and re.match(r"^b\d+$", r["tag_name"]) and any(x["name"].startswith("llama-") and re.search(r"\.(zip|tar\.gz|tgz)$", x["name"]) for x in r["assets"])][0]; bad_re = re.compile(r"cuda|vulkan|hip|sycl|opencl|rocm|openvino|cudart|kleidiai|musa|radeon|xcframework|android|ios|rpc|aclnn|cann|bf16|snapdragon|adreno|zdnn|s390x|-ui\\b", re.I)
             for label, os_t, arch_t in (("linux-x64", ("ubuntu", "linux"), ("x64", "x86_64", "x86-64", "amd64")), ("linux-arm64", ("ubuntu", "linux"), ("arm64", "aarch64")), ("windows-x64", ("win", "windows"), ("x64", "x86_64", "amd64")), ("windows-arm64", ("win", "windows"), ("arm64", "aarch64")), ("macos-arm64", ("macos",), ("arm64", "aarch64")), ("macos-x64", ("macos",), ("x64", "x86_64"))):
                 hit = [x for x in rel["assets"] if x["name"].startswith("llama-") and re.search(r"\.(zip|tar\.gz|tgz)$", x["name"]) and not bad_re.search(x["name"])
                        and any(w in os_t for w in re.split(r"[^a-z0-9_]+", x["name"].lower())) and any(w in arch_t for w in re.split(r"[^a-z0-9_]+", x["name"].lower()))]

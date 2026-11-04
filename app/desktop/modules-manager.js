@@ -232,9 +232,9 @@ class Manager {
     return this.cached(['llama', i.repo], async () => {
       if (!osTok || !archTok) throw new ApiError(412, 'There is no ready-made AI engine for this computer (' + this.cfg.platform + ' ' + this.cfg.arch + ').');
       // "latest" is not the build release here (it is a nightly stub); the binaries are in the newest bNNNN release that has them
-      const all = JSON.parse(await this.text(this.cfg.githubApi + '/repos/' + i.repo + '/releases?per_page=20')), bad = /cuda|vulkan|hip|sycl|opencl|rocm|openvino|cudart|kleidiai|musa|radeon|xcframework|android|ios|rpc|aclnn|cann|bf16/i;
+      const all = JSON.parse(await this.text(this.cfg.githubApi + '/repos/' + i.repo + '/releases?per_page=20')), bad = /cuda|vulkan|hip|sycl|opencl|rocm|openvino|cudart|kleidiai|musa|radeon|xcframework|android|ios|rpc|aclnn|cann|bf16|snapdragon|adreno|zdnn|s390x|-ui\b/i;
       const words = (n) => n.toLowerCase().split(/[^a-z0-9_]+/);
-      const j = (Array.isArray(all) ? all : []).filter((r) => r && !r.draft && !r.prerelease && /^b\d+$/.test(r.tag_name || '') && (r.assets || []).some((a) => /^llama-/.test(a.name || '') && /\.(zip|tar\.gz|tgz)$/.test(a.name || '')))[0];
+      const j = (Array.isArray(all) ? all : []).filter((r) => r && !r.draft && /^b\d+$/.test(r.tag_name || '') && (r.assets || []).some((a) => /^llama-/.test(a.name || '') && /\.(zip|tar\.gz|tgz)$/.test(a.name || '')))[0];
       if (!j) throw new ApiError(502, 'No llama.cpp build release was found');
       const c = (j.assets || []).filter((a) => /^llama-/.test(a.name) && /\.(zip|tar\.gz|tgz)$/.test(a.name) && /^[A-Za-z0-9._-]+$/.test(a.name) && !bad.test(a.name)
         && words(a.name).some((w) => osTok.includes(w)) && words(a.name).some((w) => archTok.includes(w))).sort((a, b) => a.size - b.size);
