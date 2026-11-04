@@ -120,6 +120,46 @@ public class MainActivity extends Activity {
         else web.loadUrl(home);
     }
 
+    /** Installs offline content packs onto this phone (no hub needed). Null if the bundled catalog cannot be read. */
+    private ModuleManager makeModules(File zimDir) {
+        try (java.io.InputStream in = getAssets().open("site/catalog.json")) {
+            java.io.ByteArrayOutputStream b = new java.io.ByteArrayOutputStream();
+            byte[] buf = new byte[16384];
+            int n;
+            while ((n = in.read(buf)) > 0) b.write(buf, 0, n);
+            return new ModuleManager(zimDir, "https://download.kiwix.org", b.toString("UTF-8"));
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    /** Android has no embedded reader: hand the installed pack to the Kiwix app. Returns null on success, else a message. */
+    private String openInKiwix(String file) {
+        File base = getExternalFilesDir(null);
+        if (base == null) base = getFilesDir();
+        File f = new File(new File(base, "library/zim"), file);
+        if (!f.isFile()) return "That file is missing.";
+        try {
+            android.net.Uri uri = androidx.core.content.FileProvider.getUriForFile(this, getPackageName() + ".fileprovider", f);
+            android.content.Intent i = new android.content.Intent(android.content.Intent.ACTION_VIEW);
+            i.setDataAndType(uri, "application/octet-stream");
+            i.addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION | android.content.Intent.FLAG_ACTIVITY_NEW_TASK);
+            startActivity(i);
+            return null;
+        } catch (android.content.ActivityNotFoundException e) {
+            try {
+                android.content.Intent store = new android.content.Intent(android.content.Intent.ACTION_VIEW,
+                        android.net.Uri.parse("market://details?id=org.kiwix.kiwixmobile"));
+                store.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK);
+                startActivity(store);
+            } catch (Exception ignored) {
+            }
+            return "Install the free Kiwix app to read content packs, then tap Open again.";
+        } catch (Exception e) {
+            return "Could not open the file.";
+        }
+    }
+
     private void startServer() throws IOException {
         final SharedPreferences prefs = getSharedPreferences("device", Context.MODE_PRIVATE);
         final String defaultName = ("NorwinPrep (" + Build.MODEL.replaceAll("[^A-Za-z0-9 ._()-]", "-") + ")");
@@ -169,7 +209,9 @@ public class MainActivity extends Activity {
                     }
                 },
                 filesDir,
-                new AppUpdater(this));
+                new AppUpdater(this),
+                makeModules(new File(base, "library/zim")),
+                this::openInKiwix);
         home = "http://127.0.0.1:" + server.start(PORT) + "/";
     }
 

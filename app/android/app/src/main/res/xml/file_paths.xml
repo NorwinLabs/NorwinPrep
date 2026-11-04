@@ -2,4 +2,6 @@
 <paths>
     <!-- downloaded update APKs, shared with the system installer through FileProvider -->
     <cache-path name="updates" path="updates/" />
+    <!-- installed content packs, handed to the Kiwix app to read -->
+    <external-files-path name="library" path="library/" />
 </paths>

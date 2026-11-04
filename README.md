@@ -44,7 +44,7 @@ Pi (PIN-protected) is optional.
   Linux/NetworkManager only; refused if Wi-Fi is your only internet link unless you force it) and starts a read-only server. Devices that join
   open `http://10.42.0.1:<port>` and get a landing page with the library, maps and hosted apps. Nothing there can install or change anything.
 - Content packs are read through a Kiwix reader (`kiwix-tools`), downloaded on demand as the "Content Reader" tool.
-- Android currently has the browse-only store and in-app updates; on-device installs on Android are not implemented yet.
+- **Android** installs content packs onto the phone itself (downloaded with resume and checksum verification; needs internet on the phone while installing, not the hub). Packs are read in the free Kiwix app: the Library page's Open button hands the file to it. Maps, apps and Wi-Fi sharing are desktop/Pi features.
 - The headless Pi installer below (nginx + Kiwix + Python backend) remains for screenless Pis.
 
 ## Module Store (install content, maps and apps)

@@ -50,6 +50,31 @@ public class LocalServer {
         String statusJson();
     }
 
+    /** Result of a module API call. */
+    public static final class Result {
+        public final int code;
+        public final String json;
+
+        public Result(int code, String json) {
+            this.code = code;
+            this.json = json;
+        }
+    }
+
+    /** The on-device module installer (see ModuleManager). */
+    public interface Modules {
+        /** route is the part after /api/modules, e.g. "/catalog". */
+        Result handle(String method, String route, Map<String, String> query, String body);
+
+        /** File names of installed content packs (e.g. zimgit-water_en_2025-01.zim). */
+        java.util.List<String> installedFiles();
+    }
+
+    /** Opens an installed content pack in another app (Android has no embedded reader). Returns null on success, else a message. */
+    public interface Opener {
+        String open(String file);
+    }
+
     static final Pattern NAME_RE = Pattern.compile("^[A-Za-z0-9 ._()\\-]{1,40}$");
     static final Pattern FILE_RE = Pattern.compile("^[A-Za-z0-9][A-Za-z0-9 ._()\\-]{0,99}$");
     static final long MAX_UPLOAD = 500L * 1024 * 1024;
@@ -58,6 +83,8 @@ public class LocalServer {
     private final Device device;
     private final File filesDir;
     private final Updater updater;
+    private final Modules modules;
+    private final Opener opener;
     private ServerSocket socket;
     private ExecutorService pool;
     private volatile int port;
@@ -67,10 +94,16 @@ public class LocalServer {
     }
 
     public LocalServer(Source site, Device device, File filesDir, Updater updater) {
+        this(site, device, filesDir, updater, null, null);
+    }
+
+    public LocalServer(Source site, Device device, File filesDir, Updater updater, Modules modules, Opener opener) {
         this.site = site;
         this.device = device;
         this.filesDir = filesDir;
         this.updater = updater;
+        this.modules = modules;
+        this.opener = opener;
     }
 
     public int port() {
@@ -230,6 +263,59 @@ public class LocalServer {
                     respond(out, 200, "application/json; charset=utf-8", deviceJson(), head);
                 }
             }
+            return;
+        }
+
+        // ---- install content onto THIS device (no hub, no PIN: it is your own app) ----
+        if (path.equals("/api/modules") || path.startsWith("/api/modules/")) {
+            if (modules == null) {
+                respond(out, 404, "application/json; charset=utf-8", "{\"error\":\"modules not available\"}", head);
+                return;
+            }
+            Map<String, String> qs = new HashMap<>();
+            int qi = req.target.indexOf('?');
+            if (qi >= 0) {
+                for (String kv : req.target.substring(qi + 1).split("&")) {
+                    int eq = kv.indexOf('=');
+                    try {
+                        if (eq > 0) qs.put(URLDecoder.decode(kv.substring(0, eq), "UTF-8"), URLDecoder.decode(kv.substring(eq + 1), "UTF-8"));
+                    } catch (IllegalArgumentException ignored) {
+                    }
+                }
+            }
+            String body = writes ? new String(readBody(req, 4096), StandardCharsets.UTF_8) : "";
+            String route = path.length() > 12 ? path.substring(12) : "/";
+            Result r = modules.handle(writes ? "POST" : "GET", route, qs, body);
+            respond(out, r.code, "application/json; charset=utf-8", r.json, head);
+            return;
+        }
+        if (path.equals("/api/open") && req.method.equals("POST")) {
+            String body = new String(readBody(req, 2048), StandardCharsets.UTF_8);
+            java.util.regex.Matcher fm = Pattern.compile("\"file\"\\s*:\\s*\"([^\"]*)\"").matcher(body);
+            String file = fm.find() ? fm.group(1) : "";
+            if (modules == null || opener == null || !modules.installedFiles().contains(file)) {
+                respond(out, 404, "application/json; charset=utf-8", "{\"error\":\"That content pack is not installed.\"}", head);
+                return;
+            }
+            String err = opener.open(file);
+            respond(out, err == null ? 200 : 409, "application/json; charset=utf-8", err == null ? "{\"ok\":true}" : "{\"error\":" + jsonStr(err) + "}", head);
+            return;
+        }
+        if ((path.equals("/wiki") || path.equals("/wiki/")) && !writes && modules != null) {
+            StringBuilder rows = new StringBuilder();
+            for (String f : modules.installedFiles()) {
+                rows.append("<li><span>").append(html(f)).append("</span><button data-f=\"").append(html(f)).append("\">Open</button></li>");
+            }
+            respond(out, 200, "text/html; charset=utf-8",
+                    "<!doctype html><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">"
+                            + "<title>Library</title><style>body{font:16px system-ui;background:#0d0f14;color:#e9ebf1;margin:0;padding:16px}a{color:#4aa3ff}"
+                            + "ul{list-style:none;padding:0}li{display:flex;gap:10px;align-items:center;justify-content:space-between;border:1px solid #272b36;border-radius:16px;padding:12px 14px;margin:8px 0}"
+                            + "span{overflow-wrap:anywhere}button{height:36px;padding:0 16px;border-radius:10px;border:1px solid #fff;background:#fff;color:#0d0f14;font-weight:700}"
+                            + "#m{color:#ff8a98;min-height:1.4em}</style><body><p><a href=\"/\">&larr; Module Store</a></p><h1>Library</h1>"
+                            + "<p>Content packs are read with the free Kiwix app. Tap Open to view one there.</p><ul>"
+                            + (rows.length() == 0 ? "<li>Nothing installed yet. Install a pack from the Module Store.</li>" : rows) + "</ul><div id=\"m\"></div>"
+                            + "<script>document.querySelectorAll('button[data-f]').forEach(function(b){b.onclick=function(){fetch('/api/open',{method:'POST',headers:{'X-NorwinPrep':'1','Content-Type':'application/json'},"
+                            + "body:JSON.stringify({file:b.dataset.f})}).then(function(r){return r.json()}).then(function(j){document.getElementById('m').textContent=j.error||''})}})</script>", head);
             return;
         }
 
