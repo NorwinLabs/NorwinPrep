@@ -51,7 +51,9 @@ jobs:
           cache-dependency-path: app/desktop/package-lock.json
       - name: Compute app version (VERSION is MAJOR.MINOR; every push gets its own patch number)
         run: echo "APP_VERSION=$(cat ../../VERSION).${{ github.run_number }}" >> "$GITHUB_ENV"
-      - run: npm ci
+      - name: "npm ci (retried, because the Electron download from GitHub sometimes answers 504)"
+        shell: bash
+        run: for i in 1 2 3 4; do npm ci && exit 0; echo "npm ci failed (attempt $i), retrying"; rm -rf node_modules; sleep $((i*15)); done; exit 1
       - run: npm run prepare-assets
       - name: Unit tests (updater, and that every required file is packaged)
         run: |
@@ -108,7 +110,9 @@ jobs:
           cache-dependency-path: app/desktop/package-lock.json
       - name: Compute app version
         run: echo "APP_VERSION=$(cat ../../VERSION).${{ github.run_number }}" >> "$GITHUB_ENV"
-      - run: npm ci
+      - name: "npm ci (retried, because the Electron download from GitHub sometimes answers 504)"
+        shell: bash
+        run: for i in 1 2 3 4; do npm ci && exit 0; echo "npm ci failed (attempt $i), retrying"; rm -rf node_modules; sleep $((i*15)); done; exit 1
       - run: npm run prepare-assets
       - name: Build installer + portable exe
         run: npx electron-builder --win nsis portable --x64 -c.extraMetadata.version="$APP_VERSION" --publish never
