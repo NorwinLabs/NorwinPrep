@@ -10,9 +10,17 @@ PM_META = "https://build-metadata.protomaps.dev"
 UA = {"User-Agent": "norwinprep-catalog-check"}
 
 def get(url, method="GET", n=None):
-    req = urllib.request.Request(url, headers=UA, method=method)
-    with urllib.request.urlopen(req, timeout=20) as r:
-        return r.status, dict(r.headers), (r.read(n).decode("utf-8", "replace") if method == "GET" else "")
+    # download.kiwix.org is sometimes slow (TLS handshake timeouts): retry those so a slow server is not reported as a bad link
+    for attempt in range(4):
+        try:
+            req = urllib.request.Request(url, headers=UA, method=method)
+            with urllib.request.urlopen(req, timeout=30) as r:
+                return r.status, dict(r.headers), (r.read(n).decode("utf-8", "replace") if method == "GET" else "")
+        except urllib.error.HTTPError as e:
+            if e.code < 500 and e.code != 429 or attempt == 3: raise
+        except (urllib.error.URLError, TimeoutError, OSError):
+            if attempt == 3: raise
+        import time; time.sleep(2 * (attempt + 1))
 
 def probe(url):
     try:

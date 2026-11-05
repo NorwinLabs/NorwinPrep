@@ -65,7 +65,17 @@ function loadCatalog(file, platform) {
 }
 
 // ---------------------------------------------------------------- http helpers
-function request(urlStr, o) {
+// A slow or briefly overloaded server (download.kiwix.org often is) must not look like a broken link: network timeouts,
+// resets and 5xx/429 answers are retried with a growing pause. 404 and other 4xx answers are final.
+const retryable = (e) => e instanceof HttpError ? (e.status >= 500 || e.status === 429) : !!e && !(e instanceof ApiError) && (['ECONNRESET', 'ETIMEDOUT', 'EAI_AGAIN', 'ECONNREFUSED', 'EPIPE', 'ENETUNREACH', 'EHOSTUNREACH'].includes(e.code) || /timed out|socket hang up|EPROTO|handshake/i.test(String(e.message)));
+async function request(urlStr, o) {
+  const tries = (o && o.retries !== undefined ? o.retries : 3) + 1, base = Number(process.env.NORWINPREP_RETRY_MS || 1500);
+  for (let n = 1; ; n++) {
+    try { return await requestOnce(urlStr, o); }
+    catch (e) { if (n >= tries || !retryable(e)) throw e; await new Promise((r) => setTimeout(r, base * Math.pow(2, n - 1))); }
+  }
+}
+function requestOnce(urlStr, o) {
   o = o || {};
   const left = o.redirects === undefined ? 5 : o.redirects;
   return new Promise((resolve, reject) => {
@@ -78,7 +88,7 @@ function request(urlStr, o) {
         if (left <= 0) return reject(new Error('too many redirects'));
         const next = new URL(res.headers.location, u);
         if (u.protocol === 'https:' && next.protocol !== 'https:' && !o.allowDowngrade) return reject(new Error('refusing https to http redirect'));
-        return resolve(request(next.toString(), Object.assign({}, o, { redirects: left - 1 })));
+        return resolve(requestOnce(next.toString(), Object.assign({}, o, { redirects: left - 1 })));
       }
       if (res.statusCode !== 200 && res.statusCode !== 206) { res.resume(); return reject(new HttpError(res.statusCode, urlStr)); }
       resolve(res);

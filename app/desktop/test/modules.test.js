@@ -131,6 +131,12 @@ const reset = () => { Object.assign(F, { shaOk: true, shaMissing: false, newZim:
     r = await q.handle('POST', '/cancel', new URLSearchParams(), { id: 'nothing' }); ok(r.code === 409, 'cancelling something that is not queued is refused');
     ok(q.catalog().filter((m) => m.job).every((m) => typeof m.job.t === 'number'), 'jobs carry their start time so the store can order the queue');
     await done(q, 'water'); await done(q, 'medicine'); }
+  { const http = require('http'); let hits = 0, hits404 = 0;
+    const flaky = http.createServer((q, r) => { if (q.url === '/gone') { hits404++; r.writeHead(404); return r.end(); } hits++; if (hits <= 2) { r.writeHead(503); return r.end(); } r.writeHead(200, { 'Content-Length': 2 }); r.end('ok'); });
+    await new Promise((res) => flaky.listen(0, '127.0.0.1', res)); const u = make({ kiwix: 'http://127.0.0.1:' + flaky.address().port }); let size = null, err = null;
+    try { size = await u.mgr.text('http://127.0.0.1:' + flaky.address().port + '/x'); } catch (e) { err = e; } ok(!err && size === 'ok' && hits === 3, 'a server that answers 503 twice and then works is retried and succeeds (' + hits + ' tries)');
+    try { await u.mgr.text('http://127.0.0.1:' + flaky.address().port + '/gone'); } catch (e) { err = e; } ok(err && err.status === 404 && hits404 === 1, 'a 404 is final and is not retried');
+    flaky.close(); }
   { const cat = JSON.parse(fs.readFileSync(CATALOG, 'utf8')), ids = new Set(cat.modules.map((m) => m.id)); ok(cat.tiers.length === 3 && cat.tiers.every((x) => x.modules.every((id) => ids.has(id))), 'every module named in the quick-setup tiers exists');
     ok(cat.tiers[0].modules.length < cat.tiers[1].modules.length && cat.tiers[1].modules.length < cat.tiers[2].modules.length && cat.tiers[0].modules.every((id) => cat.tiers[1].modules.includes(id)), 'tiers grow: Essential is inside Standard, Standard has more'); }
 

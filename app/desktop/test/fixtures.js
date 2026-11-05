@@ -1,4 +1,5 @@
 'use strict';
+process.env.NORWINPREP_RETRY_MS = process.env.NORWINPREP_RETRY_MS || '5';   // keep the retry pauses short in tests
 // Fake Kiwix / GitHub / Protomaps servers shared by the tests. They serve real tar.gz archives containing stand-in
 // `kiwix-serve` and `pmtiles` programs, so the reader and map-tool installs run end to end.
 const http = require('http'), fs = require('fs'), os = require('os'), path = require('path'), crypto = require('crypto'), { execFileSync } = require('child_process');
