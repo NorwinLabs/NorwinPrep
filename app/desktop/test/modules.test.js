@@ -137,6 +137,10 @@ const reset = () => { Object.assign(F, { shaOk: true, shaMissing: false, newZim:
     try { size = await u.mgr.text('http://127.0.0.1:' + flaky.address().port + '/x'); } catch (e) { err = e; } ok(!err && size === 'ok' && hits === 3, 'a server that answers 503 twice and then works is retried and succeeds (' + hits + ' tries)');
     try { await u.mgr.text('http://127.0.0.1:' + flaky.address().port + '/gone'); } catch (e) { err = e; } ok(err && err.status === 404 && hits404 === 1, 'a 404 is final and is not retried');
     flaky.close(); }
+  { // the packaged app passes env-var overrides as undefined when they are not set: that must keep the real server addresses
+    const u = new Manager({ catalog: CATALOG, dataDir: fs.mkdtempSync(path.join(os.tmpdir(), 'npundef-')), kiwix: undefined, githubApi: undefined, githubDl: undefined, protomaps: undefined, hf: undefined, pypi: undefined });
+    ok(u.cfg.kiwix === 'https://download.kiwix.org' && u.cfg.githubApi === 'https://api.github.com' && u.cfg.githubDl === 'https://github.com' && u.cfg.protomaps === 'https://build.protomaps.com' && u.cfg.hf === 'https://huggingface.co' && u.cfg.pypi === 'https://pypi.org', 'unset server options keep their real defaults (no "undefined/..." download addresses)');
+    ok(u.zimBase(u.byid.water) === 'https://download.kiwix.org/zim/other/', 'a pack is looked up at the real Kiwix address: ' + u.zimBase(u.byid.water)); }
   { const cat = JSON.parse(fs.readFileSync(CATALOG, 'utf8')), ids = new Set(cat.modules.map((m) => m.id)); ok(cat.tiers.length === 3 && cat.tiers.every((x) => x.modules.every((id) => ids.has(id))), 'every module named in the quick-setup tiers exists');
     ok(cat.tiers[0].modules.length < cat.tiers[1].modules.length && cat.tiers[1].modules.length < cat.tiers[2].modules.length && cat.tiers[0].modules.every((id) => cat.tiers[1].modules.includes(id)), 'tiers grow: Essential is inside Standard, Standard has more'); }
 

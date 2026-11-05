@@ -109,6 +109,7 @@ function readText(res, max) {
 // ---------------------------------------------------------------- manager
 class Manager {
   constructor(cfg) {
+    cfg = Object.fromEntries(Object.entries(cfg || {}).filter(([, v]) => v !== undefined));   // an unset option (undefined) must keep its default, not replace it: Object.assign would copy the undefined and every download address would become "undefined/..."
     this.cfg = Object.assign({ timeout: 30000, kiwix: 'https://download.kiwix.org', githubApi: 'https://api.github.com', githubDl: 'https://github.com',
       protomaps: 'https://build.protomaps.com', protomapsMeta: null, slug: 'NorwinLabs/NorwinPrepDisk', pmtilesRepo: 'protomaps/go-pmtiles', platform: process.platform,
       arch: process.arch, pypi: 'https://pypi.org', nomadMaps: 'https://github.com', hf: 'https://huggingface.co', onAiChange: async () => true, ramBytes: os.totalmem(), pythonCheck: async () => true, onKolibriChange: async () => true, bundledDir: path.join(__dirname, 'site'), onLibraryChange: async () => true, run: spawn }, cfg);
