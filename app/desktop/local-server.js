@@ -4,6 +4,7 @@
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
+const crypto = require('crypto');
 
 const TYPES = {
   '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8',
@@ -292,14 +293,62 @@ function create(opts) {
   };
 }
 
+// ---- sign-in for devices on the Wi-Fi share (opts.auth = { user, password }); without opts.auth the share is open, as before ----
+const LOGIN_HTML = (msg) => '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Sign in &ndash; NorwinPrep</title>' +
+  '<style>*{box-sizing:border-box}body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;background:#0d0f14;color:#e9ebf1;font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}' +
+  'form{width:min(92vw,360px);background:#12151c;border:1px solid #272b36;border-radius:18px;padding:26px}h1{margin:0 0 4px;font-size:22px}p{margin:0 0 16px;color:#8b92a3;font-size:14px}' +
+  'label{display:block;margin:12px 0 4px;font-size:13px;color:#8b92a3}input{width:100%;padding:12px;border-radius:10px;border:1px solid #3a4152;background:#0d0f14;color:inherit;font:inherit}' +
+  'button{width:100%;margin-top:18px;padding:12px;border:0;border-radius:10px;background:#fff;color:#0d0f14;font:inherit;font-weight:700;cursor:pointer}.e{margin-top:12px;color:#ff8a98;font-size:14px}</style></head><body>' +
+  '<form method="POST" action="/login"><h1>NorwinPrep</h1><p>Sign in to use the library, maps and tools on this device. No internet needed.</p>' +
+  '<label for="u">Username</label><input id="u" name="username" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false" required autofocus>' +
+  '<label for="p">Password</label><input id="p" name="password" type="password" autocomplete="current-password" required>' + (msg ? '<div class="e" role="alert">' + msg + '</div>' : '') +
+  '<button type="submit">Sign in</button></form></body></html>';
+function makeAuth(cfg) {
+  const digest = (v) => crypto.createHash('sha256').update(String(v)).digest();
+  const want = { u: digest(cfg.user), p: digest(cfg.password) }, sessions = new Map(), tries = new Map(), TTL = 12 * 3600 * 1000;
+  const same = (a, b) => crypto.timingSafeEqual(a, b);
+  return {
+    check(user, password) { const a = same(digest(user), want.u), b = same(digest(password), want.p); return a && b; },
+    open() { const t = crypto.randomBytes(24).toString('hex'); if (sessions.size > 200) sessions.delete(sessions.keys().next().value); sessions.set(t, Date.now() + TTL); return t; },
+    valid(req) { const m = /(?:^|;\s*)np_sess=([a-f0-9]{48})/.exec(req.headers.cookie || ''); if (!m) return false; const e = sessions.get(m[1]); if (!e || e < Date.now()) { sessions.delete(m[1]); return false; } return true; },
+    close(req) { const m = /(?:^|;\s*)np_sess=([a-f0-9]{48})/.exec(req.headers.cookie || ''); if (m) sessions.delete(m[1]); },
+    locked(ip) { const t = tries.get(ip); return !!(t && t.until > Date.now()); },
+    fail(ip) { const t = tries.get(ip) || { n: 0, until: 0 }; t.n++; if (t.n >= 5) { t.until = Date.now() + 60000; t.n = 0; } tries.set(ip, t); if (tries.size > 500) tries.delete(tries.keys().next().value); },
+    ok(ip) { tries.delete(ip); }
+  };
+}
+const ownHost = (h) => { h = String(h || '').toLowerCase().replace(/:\d+$/, ''); return h === '' || h === 'localhost' || /^\d{1,3}(\.\d{1,3}){3}$/.test(h) || /^\[[0-9a-f:]+\]$/.test(h) || h.endsWith('.local') || !h.includes('.'); };
 // Read-only server for devices that join this device's Wi-Fi: the portal, the map viewer, library, hosted apps. No writes, no store API.
 function createShare(opts) {
   // opts: siteDir, mapsDir, appsDir, reader, getName(), version
   let port = 0;
+  const auth = opts.auth ? makeAuth(opts.auth) : null;
   const server = http.createServer((req, res) => {
     const head = req.method === 'HEAD';
     const send = (code, type, body) => { res.writeHead(code, { 'Content-Type': type, 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff' }); res.end(head ? undefined : body); };
     let p; try { p = decodeURIComponent(new URL(req.url, 'http://x').pathname); } catch (e) { return send(400, 'text/plain', 'Bad request'); }
+    if (auth) {
+      const ip = String(req.socket.remoteAddress || '').replace(/^::ffff:/, ''), me = String(req.socket.localAddress || '').replace(/^::ffff:/, '');
+      const loginUrl = 'http://' + (me.includes(':') ? '[' + me + ']' : me) + (port === 80 ? '' : ':' + port) + '/login';
+      const go = (loc, extra) => { res.writeHead(302, Object.assign({ Location: loc, 'Cache-Control': 'no-store' }, extra || {})); res.end(); };
+      // phones and laptops test for internet with a made-up address (connectivitycheck.gstatic.com, captive.apple.com, ...): sending them to the sign-in page is what makes the "sign in to Wi-Fi" screen pop up
+      if (!ownHost(req.headers.host)) return go(loginUrl);
+      if (p === '/login' && (req.method === 'GET' || head)) return send(200, 'text/html; charset=utf-8', LOGIN_HTML(/[?&]e=1/.test(req.url) ? 'Wrong username or password.' : /[?&]e=2/.test(req.url) ? 'Too many tries. Wait a minute and try again.' : ''));
+      if (p === '/login' && req.method === 'POST') {
+        let body = '', big = false;
+        req.on('data', (c) => { body += c; if (body.length > 2048) { big = true; req.destroy(); } });
+        req.on('end', () => {
+          if (big) return;
+          if (auth.locked(ip)) return go('/login?e=2');
+          const f = new URLSearchParams(body);
+          if (auth.check(f.get('username') || '', f.get('password') || '')) { auth.ok(ip); return go('/', { 'Set-Cookie': 'np_sess=' + auth.open() + '; Path=/; HttpOnly; SameSite=Lax; Max-Age=43200' }); }
+          auth.fail(ip); go('/login?e=1');
+        });
+        return;
+      }
+      if (p === '/logout') { auth.close(req); return go('/login', { 'Set-Cookie': 'np_sess=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0' }); }
+      if (!auth.valid(req)) { if (req.method === 'GET' || head) return go('/login'); return send(401, 'application/json', '{"error":"Sign in first"}'); }
+    }
     if (opts.ai && (p === '/ai/api/chat' || p === '/ai/api/status')) {            // the only things a device on the Wi-Fi may do besides reading
       if ((p === '/ai/api/chat') !== (req.method === 'POST')) return send(405, 'text/plain', 'Method not allowed');
       const o = req.headers.origin; if (o) { try { if (new URL(o).host !== req.headers.host) return send(403, 'text/plain', 'Forbidden'); } catch (e) { return send(403, 'text/plain', 'Forbidden'); } }

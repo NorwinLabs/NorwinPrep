@@ -210,6 +210,12 @@ Power saving, all automatic:
 - Kolibri stops after 30 idle minutes (never while Wi-Fi sharing is on, because children connect to it directly);
 - a hidden window stops polling.
 
+## Joining the Wi-Fi: automatic sign-in page
+
+Devices that join the hotspot are sent to a sign-in page (the "Sign in to Wi-Fi" prompt on phones and laptops). Sign in with user **admin** and password **NOMAD** (capital letters) to reach the library, maps, AI and tools. Wrong passwords are limited to 5 tries a minute. Sessions last 12 hours; "Sign out" is on the home page.
+
+For the automatic pop-up the hotspot must answer on port 80 and be allowed to write `/etc/NetworkManager/dnsmasq-shared.d/` (the Raspberry Pi service can). If not, join the Wi-Fi and open `http://10.42.0.1` by hand; the sign-in page still appears. The Android share does not have this sign-in yet.
+
 ## Credits
 
 The extra content packs, topics and US state maps are adapted from [Project NOMAD](https://github.com/Crosstalk-Solutions/project-nomad) (Apache-2.0). See `NOTICE` and `third_party/project-nomad/`.

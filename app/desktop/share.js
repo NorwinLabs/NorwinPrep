@@ -7,7 +7,9 @@ const path = require('path');
 const { execFile } = require('child_process');
 
 const CON = 'NorwinPrepShare';
-const DEFAULT_PASSWORD = 'NORWINNOMAD';   // easy to type on a phone; WPA2 needs at least 8 characters
+const DEFAULT_PASSWORD = 'NORWINNOMAD';
+const ADMIN = { user: 'admin', password: 'NOMAD' };   // the sign-in page that devices joining the Wi-Fi are sent to
+const PORTAL_DNS = 'address=/#/10.42.0.1\n';           // every name resolves to this device, so the phone's "is there internet?" test lands on the sign-in page   // easy to type on a phone; WPA2 needs at least 8 characters
 const SSID_RE = /^[A-Za-z0-9 ._-]{1,32}$/, PW_RE = /^[A-Za-z0-9]{8,63}$/, IFACE_RE = /^[A-Za-z0-9._-]{1,15}$/;
 
 const defaultExec = (cmd, args) => new Promise((resolve, reject) => {
@@ -17,12 +19,16 @@ const fail = (code, msg) => Object.assign(new Error(msg), { code });
 
 class Share {
   constructor(o) {   // o: dataDir, platform, exec(cmd,args), makeServer() -> {start(ports,host), stop()}, ports, ssid
-    this.o = Object.assign({ platform: process.platform, exec: defaultExec, ports: [80, 8080, 0], ssid: 'NorwinPrep' }, o);
+    this.o = Object.assign({ platform: process.platform, exec: defaultExec, ports: [80, 8080, 0], ssid: 'NorwinPrep', dnsmasqDir: '/etc/NetworkManager/dnsmasq-shared.d' }, o);
+    this.captive = false;
     this.file = path.join(this.o.dataDir, 'share.json');
     this.server = null; this.active = false; this.iface = null; this.port = 0; this.busy = Promise.resolve(); this.cfg = this.load();
   }
   load() { try { const j = JSON.parse(fs.readFileSync(this.file, 'utf8')); return { on: !!j.on, auto: j.auto !== false, ssid: SSID_RE.test(j.ssid || '') ? j.ssid : this.o.ssid, password: DEFAULT_PASSWORD }; } catch (e) { return { on: false, auto: true, ssid: this.o.ssid, password: DEFAULT_PASSWORD }; } }
   save() { fs.mkdirSync(this.o.dataDir, { recursive: true }); fs.writeFileSync(this.file, JSON.stringify(this.cfg), { mode: 0o600 }); }
+  // Best effort (needs permission to write there, which the Raspberry Pi service has): without it people can still open the address by hand
+  writePortalDns() { try { fs.mkdirSync(this.o.dnsmasqDir, { recursive: true }); fs.writeFileSync(path.join(this.o.dnsmasqDir, 'norwinprep-portal.conf'), PORTAL_DNS); return true; } catch (e) { return false; } }
+  removePortalDns() { try { fs.unlinkSync(path.join(this.o.dnsmasqDir, 'norwinprep-portal.conf')); } catch (e) { /* none */ } this.captive = false; }
   async wifiDevice() {
     if (this.o.platform !== 'linux') return null;
     try {
@@ -38,7 +44,7 @@ class Share {
     const iface = await this.wifiDevice(), supported = !!iface;
     const s = { supported, active: this.active, auto: this.cfg.auto };
     if (!supported) s.reason = this.o.platform === 'linux' ? 'No Wi-Fi adapter was found (or NetworkManager is not running).' : 'Sharing over Wi-Fi needs Linux with NetworkManager, for example Raspberry Pi OS.';
-    if (this.active) { s.ssid = this.cfg.ssid; s.password = this.cfg.password; s.port = this.port; s.url = 'http://10.42.0.1' + (this.port === 80 ? '' : ':' + this.port); }
+    if (this.active) { s.ssid = this.cfg.ssid; s.password = this.cfg.password; s.port = this.port; s.url = 'http://10.42.0.1' + (this.port === 80 ? '' : ':' + this.port); s.captive = this.captive && this.port === 80; s.login = ADMIN.user; }
     return s;
   }
   set(on, force) {          // serialised: rapid toggles queue up instead of racing
@@ -50,6 +56,7 @@ class Share {
     const iface = await this.wifiDevice(); if (!iface) throw fail(400, (await this.status()).reason);
     if (!force && await this.usingWifiForInternet(iface)) throw fail(409, 'This device is online through its Wi-Fi, which the hotspot needs. Switch to Ethernet first, or share anyway and lose that Wi-Fi connection.');
     const { ssid, password } = this.cfg;
+    this.captive = this.writePortalDns();
     this.server = this.o.makeServer();
     try { this.port = await this.server.start(this.o.ports, '0.0.0.0'); }
     catch (e) { this.server = null; throw fail(500, 'Could not start the sharing server (' + e.message + ')'); }
@@ -60,6 +67,7 @@ class Share {
         'wifi-sec.key-mgmt', 'wpa-psk', 'wifi-sec.psk', password]);
       await this.o.exec('nmcli', ['connection', 'up', CON]);
     } catch (e) {
+      this.removePortalDns();
       await this.server.stop(); this.server = null;
       try { await this.o.exec('nmcli', ['connection', 'delete', CON]); } catch (e2) { /* ignore */ }
       throw fail(500, 'Could not start the Wi-Fi hotspot: ' + String(e.stderr || e.message).trim().split('\n')[0].slice(0, 160));
@@ -72,6 +80,7 @@ class Share {
     if (!this.active && !this.server) { if (!keepPreference) { this.cfg.on = false; this.save(); } return this.status(); }
     try { await this.o.exec('nmcli', ['connection', 'down', CON]); } catch (e) { /* already down */ }
     try { await this.o.exec('nmcli', ['connection', 'delete', CON]); } catch (e) { /* already gone */ }
+    this.removePortalDns();
     if (this.server) { await this.server.stop(); this.server = null; }
     this.active = false; if (!keepPreference) this.cfg.on = false; this.save();
     if (this.o.onActive) { try { this.o.onActive(false); } catch (e) { /* not fatal */ } }
@@ -85,4 +94,4 @@ class Share {
   shutdown() { return this.stop(true); }
 }
 
-module.exports = { Share };
+module.exports = { Share, ADMIN };

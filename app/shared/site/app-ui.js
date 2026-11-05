@@ -136,7 +136,7 @@
     box.appendChild(el('div', 'note', st.note || 'Turn this device into a Wi-Fi hotspot. Other devices join it and read your library, maps and apps, with no internet needed.'));
     if (st.active) {
       var dl = el('dl', 'kv'); dl.style.marginTop = '10px';
-      [['Wi-Fi name', st.ssid], ['Password', st.password], ['Then open', st.url]].forEach(function (r) { dl.appendChild(el('dt', null, r[0])); var dd = el('dd', null, String(r[1])); dd.style.fontFamily = 'var(--mono)'; dl.appendChild(dd); });
+      [['Wi-Fi name', st.ssid], ['Wi-Fi password', st.password], ['Sign-in page', st.url + '/login'], ['Sign in as', (st.login || 'admin') + ' / NOMAD']].forEach(function (r) { dl.appendChild(el('dt', null, r[0])); var dd = el('dd', null, String(r[1])); dd.style.fontFamily = 'var(--mono)'; dl.appendChild(dd); });
       box.appendChild(dl);
     }
     if (shareMsg) box.appendChild(el('div', 'note bad', shareMsg));

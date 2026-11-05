@@ -17,14 +17,41 @@ function harness(over) {
     if (cmd === 'nmcli' && args[1] === 'up' && st.failUp) throw Object.assign(new Error('x'), { stderr: 'Error: Connection activation failed: Not authorized to control networking.\nmore' });
     return { stdout: '' };
   };
+  over = Object.assign({ dnsmasqDir: path.join(dir, 'dnsmasq') }, over);
   const mk = () => createShare({ siteDir: site, mapsDir: dir, appsDir: dir, reader: null, getName: () => 'Garage Pi', version: '1.0' });
   const sh = new Share(Object.assign({ dataDir: dir, platform: 'linux', exec, makeServer: mk, ports: [0] }, over)); return { sh, calls, st, dir };
 }
 const nm = (calls, ...a) => calls.filter((c) => c[0] === 'nmcli' && a.every((x, i) => c[1 + i] === x));
+const rq = (port, method, p, o) => new Promise((res, rej) => { o = o || {}; const r = http.request({ host: '127.0.0.1', port, path: p, method, headers: Object.assign({}, o.headers || {}, o.body ? { 'Content-Type': 'application/x-www-form-urlencoded', 'Content-Length': Buffer.byteLength(o.body) } : {}) }, (x) => { let d = ''; x.on('data', (c) => d += c); x.on('end', () => res({ code: x.statusCode, body: d, h: x.headers })); }); r.on('error', rej); r.end(o.body); });
+const AUTH = { user: 'admin', password: 'NOMAD' };
+async function authTests() {
+  const a = createShare({ siteDir: site, mapsDir: site, appsDir: site, reader: null, getName: () => 'x', version: '1', auth: AUTH }), port = await a.start([0], '127.0.0.1');
+  let r = await rq(port, 'GET', '/'); ok(r.code === 302 && /\/login$/.test(r.h.location), 'not signed in: the home page sends you to the sign-in page');
+  r = await rq(port, 'GET', '/login'); ok(r.code === 200 && /Sign in/.test(r.body) && /name="password"/.test(r.body), 'the sign-in page is shown');
+  r = await rq(port, 'GET', '/generate_204', { headers: { Host: 'connectivitycheck.gstatic.com' } }); ok(r.code === 302 && /\/login$/.test(r.h.location) && !/gstatic/.test(r.h.location), 'a phone\'s "is there internet?" test is sent to the sign-in page (this is what pops up "sign in to Wi-Fi")');
+  r = await rq(port, 'GET', '/hotspot-detect.html', { headers: { Host: 'captive.apple.com' } }); ok(r.code === 302, 'Apple\'s test too');
+  r = await rq(port, 'GET', '/api/device'); ok(r.code === 302, 'nothing else is readable without signing in');
+  r = await rq(port, 'POST', '/ai/api/chat', { body: '{}' }); ok(r.code === 401, 'and nothing can be posted');
+  r = await rq(port, 'POST', '/login', { body: 'username=admin&password=nomad' }); ok(r.code === 302 && /e=1/.test(r.h.location) && !r.h['set-cookie'], 'the password is case sensitive: lower-case "nomad" is refused');
+  r = await rq(port, 'POST', '/login', { body: 'username=root&password=NOMAD' }); ok(/e=1/.test(r.h.location), 'wrong user name is refused');
+  r = await rq(port, 'POST', '/login', { body: 'username=admin&password=NOMAD' }); const ck = String(r.h['set-cookie'] || '');
+  ok(r.code === 302 && r.h.location === '/' && /np_sess=[a-f0-9]{48}/.test(ck) && /HttpOnly/.test(ck) && /SameSite=Lax/.test(ck), 'admin / NOMAD signs in and sets a private session cookie');
+  const cookie = ck.split(';')[0];
+  r = await rq(port, 'GET', '/', { headers: { Cookie: cookie } }); ok(r.code === 200 && /PORTAL/.test(r.body), 'signed in: the home page opens');
+  r = await rq(port, 'GET', '/', { headers: { Cookie: 'np_sess=' + 'a'.repeat(48) } }); ok(r.code === 302, 'a made-up cookie does not work');
+  r = await rq(port, 'GET', '/logout', { headers: { Cookie: cookie } }); r = await rq(port, 'GET', '/', { headers: { Cookie: cookie } }); ok(r.code === 302, 'signing out ends the session');
+  for (let i = 0; i < 5; i++) await rq(port, 'POST', '/login', { body: 'username=admin&password=wrong' });
+  r = await rq(port, 'POST', '/login', { body: 'username=admin&password=NOMAD' }); ok(/e=2/.test(r.h.location) && !r.h['set-cookie'], 'after 5 wrong tries it is locked for a minute, even with the right password');
+  await a.stop();
+  const open = createShare({ siteDir: site, mapsDir: site, appsDir: site, reader: null, getName: () => 'x', version: '1' }), op = await open.start([0], '127.0.0.1');
+  r = await rq(op, 'GET', '/'); ok(r.code === 200, 'without sign-in configured the share stays open (old behaviour)'); await open.stop();
+}
 (async () => {
   let { sh, calls, st, dir } = harness();
+  await authTests();
   let s = await sh.status(); ok(s.supported && !s.active, 'supported on Linux with a Wi-Fi adapter');
   s = await sh.set(true);
+  { const f = path.join(dir, 'dnsmasq', 'norwinprep-portal.conf'); ok(fs.existsSync(f) && /address=\/#\/10\.42\.0\.1/.test(fs.readFileSync(f, 'utf8')), 'every name is pointed at this device so phones find the sign-in page'); }
   ok(s.active && s.ssid === 'NorwinPrep' && s.password === 'NORWINNOMAD' && s.url.startsWith('http://10.42.0.1'), 'turning sharing on: hotspot + the NORWINNOMAD password + address ' + s.url);
   const add = nm(calls, 'connection', 'add')[0];
   ok(add && add.includes('wlan0') && add.includes('ipv4.method') && add[add.indexOf('ipv4.method') + 1] === 'shared' && add[add.indexOf('802-11-wireless.mode') + 1] === 'ap' && add[add.indexOf('wifi-sec.key-mgmt') + 1] === 'wpa-psk' && add[add.indexOf('autoconnect') + 1] === 'no', 'the hotspot is WPA2, shared-mode, not auto-connecting at boot');
