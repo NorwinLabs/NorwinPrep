@@ -20,7 +20,7 @@ const KIOSK = process.argv.includes('--kiosk');   // full-screen, for a Pi with 
 // AppImages (and root/CI runs) can't use Chromium's setuid sandbox
 if (process.env.APPIMAGE || process.argv.includes('--no-sandbox')) app.commandLine.appendSwitch('no-sandbox');
 
-let win, server, home, reader, share;
+let win, server, home, reader, share, kolibri, ai;   // everything the quit handler stops must live here, not inside startServer
 
 // ---- device name (shared with anything that connects to the local instance) ----
 function cfgFile() { return path.join(app.getPath('userData'), 'device.json'); }
@@ -81,8 +81,8 @@ async function startServer() {
   for (const d of ['zim', 'maps', 'apps']) fs.mkdirSync(path.join(dataDir, d), { recursive: true });
   reader = new Reader({ binDir: path.join(dataDir, 'reader'), zimDir: path.join(dataDir, 'zim') });
   const env = process.env;
-  const kolibri = new Kolibri({ dataDir });
-  const ai = new Llama({ dataDir, eco: () => { try { return require('electron').powerMonitor.isOnBatteryPower(); } catch (e) { return false; } } });
+  kolibri = new Kolibri({ dataDir });
+  ai = new Llama({ dataDir, eco: () => { try { return require('electron').powerMonitor.isOnBatteryPower(); } catch (e) { return false; } } });
   const modules = new Manager({
     pythonCheck: (requires) => kolibri.findPython(requires), onKolibriChange: () => kolibri.stop(), onAiChange: () => ai.stop(),
     catalog: path.join(siteDir, 'catalog.json'), dataDir, onLibraryChange: () => reader.restart(),

@@ -59,6 +59,7 @@ jobs:
         run: |
           node test/updater.test.js
           node test/package-files.test.js
+          node test/main-scope.test.js
       - name: Module manager, reader and Wi-Fi share tests
         run: |
           node test/modules.test.js
