@@ -229,10 +229,26 @@ jobs:
           [ "$(ls *.AppImage | wc -l)" -eq 3 ]
           [ "$(ls *.deb | wc -l)" -eq 3 ]
           sha256sum * > SHA256SUMS
-      - name: Publish release
+      - name: Publish release (draft, upload each file with retries, then publish)
         run: |
           TAG="v$APP_VERSION"
-          gh release create "$TAG" release/* --target "$GITHUB_SHA" --latest --title "NorwinPrep $TAG" --generate-notes
+          # an earlier failed attempt for this tag may have left a half-uploaded release behind
+          gh release delete "$TAG" --cleanup-tag --yes 2>/dev/null || true
+          created=0
+          for i in 1 2 3; do
+            if gh release create "$TAG" --draft --target "$GITHUB_SHA" --title "NorwinPrep $TAG" --generate-notes; then created=1; break; fi
+            echo "creating the release failed (attempt $i), retrying"; sleep $((i*10))
+          done
+          [ "$created" = 1 ] || exit 1
+          for f in release/*; do
+            uploaded=0
+            for i in 1 2 3 4; do
+              if gh release upload "$TAG" "$f" --clobber; then uploaded=1; break; fi
+              echo "uploading $f failed (attempt $i), retrying"; sleep $((i*10))
+            done
+            [ "$uploaded" = 1 ] || { echo "could not upload $f"; exit 1; }
+          done
+          gh release edit "$TAG" --draft=false --latest
       - name: Prune old releases (keep newest 25)
         run: |
           gh release list --limit 300 --json tagName,createdAt \
