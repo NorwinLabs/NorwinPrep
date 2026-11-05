@@ -10,7 +10,7 @@ const { spawn } = require('child_process');
 class Reader {
   constructor(o) {         // o: binDir (where kiwix-serve lives), zimDir, platform, spawnFn (tests)
     this.o = Object.assign({ platform: process.platform, spawnFn: spawn }, o);
-    this.child = null; this.port = 0; this.up = false; this.chain = Promise.resolve(); this.generation = 0;
+    this.child = null; this.port = 0; this.up = false; this.chain = Promise.resolve(); this.generation = 0; this.lastError = ''; this.log = '';
   }
   bin() { return path.join(this.o.binDir, this.o.platform === 'win32' ? 'kiwix-serve.exe' : 'kiwix-serve'); }
   zims() { try { return fs.readdirSync(this.o.zimDir).filter((f) => /\.zim$/i.test(f) && !f.startsWith('.')).sort().map((f) => path.join(this.o.zimDir, f)); } catch (e) { return []; } }
@@ -22,24 +22,26 @@ class Reader {
     return run;
   }
   async _restart() {
-    await this._stopNow();
+    await this._stopNow(); this.lastError = ''; this.log = '';
     const zims = this.zims();
     if (!zims.length) return true;                      // nothing to show yet
-    if (!fs.existsSync(this.bin())) return false;       // reader not installed yet
+    if (!fs.existsSync(this.bin())) { this.lastError = 'The reader program is not installed (' + this.bin() + ').'; return false; }       // reader not installed yet
     this.port = await freePort();
     const gen = ++this.generation;
-    const child = this.o.spawnFn(this.bin(), ['--port', String(this.port), '--address', '127.0.0.1', '--urlRootLocation', '/wiki'].concat(zims), { stdio: 'ignore', cwd: this.o.binDir });
+    const child = this.o.spawnFn(this.bin(), ['--port', String(this.port), '--address', '127.0.0.1', '--urlRootLocation', '/wiki'].concat(zims), { stdio: ['ignore', 'pipe', 'pipe'], cwd: this.o.binDir, windowsHide: true });
     this.child = child;
     let exited = false;
-    child.on('error', () => { exited = true; });
-    child.on('exit', () => { exited = true; if (gen === this.generation) { this.up = false; this.child = null; } });
+    const keep = (d) => { this.log = (this.log + d).slice(-1500); };
+    if (child.stdout) child.stdout.on('data', keep); if (child.stderr) child.stderr.on('data', keep);
+    child.on('error', (e) => { exited = true; this.lastError = 'The reader could not start: ' + e.message; });
+    child.on('exit', (code) => { exited = true; if (!this.lastError) this.lastError = 'The reader stopped right away (exit code ' + code + '). ' + (this.log.trim().split('\n').pop() || '').slice(0, 200); if (gen === this.generation) { this.up = false; this.child = null; } });
     const t0 = Date.now();
     while (Date.now() - t0 < 15000) {                   // wait until it answers
       if (exited) return false;
       if (await probe(this.port)) { this.up = true; return true; }
       await new Promise((r) => setTimeout(r, 150));
     }
-    await this._stopNow(); return false;
+    this.lastError = this.lastError || 'The reader did not answer within 15 seconds. ' + (this.log.trim().split('\n').pop() || '').slice(0, 200); await this._stopNow(); return false;
   }
   async _stopNow() {
     const c = this.child; this.up = false; this.generation++; this.child = null;

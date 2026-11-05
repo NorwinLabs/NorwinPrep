@@ -82,7 +82,8 @@ function serveContent(req, res, p, head, o) {
   if (p === '/wiki') { res.writeHead(302, { Location: '/wiki/' }); res.end(); return true; }
   if (p.startsWith('/wiki/')) {
     if (o.reader && o.reader.ready()) o.reader.proxy(req, res);
-    else send(503, 'text/html; charset=utf-8', page('Library not ready', '<p><a style="color:#4aa3ff" href="/">&larr; Back</a></p><h1>The library is not ready</h1><p style="color:#8b92a3">Install a content pack from the Module Store (the reader comes with it), then try again.</p>'));
+    else send(503, 'text/html; charset=utf-8', page('Library not ready', '<p><a style="color:#4aa3ff" href="/">&larr; Back</a></p><h1>The library is not ready</h1><p style="color:#8b92a3">Install a content pack from the Module Store (the reader comes with it), then try again.</p>' + (o.reader && o.reader.lastError ? '<p style="color:#ff8a98">Why: ' + esc(o.reader.lastError) + '</p><p><a style="color:#4aa3ff" href="/wiki/?retry=1">Try again</a></p>' : '')));
+    if (o.reader && o.reader.lastError && /[?&]retry=1/.test(req.url) && o.reader.restart) o.reader.restart().catch(() => {});
     return true;
   }
   return false;
