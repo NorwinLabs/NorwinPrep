@@ -54,7 +54,7 @@ public class PhoneShare implements LocalServer.Sharing {
         if (modules == null || Build.VERSION.SDK_INT < 26) b.append(",\"reason\":\"Sharing needs Android 8 or newer.\"");
         if (active) {
             b.append(",\"ssid\":").append(LocalServer.jsonStr(ssid)).append(",\"password\":").append(LocalServer.jsonStr(password))
-                    .append(",\"url\":").append(LocalServer.jsonStr(url));
+                    .append(",\"url\":").append(LocalServer.jsonStr(url)).append(",\"login\":\"admin\"");
         }
         return b.append('}').toString();
     }
@@ -103,7 +103,7 @@ public class PhoneShare implements LocalServer.Sharing {
             public File zimDir() {
                 return zimDir;
             }
-        });
+        }, "admin", "NOMAD");
         int port;
         try {
             port = s.start(new int[]{8080, 8888, 0});

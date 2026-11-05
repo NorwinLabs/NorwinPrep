@@ -34,7 +34,64 @@ public class ShareServerTest {
         return new Object[]{code, b.toByteArray(), c.getHeaderField("Content-Range")};
     }
 
+    /** Raw request that does not follow redirects. Returns {code, body, Location, Set-Cookie}. */
+    static String[] raw(int port, String method, String path, String host, String cookie, String form) throws Exception {
+        HttpURLConnection c = (HttpURLConnection) new URL("http://127.0.0.1:" + port + path).openConnection();
+        c.setInstanceFollowRedirects(false);
+        c.setRequestMethod(method);
+        if (host != null) c.setRequestProperty("Host", host);
+        if (cookie != null) c.setRequestProperty("Cookie", cookie);
+        if (form != null) {
+            c.setDoOutput(true);
+            c.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
+            c.getOutputStream().write(form.getBytes(StandardCharsets.UTF_8));
+        }
+        int code = c.getResponseCode();
+        InputStream in = code >= 400 ? c.getErrorStream() : c.getInputStream();
+        ByteArrayOutputStream b = new ByteArrayOutputStream();
+        if (in != null) in.transferTo(b);
+        return new String[]{String.valueOf(code), new String(b.toByteArray(), StandardCharsets.UTF_8), c.getHeaderField("Location"), c.getHeaderField("Set-Cookie")};
+    }
+
+    static void authTests() throws Exception {
+        File dir = Files.createTempDirectory("npshareauth").toFile();
+        ShareServer a = new ShareServer(p -> {
+            if (p.equals("portal.html")) return new java.io.ByteArrayInputStream("<title>PORTAL</title>".getBytes());
+            throw new java.io.FileNotFoundException(p);
+        }, "Pat's phone", new ShareServer.Packs() {
+            public List<String> installedFiles() { return Collections.emptyList(); }
+            public File zimDir() { return dir; }
+        }, "admin", "NOMAD");
+        int port = a.start(new int[]{0});
+        String[] r = raw(port, "GET", "/", null, null, null);
+        ok(r[0].equals("302") && r[2].endsWith("/login"), "not signed in: the home page sends you to the sign-in page");
+        r = raw(port, "GET", "/login", null, null, null);
+        ok(r[0].equals("200") && r[1].contains("Sign in") && r[1].contains("name=\"password\""), "the sign-in page is shown");
+        r = raw(port, "GET", "/generate_204", "connectivitycheck.gstatic.com", null, null);
+        ok(r[0].equals("302") && r[2].endsWith("/login") && !r[2].contains("gstatic"), "a phone's internet test is sent to the sign-in page");
+        ok(raw(port, "GET", "/api/device", null, null, null)[0].equals("302"), "nothing else is readable without signing in");
+        ok(raw(port, "POST", "/x", null, null, "a=b")[0].equals("401"), "and nothing can be posted");
+        r = raw(port, "POST", "/login", null, null, "username=admin&password=nomad");
+        ok(r[0].equals("302") && r[2].contains("e=1") && r[3] == null, "the password is case sensitive: lower-case nomad is refused");
+        r = raw(port, "POST", "/login", null, null, "username=root&password=NOMAD");
+        ok(r[2] != null && r[2].contains("e=1"), "wrong user name is refused");
+        r = raw(port, "POST", "/login", null, null, "username=admin&password=NOMAD");
+        ok(r[0].equals("302") && "/".equals(r[2]) && r[3] != null && r[3].matches("np_sess=[a-f0-9]{48};.*HttpOnly.*SameSite=Lax.*"), "admin / NOMAD signs in and sets a private cookie");
+        String cookie = r[3].split(";")[0];
+        r = raw(port, "GET", "/", null, cookie, null);
+        ok(r[0].equals("200") && r[1].contains("PORTAL"), "signed in: the home page opens");
+        ok(raw(port, "GET", "/", null, "np_sess=" + "a".repeat(48), null)[0].equals("302"), "a made-up cookie does not work");
+        raw(port, "GET", "/logout", null, cookie, null);
+        ok(raw(port, "GET", "/", null, cookie, null)[0].equals("302"), "signing out ends the session");
+        for (int i = 0; i < 5; i++) raw(port, "POST", "/login", null, null, "username=admin&password=wrong");
+        r = raw(port, "POST", "/login", null, null, "username=admin&password=NOMAD");
+        ok(r[2] != null && r[2].contains("e=2") && r[3] == null, "after 5 wrong tries it is locked for a minute, even with the right password");
+        a.stop();
+    }
+
     public static void main(String[] a) throws Exception {
+        System.setProperty("sun.net.http.allowRestrictedHeaders", "true");
+        authTests();
         File dir = Files.createTempDirectory("npshare").toFile();
         byte[] pack = new byte[300_000];
         new java.util.Random(7).nextBytes(pack);

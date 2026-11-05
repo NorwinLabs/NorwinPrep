@@ -214,7 +214,7 @@ Power saving, all automatic:
 
 Devices that join the hotspot are sent to a sign-in page (the "Sign in to Wi-Fi" prompt on phones and laptops). Sign in with user **admin** and password **NOMAD** (capital letters) to reach the library, maps, AI and tools. Wrong passwords are limited to 5 tries a minute. Sessions last 12 hours; "Sign out" is on the home page.
 
-For the automatic pop-up the hotspot must answer on port 80 and be allowed to write `/etc/NetworkManager/dnsmasq-shared.d/` (the Raspberry Pi service can). If not, join the Wi-Fi and open `http://10.42.0.1` by hand; the sign-in page still appears. The Android share does not have this sign-in yet.
+For the automatic pop-up the hotspot must answer on port 80 and be allowed to write `/etc/NetworkManager/dnsmasq-shared.d/` (the Raspberry Pi service can). If not, join the Wi-Fi and open `http://10.42.0.1` by hand; the sign-in page still appears. The Android phone share has the same sign-in (admin / NOMAD); Android picks that hotspot's name and password, and cannot do the automatic pop-up.
 
 ## Credits
 
