@@ -214,7 +214,7 @@ Power saving, all automatic:
 
 Devices that join the hotspot are sent to a sign-in page (the "Sign in to Wi-Fi" prompt on phones and laptops). Sign in with user **admin** and password **NOMAD** (capital letters) to reach the library, maps, AI and tools. Wrong passwords are limited to 5 tries a minute. Sessions last 12 hours; "Sign out" is on the home page.
 
-For the automatic pop-up the hotspot must answer on port 80 and be allowed to write `/etc/NetworkManager/dnsmasq-shared.d/` (the Raspberry Pi service can). If not, join the Wi-Fi and open `http://10.42.0.1` by hand; the sign-in page still appears. The Android phone share has the same sign-in (admin / NOMAD); Android picks that hotspot's name and password, and cannot do the automatic pop-up.
+For the automatic pop-up the hotspot must answer on port 80 and be allowed to write `/etc/NetworkManager/dnsmasq-shared.d/` (the Raspberry Pi service can). If not, join the Wi-Fi and open `http://10.42.0.1` by hand; the sign-in page still appears. **Changing the passwords:** open the connection panel (the Wi-Fi icon), then *Share over Wi-Fi* > *Change passwords*. The Wi-Fi password is 8 to 63 letters and numbers (the hotspot restarts and devices rejoin); the sign-in password is 4 to 64 characters and signs everyone out. The sign-in password is stored only as a salted hash. **Active users:** the panel shows how many devices have joined in the last 3 minutes. The desktop app also shows a notification, flashes the taskbar and beeps when a new device joins; **an Android phone vibrates** (PCs have no vibration motor). The Android phone share has the same sign-in (admin / NOMAD); Android picks that hotspot's name and password, and cannot do the automatic pop-up.
 
 ## What is in the store
 

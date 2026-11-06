@@ -7,7 +7,7 @@ const http = require('http');
 const { create, createShare, NAME_RE } = require('./local-server');
 const { Manager } = require('./modules-manager');
 const { Reader } = require('./reader');
-const { Share, ADMIN } = require('./share');
+const { Share } = require('./share');
 const { Autostart } = require('./autostart');
 const { Kolibri } = require('./kolibri');
 const { Llama } = require('./ai');
@@ -90,7 +90,7 @@ async function startServer() {
   });
   share = new Share({
     dataDir: app.getPath('userData'), onActive: (on) => kolibri.setShared(on),
-    makeServer: () => createShare({ siteDir, ai, kolibriInfo: () => kolibri.info(), siteRoot: (d) => modules.siteRoot(d), siteList: () => modules.listSites(), mapsDir: path.join(dataDir, 'maps'), appsDir: path.join(dataDir, 'apps'), reader, getName: () => name, version: app.getVersion(), auth: ADMIN })
+    makeServer: () => createShare({ siteDir, ai, kolibriInfo: () => kolibri.info(), siteRoot: (d) => modules.siteRoot(d), siteList: () => modules.listSites(), mapsDir: path.join(dataDir, 'maps'), appsDir: path.join(dataDir, 'apps'), reader, getName: () => name, version: app.getVersion(), auth: share.authFor(), onClient: (ip, n) => deviceJoined(n) })
   });
   // start with the device: on the very first run turn "launch at startup" on (the user can switch it off in the connections panel)
   const autostart = new Autostart({ platform: process.platform, exec: process.env.APPIMAGE || process.execPath, app, args: process.argv.slice(1).filter((a) => a === '--kiosk' || a === '--no-sandbox') });
@@ -111,6 +111,11 @@ async function startServer() {
   return { port, filesDir };
 }
 
+// a device joined the Wi-Fi share: there is no vibration motor in a PC, so tell the owner with a system notification, a taskbar flash and a beep
+function deviceJoined(n) {
+  try { const { Notification, shell } = require('electron'); if (Notification.isSupported()) new Notification({ title: 'A device joined your Wi-Fi', body: n + (n === 1 ? ' device is' : ' devices are') + ' connected. They will be asked to sign in.', silent: false }).show(); try { shell.beep(); } catch (e) { /* no sound */ } } catch (e) { /* not fatal */ }
+  try { if (win && !win.isDestroyed() && !win.isFocused()) win.flashFrame(true); } catch (e) { /* not fatal */ }
+}
 function goHome(stay) { win.loadURL(home + (stay ? '?stay=1' : '')); }
 
 function createWindow(info) {

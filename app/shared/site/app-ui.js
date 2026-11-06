@@ -128,6 +128,36 @@
     cb.addEventListener('change', function () { var b = {}; b[key] = cb.checked; setPref(b); });
     row.appendChild(cb); row.appendChild(document.createTextNode(label)); return row;
   }
+  // change the Wi-Fi password (not on Android, which picks it) and the sign-in password that joined devices must use
+  function passwordForm(st) {
+    var wrap = el('details'); wrap.style.marginTop = '12px'; var sm = el('summary', 'mono', 'Change passwords'); sm.style.cursor = 'pointer'; wrap.appendChild(sm);
+    function field(label, hint, key, type) {
+      var f = el('form'); f.style.cssText = 'display:flex;flex-direction:column;gap:6px;margin-top:10px'; f.autocomplete = 'off';
+      var l = el('label', 'note', label); var i = document.createElement('input'); i.type = type; i.autocomplete = 'off'; i.autocapitalize = 'off'; i.spellcheck = false; i.placeholder = hint; i.setAttribute('aria-label', label); i.style.cssText = 'padding:10px;border-radius:10px;border:1px solid var(--line2);background:#0d0f14;color:inherit;font:inherit';
+      var go = el('button', 'btn sm', 'Save'); go.type = 'submit'; f.appendChild(l); f.appendChild(i); f.appendChild(go);
+      f.addEventListener('submit', function (e) { e.preventDefault(); var v = i.value; if (!v) return; var b = {}; b[key] = v; go.disabled = true;
+        jf('/api/share', { method: 'POST', headers: Object.assign({ 'Content-Type': 'application/json' }, H), body: JSON.stringify(b) })
+          .then(function (j) { shareState = j; shareMsg = key === 'wifiPassword' ? 'Wi-Fi password changed. The hotspot restarted, so devices must join again with the new password.' : 'Sign-in password changed. Everyone must sign in again.'; refreshUi(); })
+          .catch(function (er) { go.disabled = false; shareMsg = er.message; refreshUi(); }); });
+      wrap.appendChild(f);
+    }
+    if (st.canChangeWifiPassword !== false) field('Wi-Fi password (8 to 63 letters and numbers)', 'New Wi-Fi password', 'wifiPassword', 'text');
+    else wrap.appendChild(el('div', 'note', 'Android chooses this phone’s Wi-Fi name and password itself, so only the sign-in password can be changed here.'));
+    field('Sign-in password (4 to 64 characters; the user name stays admin)', 'New sign-in password', 'adminPassword', 'text');
+    return wrap;
+  }
+  var shareTimer = null, lastClients = -1;
+  function pollShare() {                 // keeps the "Connected devices" number live without rebuilding the panel (which would wipe a password being typed)
+    clearInterval(shareTimer);
+    shareTimer = setInterval(function () {
+      if (!panelBox || !panelBox.isConnected) { clearInterval(shareTimer); return; }
+      jf('/api/share', { cache: 'no-store' }).then(function (j) {
+        var was = shareState && shareState.active; shareState = j;
+        var n = document.getElementById('shareClients'); if (n) n.textContent = String(j.clients || 0);
+        if (!!j.active !== !!was) refreshUi();
+      }).catch(function () { /* try again next time */ });
+    }, 3000);
+  }
   function shareSection() {
     var st = shareState;
     if (!st || (!st.supported && !(dev0 && dev0.platform === 'linux'))) return null;
@@ -136,7 +166,8 @@
     box.appendChild(el('div', 'note', st.note || 'Turn this device into a Wi-Fi hotspot. Other devices join it and read your library, maps and apps, with no internet needed.'));
     if (st.active) {
       var dl = el('dl', 'kv'); dl.style.marginTop = '10px';
-      [['Wi-Fi name', st.ssid], ['Wi-Fi password', st.password], ['Sign-in page', st.url + '/login'], ['Sign in as', (st.login || 'admin') + ' / NOMAD']].forEach(function (r) { dl.appendChild(el('dt', null, r[0])); var dd = el('dd', null, String(r[1])); dd.style.fontFamily = 'var(--mono)'; dl.appendChild(dd); });
+      [['Wi-Fi name', st.ssid], ['Wi-Fi password', st.password], ['Sign-in page', st.url + '/login'], ['Sign in as', (st.login || 'admin') + (st.adminDefault ? ' / NOMAD (default)' : ' / your sign-in password')], ['Connected devices', String(st.clients || 0)]].forEach(function (r) {
+        dl.appendChild(el('dt', null, r[0])); var dd = el('dd', null, String(r[1])); dd.style.fontFamily = 'var(--mono)'; if (r[0] === 'Connected devices') dd.id = 'shareClients'; dl.appendChild(dd); });
       box.appendChild(dl);
     }
     if (shareMsg) box.appendChild(el('div', 'note bad', shareMsg));
@@ -145,6 +176,7 @@
     b.addEventListener('click', function () { setShare(!st.active, false); }); row.appendChild(b);
     if (st.needForce && !st.active) { var f = el('button', 'btn sm warn', 'Share anyway'); f.type = 'button'; f.addEventListener('click', function () { setShare(true, true); }); row.appendChild(f); }
     box.appendChild(row);
+    box.appendChild(passwordForm(st));
     if (st.canAuto !== false) box.appendChild(prefRow('Start the Wi-Fi automatically when the app opens', st.auto, 'auto'));
     if (st.launchAtStartup !== undefined) box.appendChild(prefRow('Open this app when the device starts', st.launchAtStartup, 'launchAtStartup'));
     return box;
@@ -195,7 +227,7 @@
   }
   function openConnections(msg) {
     panelMsg = msg || '';          // kept so the picker's re-draws (after each scan result) still show it
-    shareMsg = ''; loadShare();
+    shareMsg = ''; loadShare(); pollShare();
     U.openModal(function (m) {
       m.appendChild(el('h3', null, 'Connection'));
       var mb = el('div', 'mb'); panelBox = el('div'); mb.appendChild(panelBox); m.appendChild(mb);

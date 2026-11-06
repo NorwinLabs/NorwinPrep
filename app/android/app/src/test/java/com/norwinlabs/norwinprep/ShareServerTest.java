@@ -89,9 +89,37 @@ public class ShareServerTest {
         a.stop();
     }
 
+    static void presenceTests() throws Exception {
+        File dir = Files.createTempDirectory("npsharepres").toFile();
+        final java.util.concurrent.atomic.AtomicInteger joins = new java.util.concurrent.atomic.AtomicInteger(), last = new java.util.concurrent.atomic.AtomicInteger();
+        final String[] pw = {"NOMAD"};
+        ShareServer a = new ShareServer(p -> {
+            if (p.equals("portal.html")) return new java.io.ByteArrayInputStream("<title>PORTAL</title>".getBytes());
+            throw new java.io.FileNotFoundException(p);
+        }, "x", new ShareServer.Packs() {
+            public List<String> installedFiles() { return Collections.emptyList(); }
+            public File zimDir() { return dir; }
+        }, "admin", (u, p) -> u.equals("admin") && p.equals(pw[0]));
+        a.setListener(n -> { joins.incrementAndGet(); last.set(n); });
+        int port = a.start(new int[]{0});
+        raw(port, "GET", "/", null, null, null);
+        ok(a.activeDevices() == 0 && joins.get() == 0, "the owner's own device (loopback) is not counted as a joined device");
+        // password can change while sharing, and sessions end
+        String[] r = raw(port, "POST", "/login", null, null, "username=admin&password=NOMAD");
+        String cookie = r[3].split(";")[0];
+        ok(raw(port, "GET", "/", null, cookie, null)[0].equals("200"), "signed in with the current password");
+        pw[0] = "Fresh pass 9";
+        a.resetSessions();
+        ok(raw(port, "GET", "/", null, cookie, null)[0].equals("302"), "after a password change the old session is signed out");
+        ok(raw(port, "POST", "/login", null, null, "username=admin&password=NOMAD")[2].contains("e=1"), "the old password no longer works");
+        ok(raw(port, "POST", "/login", null, null, "username=admin&password=Fresh+pass+9")[0].equals("302"), "the new password works");
+        a.stop();
+    }
+
     public static void main(String[] a) throws Exception {
         System.setProperty("sun.net.http.allowRestrictedHeaders", "true");
         authTests();
+        presenceTests();
         File dir = Files.createTempDirectory("npshare").toFile();
         byte[] pack = new byte[300_000];
         new java.util.Random(7).nextBytes(pack);

@@ -181,6 +181,10 @@ function create(opts) {
         try { if (typeof b.launchAtStartup === 'boolean' && opts.autostart) opts.autostart.set(b.launchAtStartup); } catch (e) { return json(500, { error: 'Could not change the startup setting' }); }
         const done = (r) => json(200, withLaunch(r)), bad = (e) => json(e.code || 500, { error: e.message || 'Server error' });
         if (typeof b.auto === 'boolean') opts.share.setAuto(b.auto);
+        if (typeof b.wifiPassword === 'string' || typeof b.adminPassword === 'string') {
+          const pw = {}; if (typeof b.wifiPassword === 'string') pw.wifiPassword = b.wifiPassword; if (typeof b.adminPassword === 'string') pw.adminPassword = b.adminPassword;
+          return void opts.share.setPasswords(pw).then(done, bad);
+        }
         if (typeof b.on === 'boolean') opts.share.set(b.on, !!b.force).then(done, bad); else opts.share.status().then(done, bad);
       });
       return;
@@ -306,10 +310,11 @@ const LOGIN_HTML = (msg) => '<!doctype html><html lang="en"><head><meta charset=
   '<button type="submit">Sign in</button></form></body></html>';
 function makeAuth(cfg) {
   const digest = (v) => crypto.createHash('sha256').update(String(v)).digest();
-  const want = { u: digest(cfg.user), p: digest(cfg.password) }, sessions = new Map(), tries = new Map(), TTL = 12 * 3600 * 1000;
+  const want = { u: digest(cfg.user), p: cfg.verify ? null : digest(cfg.password) }, sessions = new Map(), tries = new Map(), TTL = 12 * 3600 * 1000;
   const same = (a, b) => crypto.timingSafeEqual(a, b);
   return {
-    check(user, password) { const a = same(digest(user), want.u), b = same(digest(password), want.p); return a && b; },
+    check(user, password) { const a = same(digest(user), want.u), b = cfg.verify ? !!cfg.verify(String(user), String(password)) : same(digest(password), want.p); return a && b; },
+    reset() { sessions.clear(); },
     open() { const t = crypto.randomBytes(24).toString('hex'); if (sessions.size > 200) sessions.delete(sessions.keys().next().value); sessions.set(t, Date.now() + TTL); return t; },
     valid(req) { const m = /(?:^|;\s*)np_sess=([a-f0-9]{48})/.exec(req.headers.cookie || ''); if (!m) return false; const e = sessions.get(m[1]); if (!e || e < Date.now()) { sessions.delete(m[1]); return false; } return true; },
     close(req) { const m = /(?:^|;\s*)np_sess=([a-f0-9]{48})/.exec(req.headers.cookie || ''); if (m) sessions.delete(m[1]); },
@@ -324,10 +329,19 @@ function createShare(opts) {
   // opts: siteDir, mapsDir, appsDir, reader, getName(), version
   let port = 0;
   const auth = opts.auth ? makeAuth(opts.auth) : null;
+  // who is connected: a device counts while it has made a request in the last 3 minutes (phones check for internet as soon as they join)
+  const ACTIVE_MS = 3 * 60000, seen = new Map();
+  const activeCount = () => { const t = Date.now(); let n = 0; for (const [ip, last] of seen) { if (t - last > ACTIVE_MS) seen.delete(ip); else n++; } return n; };
+  const touch = (req) => {
+    const ip = String(req.socket.remoteAddress || '').replace(/^::ffff:/, ''); if (!ip || ip === '127.0.0.1' || ip === '::1') return;
+    const t = Date.now(), prev = seen.get(ip), fresh = prev === undefined || t - prev > ACTIVE_MS; seen.set(ip, t); if (seen.size > 500) seen.delete(seen.keys().next().value);
+    if (fresh && opts.onClient) { try { opts.onClient(ip, activeCount()); } catch (e) { /* the hook must never break the server */ } }
+  };
   const server = http.createServer((req, res) => {
     const head = req.method === 'HEAD';
     const send = (code, type, body) => { res.writeHead(code, { 'Content-Type': type, 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff' }); res.end(head ? undefined : body); };
     let p; try { p = decodeURIComponent(new URL(req.url, 'http://x').pathname); } catch (e) { return send(400, 'text/plain', 'Bad request'); }
+    touch(req);
     if (auth) {
       const ip = String(req.socket.remoteAddress || '').replace(/^::ffff:/, ''), me = String(req.socket.localAddress || '').replace(/^::ffff:/, '');
       const loginUrl = 'http://' + (me.includes(':') ? '[' + me + ']' : me) + (port === 80 ? '' : ':' + port) + '/login';
@@ -386,7 +400,9 @@ function createShare(opts) {
       });
     },
     stop() { return new Promise((r) => { try { server.close(() => r()); server.closeAllConnections && server.closeAllConnections(); } catch (e) { r(); } }); },
-    get port() { return port; }
+    get port() { return port; },
+    clients: activeCount,
+    resetSessions() { if (auth) auth.reset(); }
   };
 }
 

@@ -77,6 +77,11 @@ public class LocalServer {
 
         /** Starts or stops sharing; returns the status JSON, or throws IOException with a message for the user. */
         String set(boolean on) throws IOException;
+
+        /** Changes the sign-in password that devices on the Wi-Fi must use; returns the status JSON. */
+        default String setAdminPassword(String password) throws IOException {
+            throw new IOException("Not supported here.");
+        }
     }
 
     /** Opens an installed content pack in another app (Android has no embedded reader). Returns null on success, else a message. */
@@ -312,8 +317,20 @@ public class LocalServer {
                 respond(out, 200, "application/json; charset=utf-8", sh.statusJson(), head);
             } else {
                 String body = new String(readBody(req, 1024), StandardCharsets.UTF_8);
+                String newPw = null;
+                try {
+                    Map<String, Object> jb = MiniJson.obj(MiniJson.parse(body.isEmpty() ? "{}" : body));
+                    if (jb != null && jb.get("adminPassword") instanceof String) newPw = (String) jb.get("adminPassword");
+                } catch (RuntimeException ignored) {
+                }
                 java.util.regex.Matcher om = Pattern.compile("\"on\"\\s*:\\s*(true|false)").matcher(body);
-                if (!om.find()) {
+                if (newPw != null) {
+                    try {
+                        respond(out, 200, "application/json; charset=utf-8", sh.setAdminPassword(newPw), head);
+                    } catch (IOException e) {
+                        respond(out, 400, "application/json; charset=utf-8", "{\"error\":" + jsonStr(String.valueOf(e.getMessage())) + "}", head);
+                    }
+                } else if (!om.find()) {
                     respond(out, 400, "application/json; charset=utf-8", "{\"error\":\"missing on\"}", head);
                 } else {
                     try {

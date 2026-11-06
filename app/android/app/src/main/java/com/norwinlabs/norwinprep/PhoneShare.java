@@ -10,12 +10,17 @@ import android.net.wifi.WifiManager;
 import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
+import android.os.VibrationEffect;
+import android.os.Vibrator;
+import android.content.SharedPreferences;
 
 import java.io.File;
 import java.io.IOException;
 import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
+import java.security.MessageDigest;
+import java.security.SecureRandom;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
@@ -36,6 +41,53 @@ public class PhoneShare implements LocalServer.Sharing {
     private WifiManager.LocalOnlyHotspotReservation reservation;
     private ShareServer server;
     private String ssid, password, url;
+    private final SharedPreferences prefs;
+
+    // ---- sign-in password: default NOMAD; once changed it is kept only as a salted PBKDF2 hash ----
+    private static String hash(String pw, byte[] salt) {
+        try {
+            javax.crypto.spec.PBEKeySpec spec = new javax.crypto.spec.PBEKeySpec(pw.toCharArray(), salt, 50000, 256);
+            byte[] h = javax.crypto.SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256").generateSecret(spec).getEncoded();
+            StringBuilder b = new StringBuilder();
+            for (byte x : h) b.append(String.format("%02x", x));
+            return b.toString();
+        } catch (Exception e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
+    private static byte[] unhex(String h) {
+        byte[] o = new byte[h.length() / 2];
+        for (int i = 0; i < o.length; i++) o[i] = (byte) Integer.parseInt(h.substring(2 * i, 2 * i + 2), 16);
+        return o;
+    }
+
+    boolean checkAdmin(String user, String pw) {
+        if (!"admin".equals(user) || pw == null) return false;
+        String salt = prefs.getString("adminSalt", null), want = prefs.getString("adminHash", null);
+        if (salt == null || want == null) return MessageDigest.isEqual("NOMAD".getBytes(), pw.getBytes());
+        return MessageDigest.isEqual(hash(pw, unhex(salt)).getBytes(), want.getBytes());
+    }
+
+    @Override
+    public synchronized String setAdminPassword(String pw) throws IOException {
+        if (pw == null || pw.length() < 4 || pw.length() > 64) throw new IOException("The sign-in password must be 4 to 64 characters.");
+        byte[] salt = new byte[16];
+        new SecureRandom().nextBytes(salt);
+        StringBuilder sb = new StringBuilder();
+        for (byte x : salt) sb.append(String.format("%02x", x));
+        prefs.edit().putString("adminSalt", sb.toString()).putString("adminHash", hash(pw, salt)).apply();
+        if (server != null) server.resetSessions();                 // everyone signs in again
+        return statusJson();
+    }
+
+    private void buzz() {
+        try {
+            Vibrator v = (Vibrator) act.getSystemService(Context.VIBRATOR_SERVICE);
+            if (v != null && v.hasVibrator()) v.vibrate(VibrationEffect.createOneShot(300, VibrationEffect.DEFAULT_AMPLITUDE));
+        } catch (RuntimeException ignored) {
+        }
+    }
 
     public PhoneShare(Activity act, LocalServer.Source site, File zimDir, ModuleManager modules, String deviceName) {
         this.act = act;
@@ -43,6 +95,7 @@ public class PhoneShare implements LocalServer.Sharing {
         this.zimDir = zimDir;
         this.modules = modules;
         this.deviceName = deviceName;
+        this.prefs = act.getSharedPreferences("norwinprep_share", Context.MODE_PRIVATE);
     }
 
     @Override
@@ -54,7 +107,8 @@ public class PhoneShare implements LocalServer.Sharing {
         if (modules == null || Build.VERSION.SDK_INT < 26) b.append(",\"reason\":\"Sharing needs Android 8 or newer.\"");
         if (active) {
             b.append(",\"ssid\":").append(LocalServer.jsonStr(ssid)).append(",\"password\":").append(LocalServer.jsonStr(password))
-                    .append(",\"url\":").append(LocalServer.jsonStr(url)).append(",\"login\":\"admin\"");
+                    .append(",\"url\":").append(LocalServer.jsonStr(url)).append(",\"login\":\"admin\"").append(",\"clients\":").append(server.activeDevices())
+                    .append(",\"adminDefault\":").append(prefs.getString("adminHash", null) == null).append(",\"canChangeWifiPassword\":false");
         }
         return b.append('}').toString();
     }
@@ -103,7 +157,8 @@ public class PhoneShare implements LocalServer.Sharing {
             public File zimDir() {
                 return zimDir;
             }
-        }, "admin", "NOMAD");
+        }, "admin", (u, p) -> checkAdmin(u, p));
+        s.setListener(n -> buzz());                          // a phone in your pocket tells you someone joined
         int port;
         try {
             port = s.start(new int[]{8080, 8888, 0});

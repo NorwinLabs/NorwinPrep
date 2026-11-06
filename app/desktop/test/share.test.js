@@ -46,8 +46,51 @@ async function authTests() {
   const open = createShare({ siteDir: site, mapsDir: site, appsDir: site, reader: null, getName: () => 'x', version: '1' }), op = await open.start([0], '127.0.0.1');
   r = await rq(op, 'GET', '/'); ok(r.code === 200, 'without sign-in configured the share stays open (old behaviour)'); await open.stop();
 }
+async function passwordTests() {
+  // ---- presence: who is connected ----
+  const joined = [], a = createShare({ siteDir: site, mapsDir: site, appsDir: site, reader: null, getName: () => 'x', version: '1', auth: AUTH, onClient: (ip, n) => joined.push(n) }), port = await a.start([0], '127.0.0.1');
+  ok(a.clients() === 0, 'nobody connected yet'); await rq(port, 'GET', '/'); ok(a.clients() === 0 && joined.length === 0, 'the owner\'s own device (loopback) is not counted');
+  a.stop();
+  // a fake remote address is needed to test counting: drive the handler through a custom server wrapper
+  const http2 = require('http'); let remote = '10.42.0.7'; const b = createShare({ siteDir: site, mapsDir: site, appsDir: site, reader: null, getName: () => 'x', version: '1', auth: AUTH, onClient: (ip, n) => joined.push(n) });
+  const bp = await b.start([0], '127.0.0.1'); const real = http2.Server.prototype.emit;   // make the socket report a hotspot address
+  http2.Server.prototype.emit = function (ev, req, ...r) { if (ev === 'request' && req && req.socket && remote) Object.defineProperty(req.socket, 'remoteAddress', { value: remote, configurable: true }); return real.call(this, ev, req, ...r); };
+  try {
+    await rq(bp, 'GET', '/generate_204', { headers: { Host: 'connectivitycheck.gstatic.com' } }); ok(joined.length === 1 && joined[0] === 1 && b.clients() === 1, 'a phone joining (its first request) is reported once: the hook fires with 1 device');
+    await rq(bp, 'GET', '/login'); await rq(bp, 'GET', '/login'); ok(joined.length === 1, 'more requests from the same phone are not new joins');
+    remote = '10.42.0.8'; await rq(bp, 'GET', '/login'); ok(joined.length === 2 && joined[1] === 2 && b.clients() === 2, 'a second phone makes it 2 active users');
+  } finally { http2.Server.prototype.emit = real; }
+  b.stop();
+  // ---- changing the sign-in and Wi-Fi passwords ----
+  const { sh, calls, dir } = harness();
+  ok(sh.checkAdmin('admin', 'NOMAD') && !sh.checkAdmin('admin', 'nomad') && !sh.checkAdmin('root', 'NOMAD'), 'default sign-in is admin / NOMAD');
+  let st = await sh.status(); ok(st.adminDefault === true && st.wifiDefault === true, 'status says the defaults are still in use');
+  await sh.set(true); st = await sh.status();
+  let e = null; try { await sh.setPasswords({ adminPassword: 'abc' }); } catch (x) { e = x; } ok(e && e.code === 400, 'a sign-in password under 4 characters is refused');
+  e = null; try { await sh.setPasswords({ wifiPassword: 'short' }); } catch (x) { e = x; } ok(e && e.code === 400, 'a Wi-Fi password under 8 characters is refused');
+  e = null; try { await sh.setPasswords({ wifiPassword: 'has space1' }); } catch (x) { e = x; } ok(e && e.code === 400, 'a Wi-Fi password with a space or symbol is refused (WPA2 on a phone keyboard)');
+  await sh.setPasswords({ adminPassword: 'My new pass 42' });
+  ok(sh.checkAdmin('admin', 'My new pass 42') && !sh.checkAdmin('admin', 'NOMAD'), 'after the change only the new sign-in password works');
+  ok(!fs.readFileSync(path.join(dir, 'share.json'), 'utf8').includes('My new pass 42') && /"hash":"[0-9a-f]{64}"/.test(fs.readFileSync(path.join(dir, 'share.json'), 'utf8')), 'it is stored only as a salted hash');
+  const before = calls.filter((c) => c[0] === 'nmcli' && c[1] === 'connection' && c[2] === 'add').length;
+  st = await sh.setPasswords({ wifiPassword: 'CampfireNight7' });
+  const adds = calls.filter((c) => c[0] === 'nmcli' && c[1] === 'connection' && c[2] === 'add');
+  ok(st.active && st.password === 'CampfireNight7' && adds.length === before + 1 && adds[adds.length - 1].includes('CampfireNight7'), 'a new Wi-Fi password restarts the hotspot with it');
+  ok(st.adminDefault === false && st.wifiDefault === false, 'status no longer reports defaults');
+  await sh.stop();
+  const again = new Share({ dataDir: dir, platform: 'linux', exec: async () => ({ stdout: '' }), makeServer: () => createShare({ siteDir: site, mapsDir: site, appsDir: site, reader: null, getName: () => 'x', version: '1' }), ports: [0], dnsmasqDir: path.join(dir, 'dn') });
+  ok(again.checkAdmin('admin', 'My new pass 42') && again.cfg.password === 'CampfireNight7', 'both passwords survive a restart of the app');
+  // sessions end when the password changes
+  const live = createShare({ siteDir: site, mapsDir: site, appsDir: site, reader: null, getName: () => 'x', version: '1', auth: sh.authFor() }), lp = await live.start([0], '127.0.0.1');
+  let r = await rq(lp, 'POST', '/login', { body: 'username=admin&password=My%20new%20pass%2042' }); const ck = String(r.h['set-cookie'] || '').split(';')[0];
+  r = await rq(lp, 'GET', '/', { headers: { Cookie: ck } }); ok(r.code === 200, 'signed in with the changed password');
+  live.resetSessions(); r = await rq(lp, 'GET', '/', { headers: { Cookie: ck } }); ok(r.code === 302, 'resetting sessions signs everyone out');
+  r = await rq(lp, 'POST', '/login', { body: 'username=admin&password=NOMAD' }); ok(/e=1/.test(r.h.location), 'the old password is refused by the live server');
+  await live.stop();
+}
 (async () => {
   let { sh, calls, st, dir } = harness();
+  await passwordTests();
   await authTests();
   let s = await sh.status(); ok(s.supported && !s.active, 'supported on Linux with a Wi-Fi adapter');
   s = await sh.set(true);

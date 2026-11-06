@@ -41,11 +41,19 @@ public class ShareServer {
     private final LocalServer.Source site;
     private final String name;
     private final Packs packs;
-    private final String user, pass;                                  // null = open share (no sign-in)
+    private final String user;                                        // null = open share (no sign-in)
+    private volatile java.util.function.BiPredicate<String, String> verifier;
     private final Map<String, Long> sessions = new java.util.concurrent.ConcurrentHashMap<>();
     private final Map<String, long[]> tries = new java.util.concurrent.ConcurrentHashMap<>();   // ip -> {failures, lockedUntil}
     private final SecureRandom rnd = new SecureRandom();
-    private static final long TTL = 12L * 3600 * 1000;
+    private static final long TTL = 12L * 3600 * 1000, ACTIVE_MS = 3L * 60000;
+    private final Map<String, Long> seen = new java.util.concurrent.ConcurrentHashMap<>();   // device address -> last request
+    private volatile Listener listener;
+
+    /** Told when a new device appears on the Wi-Fi (its first request, or its first after 3 quiet minutes). */
+    public interface Listener {
+        void onDeviceJoined(int activeDevices);
+    }
     private static final Pattern COOKIE_RE = Pattern.compile("(?:^|;\\s*)np_sess=([a-f0-9]{48})");
     private static final Pattern IPV4_RE = Pattern.compile("^\\d{1,3}(\\.\\d{1,3}){3}$");
     private ServerSocket socket;
@@ -53,16 +61,54 @@ public class ShareServer {
     private volatile int port;
 
     public ShareServer(LocalServer.Source site, String deviceName, Packs packs) {
-        this(site, deviceName, packs, null, null);
+        this(site, deviceName, packs, null, (java.util.function.BiPredicate<String, String>) null);
     }
 
     /** With a user name and password: devices must sign in first (the same page and rules as the desktop share). */
     public ShareServer(LocalServer.Source site, String deviceName, Packs packs, String user, String password) {
+        this(site, deviceName, packs, user, (u, p) -> same(u, user) & same(p, password));
+    }
+
+    /** Sign-in decided by a function, so the password can be stored hashed and changed while sharing. */
+    public ShareServer(LocalServer.Source site, String deviceName, Packs packs, String user, java.util.function.BiPredicate<String, String> verifier) {
         this.site = site;
         this.name = deviceName;
         this.packs = packs;
         this.user = user;
-        this.pass = password;
+        this.verifier = verifier;
+    }
+
+    public void setListener(Listener l) {
+        this.listener = l;
+    }
+
+    /** Devices that made a request in the last 3 minutes. */
+    public int activeDevices() {
+        long t = System.currentTimeMillis();
+        int n = 0;
+        for (Map.Entry<String, Long> e : seen.entrySet()) {
+            if (t - e.getValue() > ACTIVE_MS) seen.remove(e.getKey());
+            else n++;
+        }
+        return n;
+    }
+
+    /** After a password change: everyone has to sign in again. */
+    public void resetSessions() {
+        sessions.clear();
+    }
+
+    private void touch(String ip) {
+        if (ip == null || ip.isEmpty() || ip.equals("127.0.0.1") || ip.equals("0:0:0:0:0:0:0:1")) return;
+        long t = System.currentTimeMillis();
+        Long prev = seen.put(ip, t);
+        if (seen.size() > 500) seen.clear();
+        if ((prev == null || t - prev > ACTIVE_MS) && listener != null) {
+            try {
+                listener.onDeviceJoined(activeDevices());
+            } catch (RuntimeException ignored) {
+            }
+        }
     }
 
     public int port() {
@@ -255,7 +301,7 @@ public class ShareServer {
                 redirect(out, "/login?e=2", null);
                 return true;
             }
-            boolean good = same(formValue(body, "username"), user) & same(formValue(body, "password"), pass);
+            boolean good = same(formValue(body, "username"), user) && verifier.test(formValue(body, "username"), formValue(body, "password"));
             if (good) {
                 tries.remove(ip);
                 byte[] raw = new byte[24];
@@ -290,6 +336,7 @@ public class ShareServer {
 
     private void route(String method, String target, Map<String, String> headers, OutputStream out, String body, String ip, String me) throws IOException {
         boolean head = method.equals("HEAD");
+        touch(ip);
         if (user != null) {
             String gp = target;
             int gq = gp.indexOf('?');
