@@ -760,6 +760,9 @@
     p.scrollTop = keepTop;
   }
   $('dlbtn').addEventListener('click', function () { dlOpen = !dlOpen; updateQueue(); });
+  // clicking anywhere outside the panel (or pressing Esc) closes it
+  document.addEventListener('click', function (e) { if (dlOpen && !e.target.closest('#dlpanel') && !e.target.closest('#dlbtn')) { dlOpen = false; updateQueue(); } });
+  document.addEventListener('keydown', function (e) { if (dlOpen && e.key === 'Escape') { dlOpen = false; updateQueue(); } });
   function patchProgress() {   // update running bars in place so they don't flicker
     state.mods.forEach(function (m) {
       if (!active(m)) return;
