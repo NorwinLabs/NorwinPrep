@@ -9,7 +9,7 @@ let fails = 0; const ok = (c, m) => { if (!c) { fails++; console.error('FAIL ' +
 const get = (port, p) => new Promise((res, rej) => { http.get({ host: '127.0.0.1', port, path: p }, (r) => { let d = ''; r.on('data', (c) => d += c); r.on('end', () => res({ code: r.statusCode, body: d, h: r.headers })); }).on('error', rej); });
 (async () => {
   const data = fs.mkdtempSync(path.join(os.tmpdir(), 'npkreal-')), k = new Kolibri({ dataDir: data, startTimeout: 300000 });
-  const mgr = new Manager({ catalog: path.join(__dirname, '..', '..', 'shared', 'site', 'catalog.json'), dataDir: data, platform: process.platform, arch: process.arch, pythonCheck: (r) => k.findPython(r), onKolibriChange: () => k.stop() });
+  const mgr = new Manager({ catalog: require('./catalog-merged').merged(), dataDir: data, platform: process.platform, arch: process.arch, pythonCheck: (r) => k.findPython(r), onKolibriChange: () => k.stop() });
   const info = await mgr.handle('GET', '/info', new URLSearchParams('id=kolibri'), null); console.log('info', JSON.stringify(info.body)); ok(info.code === 200, 'PyPI lookup works');
   mgr.enqueue('kolibri', 'install'); let j; for (let i = 0; i < 1800; i++) { j = mgr.jobs.kolibri; if (j.state === 'done' || j.state === 'error') break; await new Promise((r) => setTimeout(r, 500)); }
   ok(j.state === 'done', 'real Kolibri installed: ' + j.message); if (j.state !== 'done') process.exit(1);

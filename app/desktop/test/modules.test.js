@@ -3,7 +3,7 @@
 const fs = require('fs'), os = require('os'), path = require('path');
 const { Manager, loadCatalog } = require('../modules-manager');
 const { ZIM, WATER, APK, EXE, PEXE, F, server, work } = require('./fixtures');
-const CATALOG = path.join(__dirname, '..', '..', 'shared', 'site', 'catalog.json');
+const { SHIPPED, merged } = require('./catalog-merged'); const CATALOG = merged();   // CATALOG = shipped modules + test-only extras; SHIPPED = exactly what users get
 let fails = 0; const ok = (c, m) => { if (!c) { fails++; console.error('FAIL ' + m); } else console.log('ok   ' + m); };
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
@@ -24,8 +24,12 @@ const reset = () => { Object.assign(F, { shaOk: true, shaMissing: false, newZim:
 
   // ---------- catalog ----------
   const forLinux = loadCatalog(CATALOG, 'linux'), forWin = loadCatalog(CATALOG, 'windows'), forAndroid = loadCatalog(CATALOG, 'android');
-  ok(forLinux.length === 148 && forLinux.some((m) => m.id === 'reader') && forWin.some((m) => m.type === 'maps'), 'desktop sees all 148 modules including the reader and maps');
-  ok(forAndroid.length > 25 && forAndroid.every((m) => m.type === 'content'), 'Android only sees content packs (' + forAndroid.length + ')');
+  { const shipped = loadCatalog(SHIPPED, 'linux'), cats = new Set(shipped.map((m) => m.category));
+    ok(shipped.length === 88 && shipped.some((m) => m.id === 'reader') && shipped.filter((m) => m.type === 'maps').length === 51, 'the shipped catalog is the short list: ' + shipped.length + ' modules, 51 of them maps');
+    ok(['maps', 'survival', 'water', 'cooking', 'electronics', 'coding', 'dictionary', 'ai'].every((c) => cats.has(c)), 'it covers maps, survival, water, cooking, electronics, coding, dictionary and AI');
+    ok(!shipped.some((m) => ['cyberchef', 'kolibri', 'gardening', 'wikipedia-full', 'map-usa'].includes(m.id)), 'the niche modules are gone'); }
+  ok(forLinux.length >= 88 && forLinux.some((m) => m.id === 'reader') && forWin.some((m) => m.type === 'maps'), 'desktop sees the modules including the reader and maps (' + forLinux.length + ' with the test extras)');
+  ok(forAndroid.length > 15 && forAndroid.every((m) => m.type === 'content'), 'Android only sees content packs (' + forAndroid.length + ')');
   for (const bad of [{ id: '../x', type: 'content', sizeClass: 's', install: { kind: 'zim', subdir: 'a', prefix: 'b' } }, { id: 'ok1', type: 'content', sizeClass: 's', install: { kind: 'zim', subdir: '../etc', prefix: 'b' } },
     { id: 'ok2', type: 'content', sizeClass: 's', install: { kind: 'shell', cmd: 'rm -rf /' } }, { id: 'ok3', type: 'maps', sizeClass: 's', install: { kind: 'maps', file: '../x.pmtiles', maxzoom: 7 } },
     { id: 'ok4', type: 'maps', sizeClass: 's', install: { kind: 'maps', file: 'a.pmtiles', maxzoom: 7, bbox: '1,2,3' } }, { id: 'ok5', type: 'app', sizeClass: 's', install: { kind: 'app', suffixes: ['a/../b'] } },
@@ -142,7 +146,8 @@ const reset = () => { Object.assign(F, { shaOk: true, shaMissing: false, newZim:
     ok(u.cfg.kiwix === 'https://download.kiwix.org' && u.cfg.githubApi === 'https://api.github.com' && u.cfg.githubDl === 'https://github.com' && u.cfg.protomaps === 'https://build.protomaps.com' && u.cfg.hf === 'https://huggingface.co' && u.cfg.pypi === 'https://pypi.org', 'unset server options keep their real defaults (no "undefined/..." download addresses)');
     ok(u.zimBase(u.byid.water) === 'https://download.kiwix.org/zim/other/', 'a pack is looked up at the real Kiwix address: ' + u.zimBase(u.byid.water)); }
   { const cat = JSON.parse(fs.readFileSync(CATALOG, 'utf8')), ids = new Set(cat.modules.map((m) => m.id)); ok(cat.tiers.length === 3 && cat.tiers.every((x) => x.modules.every((id) => ids.has(id))), 'every module named in the quick-setup tiers exists');
-    ok(cat.tiers[0].modules.length < cat.tiers[1].modules.length && cat.tiers[1].modules.length < cat.tiers[2].modules.length && cat.tiers[0].modules.every((id) => cat.tiers[1].modules.includes(id)), 'tiers grow: Essential is inside Standard, Standard has more'); }
+    ok((() => { const model = new Set(cat.modules.filter((m) => m.type === 'model').map((m) => m.id)), content = (t) => t.modules.filter((id) => !model.has(id));   // the AI model is swapped for a bigger one in each tier, not piled up
+      return cat.tiers[0].modules.length < cat.tiers[1].modules.length && cat.tiers[1].modules.length < cat.tiers[2].modules.length && content(cat.tiers[0]).every((id) => cat.tiers[1].modules.includes(id)) && content(cat.tiers[1]).every((id) => cat.tiers[2].modules.includes(id)); })(), 'tiers grow: Essential is inside Standard, Standard has more'); }
 
   server.close(); console.log(fails ? fails + ' FAILED' : 'ALL PASSED'); process.exit(fails ? 1 : 0);
 })().catch((e) => { console.error('CRASH', e); process.exit(1); });

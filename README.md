@@ -216,6 +216,10 @@ Devices that join the hotspot are sent to a sign-in page (the "Sign in to Wi-Fi"
 
 For the automatic pop-up the hotspot must answer on port 80 and be allowed to write `/etc/NetworkManager/dnsmasq-shared.d/` (the Raspberry Pi service can). If not, join the Wi-Fi and open `http://10.42.0.1` by hand; the sign-in page still appears. The Android phone share has the same sign-in (admin / NOMAD); Android picks that hotspot's name and password, and cannot do the automatic pop-up.
 
+## What is in the store
+
+A short list on purpose: **maps** (a world overview and the 50 US state maps), **survival** (first aid, medicines, disaster guides, knots), **water filtration**, **cooking**, **electronics**, **coding**, a **dictionary** (Wiktionary) and the **local AI** (engine plus four model sizes). The content comes from Project NOMAD's lists (`scripts/import-nomad.py` fetches all of NOMAD's; `scripts/curate-catalog.py` cuts them down to this list). Anything else can be added back by editing the `GROUPS` in `scripts/curate-catalog.py`.
+
 ## Credits
 
 The extra content packs, topics and US state maps are adapted from [Project NOMAD](https://github.com/Crosstalk-Solutions/project-nomad) (Apache-2.0). See `NOTICE` and `third_party/project-nomad/`.

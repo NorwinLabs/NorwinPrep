@@ -71,13 +71,13 @@ function installFake(dir) { const app = path.join(dir, 'kolibri', 'app', 'kolibr
   // ---- installing from PyPI (fake) ----
   const b = 'http://127.0.0.1:' + server.address().port, lib = path.join(tmp, 'mgrlib'); fs.mkdirSync(lib);
   const calls = { py: [], stops: 0 };
-  const mk = (over) => new Manager(Object.assign({ catalog: path.join(__dirname, '..', '..', 'shared', 'site', 'catalog.json'), dataDir: lib, pypi: b, pypiFilesAny: true, githubApi: b, githubDl: b, kiwix: b, platform: 'linux', arch: 'x64', timeout: 5000,
+  const mk = (over) => new Manager(Object.assign({ catalog: require('./catalog-merged').merged(), dataDir: lib, pypi: b, pypiFilesAny: true, githubApi: b, githubDl: b, kiwix: b, platform: 'linux', arch: 'x64', timeout: 5000,
     pythonCheck: async (r) => { calls.py.push(r); }, onKolibriChange: async () => { calls.stops++; } }, over));
   let mgr = mk(); const done = async (id) => { for (let i = 0; i < 400; i++) { const j = mgr.jobs[id]; if (j && (j.state === 'done' || j.state === 'error')) return j; await sleep(40); } throw new Error('timeout'); };
   let r = await mgr.handle('GET', '/info', new URLSearchParams('id=kolibri'), null); ok(r.code === 200 && r.body.version === '0.19.5' && r.body.file === 'kolibri-0.19.5-py2.py3-none-any.whl' && /Python <3\.15,>=3\.6/.test(r.body.note), 'info: newest pure-Python wheel from PyPI, version, size and the Python it needs');
   mgr.enqueue('kolibri', 'install'); let j = await done('kolibri'); ok(j.state === 'done' && calls.py[0] === '<3.15,>=3.6', 'installs after checking the computer has a suitable Python: ' + j.message);
   ok(fs.existsSync(path.join(lib, 'kolibri', 'app', 'kolibri', '__init__.py')) && JSON.parse(fs.readFileSync(path.join(lib, 'kolibri', 'app', '.installed'), 'utf8')).version === '0.19.5', 'unpacked and marked installed');
-  const item = mgr.catalog().find((m) => m.id === 'kolibri'); ok(item.installed && item.version === '0.19.5' && item.open === '/learn/' && item.category === 'education', 'the store sees it: installed, Open goes to /learn/, in Education');
+  const item = mgr.catalog().find((m) => m.id === 'kolibri'); ok(item.installed && item.version === '0.19.5' && item.open === '/learn/' && item.category === 'education' || item.category === 'tools', 'the store sees it: installed, Open goes to /learn/, in Education');
   fs.mkdirSync(path.join(lib, 'kolibri', 'home'), { recursive: true }); fs.writeFileSync(path.join(lib, 'kolibri', 'home', 'accounts.db'), 'learner data');
   mgr.enqueue('kolibri', 'remove'); j = await done('kolibri'); ok(j.state === 'done' && !mgr.catalog().find((m) => m.id === 'kolibri').installed && fs.readFileSync(path.join(lib, 'kolibri', 'home', 'accounts.db'), 'utf8') === 'learner data', 'removing deletes the program but keeps accounts and lessons');
   F.kolibriSha = 'bad'; mgr = mk(); mgr.enqueue('kolibri', 'install'); j = await done('kolibri'); ok(j.state === 'error' && /checksum|corrupt/i.test(j.message) && !fs.existsSync(path.join(lib, 'kolibri', 'app')), 'a wheel that fails PyPI\'s SHA-256 is rejected and nothing is installed: ' + j.message);

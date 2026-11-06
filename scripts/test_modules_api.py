@@ -108,7 +108,7 @@ class Base(unittest.TestCase):
 class CatalogTests(Base):
     def test_real_catalog_is_valid(self):
         mods = api.load_catalog(CATALOG)
-        self.assertGreaterEqual(len(mods), 40)
+        self.assertGreaterEqual(len(mods), 25)
         self.assertEqual({m["type"] for m in mods}, {"content", "maps", "app"})
         self.assertEqual(len({m["id"] for m in mods}), len(mods))
         for m in mods: self.assertTrue(m["name"] and m["tagline"] and m["description"] and m["icon"] and re.match(r"^#[0-9a-f]{6}$", m["color"]), m["id"])
@@ -168,7 +168,7 @@ class ContentTests(Base):
         s, i = self.get("/api/modules/info?id=medicine"); self.assertEqual(s, 200)
         self.assertEqual((i["file"], i["version"], i["bytes"]), ("zimgit-medicine_en_2025-03.zim", "2025.03", len(ZIM))); self.assertGreater(i["free"], 0)
         self.assertEqual(self.get("/api/modules/info?id=nope")[0], 404)
-        s, i = self.get("/api/modules/info?id=gardening"); self.assertEqual(s, 404); self.assertIn("not found in the Kiwix library", i["error"])
+        s, i = self.get("/api/modules/info?id=cooking"); self.assertEqual(s, 404); self.assertIn("not found in the Kiwix library", i["error"])
     def test_info_when_kiwix_unreachable(self):
         self.mgr.cfg["kiwix"] = "http://127.0.0.1:1"; s, i = self.get("/api/modules/info?id=medicine"); self.assertEqual(s, 502); self.assertIn("Could not reach", i["error"])
     def test_install_verifies_and_replaces_old(self):
@@ -203,7 +203,7 @@ class ContentTests(Base):
         self.post("/api/modules/install", {"id": "medicine"}); j = self.wait("medicine"); self.assertEqual(j["state"], "error"); self.assertIn("Not enough free space", j["message"])
         self.assertTrue(not os.path.exists(self.zim) or os.listdir(self.zim) == [])
     def test_not_in_library(self):
-        self.post("/api/modules/install", {"id": "gardening"}); j = self.wait("gardening"); self.assertEqual(j["state"], "error"); self.assertIn("not found", j["message"])
+        self.post("/api/modules/install", {"id": "cooking"}); j = self.wait("cooking"); self.assertEqual(j["state"], "error"); self.assertIn("not found", j["message"])
     def test_remove(self):
         self.post("/api/modules/install", {"id": "water"}); self.wait("water")
         self.assertEqual(self.post("/api/modules/remove", {"id": "water"})[0], 202); self.assertEqual(self.wait("water")["state"], "done")
@@ -220,7 +220,7 @@ class MapsAndAppsTests(Base):
         self.assertTrue(open(os.path.join(self.maps, "world.pmtiles")).read().endswith("20260301.pmtiles"), "uses the newest Protomaps build")
         self.assertEqual([f for f in os.listdir(self.maps) if f.startswith(".")], []); self.assertTrue(self.mod("map-world")["installed"])
     def test_map_failure_leaves_nothing(self):
-        os.environ["FAKE_PM_FAIL"] = "1"; self.post("/api/modules/install", {"id": "map-usa"}); j = self.wait("map-usa")
+        os.environ["FAKE_PM_FAIL"] = "1"; self.post("/api/modules/install", {"id": "map-world"}); j = self.wait("map-world")
         self.assertEqual(j["state"], "error"); self.assertIn("source unreachable", j["message"]); self.assertEqual(os.listdir(self.maps), [])
     def test_map_needs_tool(self):
         self.mgr.cfg["pmtiles"] = "/nonexistent/pmtiles"; self.post("/api/modules/install", {"id": "map-world"}); j = self.wait("map-world")
@@ -289,13 +289,13 @@ class SizeTests(Base):
     def test_every_module_has_a_size_class(self):
         c = self.get("/api/modules/catalog")[1]
         self.assertTrue(all(m["sizeClass"] in ("s", "m", "l", "xl") for m in c["modules"]))
-        self.assertEqual(next(m for m in c["modules"] if m["id"] == "wikipedia-full")["sizeClass"], "xl")
+        self.assertEqual(next(m for m in c["modules"] if m["id"] == "wiktionary")["sizeClass"], "m")
     def test_exact_sizes_are_looked_up_in_the_background(self):
         self.get("/api/modules/catalog"); c = self.settle(); by = {m["id"]: m for m in c["modules"]}
         self.assertEqual(by["medicine"]["size"], len(ZIM)); self.assertEqual(by["water"]["size"], len(WATER))
         self.assertEqual(by["app-android"]["size"], len(APK)); self.assertEqual(by["app-windows"]["size"], len(EXE) + len(PORT_EXE))
         self.assertNotIn("size", by["map-world"], "map size depends on the region, so no exact number is claimed")
-        self.assertNotIn("size", by["gardening"], "not in the library -> no size")
+        self.assertNotIn("size", by["cooking"], "not in the library -> no size")
         self.assertEqual(by["medicine"]["latest"], "2025.03", "the same lookup also tells us the newest version")
     def test_installed_module_reports_its_size_on_disk(self):
         os.makedirs(self.zim); open(os.path.join(self.zim, "zimgit-medicine_en_2024-06.zim"), "wb").write(b"x" * 4321)

@@ -1,0 +1,132 @@
+{
+  "_comment": "Modules that are NOT in the shipped catalog but whose installers (static-site, python-wheel, maps extract, ...) are still tested. Merged into the catalog only by test/catalog-merged.js.",
+  "modules": [
+    {
+      "id": "cyberchef",
+      "type": "tool",
+      "category": "tools",
+      "name": "CyberChef",
+      "tagline": "The data Swiss Army knife",
+      "description": "Encode, decode, encrypt, hash, convert and analyse data in the app. A static web app from GCHQ that runs fully offline.",
+      "by": "GCHQ",
+      "source": "https://github.com/gchq/CyberChef",
+      "icon": "wrench",
+      "color": "#d9822b",
+      "sizeClass": "s",
+      "install": {
+        "kind": "static-site",
+        "repo": "gchq/CyberChef",
+        "asset": "^CyberChef_(v[0-9.]+|[0-9a-f]{40})\\.zip$",
+        "dir": "cyberchef"
+      },
+      "platforms": [
+        "windows",
+        "linux",
+        "darwin"
+      ],
+      "hosts": [
+        "app"
+      ],
+      "open": "/tools/cyberchef/"
+    },
+    {
+      "id": "kolibri",
+      "type": "tool",
+      "category": "education",
+      "name": "Kolibri",
+      "tagline": "A full offline school: courses, quizzes, progress",
+      "description": "Learning Equality's offline learning platform. Teachers and learners get accounts, lessons and progress tracking. Import courses (such as Khan Academy) inside Kolibri. Needs Python 3 on this computer.",
+      "by": "LEARNING EQUALITY",
+      "source": "https://learningequality.org/kolibri/",
+      "icon": "book",
+      "color": "#7b5cd6",
+      "sizeClass": "s",
+      "install": {
+        "kind": "python-wheel",
+        "package": "kolibri",
+        "dir": "kolibri"
+      },
+      "platforms": [
+        "windows",
+        "linux",
+        "darwin"
+      ],
+      "hosts": [
+        "app"
+      ],
+      "open": "/learn/"
+    },
+    {
+      "id": "gardening",
+      "type": "content",
+      "name": "Gardening Q&A",
+      "tagline": "Growing food and plants",
+      "description": "Growing food and plants - StackExchange archive.",
+      "by": "KIWIX",
+      "source": "https://library.kiwix.org/",
+      "icon": "leaf",
+      "color": "#5aa84f",
+      "install": {
+        "kind": "zim",
+        "subdir": "stack_exchange",
+        "prefix": "gardening.stackexchange.com_en_all"
+      },
+      "sizeClass": "s",
+      "platforms": [
+        "windows",
+        "linux",
+        "darwin",
+        "android"
+      ],
+      "category": "library"
+    },
+    {
+      "id": "map-usa",
+      "type": "maps",
+      "name": "Map: United States",
+      "tagline": "Street-level detail",
+      "description": "OpenStreetMap data for the US. Large download.",
+      "by": "PROTOMAPS",
+      "source": "https://protomaps.com/",
+      "icon": "map",
+      "color": "#3a9d8f",
+      "install": {
+        "kind": "maps",
+        "file": "usa.pmtiles",
+        "maxzoom": 15,
+        "bbox": "-125.0,24.3,-66.9,49.5"
+      },
+      "sizeClass": "l",
+      "platforms": [
+        "windows",
+        "linux",
+        "darwin"
+      ],
+      "category": "maps"
+    },
+    {
+      "id": "wikipedia-full",
+      "type": "content",
+      "name": "Wikipedia: Full (images)",
+      "tagline": "Everything, with pictures",
+      "description": "The complete English Wikipedia with images. Huge; needs a large drive.",
+      "by": "WIKIMEDIA",
+      "source": "https://en.wikipedia.org/",
+      "icon": "book",
+      "color": "#2f4fb0",
+      "install": {
+        "kind": "zim",
+        "subdir": "wikipedia",
+        "prefix": "wikipedia_en_all_maxi"
+      },
+      "sizeClass": "xl",
+      "platforms": [
+        "windows",
+        "linux",
+        "darwin",
+        "android"
+      ],
+      "category": "library"
+    }
+  ]
+}

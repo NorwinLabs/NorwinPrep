@@ -195,9 +195,13 @@
   <div class="chips" role="group" aria-label="Filter by type" id="chips">
     <button class="sq mono on" data-t="all">All</button>
     <button class="sq mono" data-t="installed" id="chipInstalled">Installed</button>
-    <button class="sq mono" data-t="library">Library</button>
-    <button class="sq mono" data-t="education">Education</button>
     <button class="sq mono" data-t="maps">Maps</button>
+    <button class="sq mono" data-t="survival">Survival</button>
+    <button class="sq mono" data-t="water">Water</button>
+    <button class="sq mono" data-t="cooking">Cooking</button>
+    <button class="sq mono" data-t="electronics">Electronics</button>
+    <button class="sq mono" data-t="coding">Coding</button>
+    <button class="sq mono" data-t="dictionary">Dictionary</button>
     <button class="sq mono" data-t="ai">AI</button>
     <button class="sq mono" data-t="tools">Tools</button>
     <button class="sq mono" data-t="apps">Apps</button>
@@ -325,8 +329,8 @@
     b.appendChild(bv); f.appendChild(b);
     return f;
   }
-  var CATS = ['library', 'education', 'maps', 'ai', 'tools', 'apps'];
-  function catOf(m) { return CATS.indexOf(m.category) >= 0 ? m.category : (m.type === 'maps' ? 'maps' : m.type === 'app' ? 'apps' : m.type === 'tool' ? 'tools' : 'library'); }
+  var CATS = ['maps', 'survival', 'water', 'cooking', 'electronics', 'coding', 'dictionary', 'ai', 'tools', 'apps'];
+  function catOf(m) { return CATS.indexOf(m.category) >= 0 ? m.category : (m.type === 'maps' ? 'maps' : m.type === 'app' ? 'apps' : m.type === 'tool' ? 'tools' : 'survival'); }
   function typeLabel(t) { return t === 'model' ? 'AI model' : t === 'app' ? 'App' : t === 'maps' ? 'Map' : t === 'tool' ? 'Tool' : 'Content'; }
   function openHref(m) { return base + (/^\/tools\/[a-z0-9-]+\/$/.test(m.open || '') ? m.open : m.type === 'maps' ? '/maps/' : m.type === 'app' ? '/apps/' : '/wiki/'); }
   function active(m) { return m.job && (m.job.state === 'queued' || m.job.state === 'running'); }
@@ -604,12 +608,10 @@
       if (!(href && on)) t.addEventListener('click', function () { goStore(store); });
       g.appendChild(t);
     }
-    var nLib = instCount(function (m) { return m.type === 'content' && (m.category === 'library' || m.category === 'education'); });
-    tile('library', 'Library', nLib > 0, nLib + ' installed', base + '/wiki/', 'library');
+    var nLib = instCount(function (m) { return m.type === 'content'; });
+    tile('library', 'Library', nLib > 0, nLib + ' installed', base + '/wiki/', 'survival');
     var nMap = instCount(function (m) { return m.type === 'maps'; });
     tile('maps', 'Maps', nMap > 0, nMap === 1 ? 'Ready' : nMap + ' installed', base + '/maps/', 'maps');
-    var kol = state.mods.filter(function (m) { return m.id === 'kolibri'; })[0];
-    if (kol) tile('learn', 'Learn', !!kol.installed, 'Courses and lessons', base + '/learn/', 'education');
     var nAi = instCount(function (m) { return m.type === 'model'; });
     if (state.mods.some(function (m) { return m.type === 'model'; })) tile('ai', 'Ask AI', nAi > 0, 'Plain-language answers', base + '/ai/', 'ai');
     var tools = state.mods.filter(function (m) { return m.installed && m.type === 'tool' && m.id !== 'kolibri' && /^\/tools\/[a-z0-9-]+\/$/.test(m.open || ''); });
