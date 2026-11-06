@@ -11,6 +11,7 @@ const { Share } = require('./share');
 const { Autostart } = require('./autostart');
 const { Kolibri } = require('./kolibri');
 const { Llama } = require('./ai');
+const { libraryContext } = require('./library-search');
 const updaterLib = require('./updater');
 const { spawn, execFile } = require('child_process');
 
@@ -82,7 +83,7 @@ async function startServer() {
   reader = new Reader({ binDir: path.join(dataDir, 'reader'), zimDir: path.join(dataDir, 'zim') });
   const env = process.env;
   kolibri = new Kolibri({ dataDir });
-  ai = new Llama({ dataDir, eco: () => { try { return require('electron').powerMonitor.isOnBatteryPower(); } catch (e) { return false; } } });
+  ai = new Llama({ dataDir, context: (q, eco) => (reader && reader.ready() ? libraryContext(q, { port: reader.port, root: '/wiki', maxChars: eco ? 1200 : 3000, maxPages: eco ? 2 : 3 }) : null), eco: () => { try { return require('electron').powerMonitor.isOnBatteryPower(); } catch (e) { return false; } } });
   const modules = new Manager({
     pythonCheck: (requires) => kolibri.findPython(requires), onKolibriChange: () => kolibri.stop(), onAiChange: () => ai.stop(),
     catalog: path.join(siteDir, 'catalog.json'), dataDir, onLibraryChange: () => reader.restart(),

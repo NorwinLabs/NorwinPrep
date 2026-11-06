@@ -85,11 +85,25 @@ class Llama {
         let j; try { j = JSON.parse(b); } catch (e) { return json(400, { error: 'invalid JSON' }); }
         const msgs = Array.isArray(j.messages) ? j.messages.slice(-40).filter((m) => m && ['system', 'user', 'assistant'].includes(m.role) && typeof m.content === 'string').map((m) => ({ role: m.role, content: m.content.slice(0, 16000) })) : [];
         if (!msgs.length) return json(400, { error: 'no messages' });
+        const wantLib = j.library === true && typeof this.o.context === 'function';
+        let sources = [];
         const body = { messages: msgs, stream: j.stream !== false, temperature: Math.min(2, Math.max(0, Number(j.temperature) || 0.7)), max_tokens: Math.min(2048, Math.max(1, parseInt(j.max_tokens, 10) || 768)) };
-        const go = () => {
-          this.touch(); const payload = JSON.stringify(body);
+        const withLibrary = async () => {                        // let the model read the installed library: the best matching pages go in as a system note
+          if (!wantLib) return;
+          const q = [...msgs].reverse().find((m) => m.role === 'user'); if (!q) return;
+          try {
+            const c = await Promise.race([this.o.context(q.content, this.isEco()), new Promise((r) => setTimeout(() => r(null), 9000))]);
+            if (c && c.text) {
+              sources = c.sources || [];
+              const note = { role: 'system', content: 'Excerpts from the user\'s offline library follow. Answer from them when they are relevant, name the page you used in [brackets], and say so if they do not cover the question. Do not invent facts that are not in them.\n\n' + c.text };
+              const at = msgs.findIndex((m) => m.role !== 'system'); body.messages = msgs.slice(0, at < 0 ? msgs.length : at).concat([note], msgs.slice(at < 0 ? msgs.length : at));
+            }
+          } catch (e) { /* no library: answer without it */ }
+        };
+        const go = async () => {
+          await withLibrary(); this.touch(); const payload = JSON.stringify(body);
           const up = http.request({ host: '127.0.0.1', port: this.port, method: 'POST', path: '/v1/chat/completions', headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(payload) } }, (r) => {
-            res.writeHead(r.statusCode, { 'Content-Type': r.headers['content-type'] || 'application/json', 'Cache-Control': 'no-store', 'X-Accel-Buffering': 'no' }); r.pipe(res);
+            res.writeHead(r.statusCode, Object.assign({ 'Content-Type': r.headers['content-type'] || 'application/json', 'Cache-Control': 'no-store', 'X-Accel-Buffering': 'no' }, sources.length ? { 'X-Library-Sources': encodeURIComponent(JSON.stringify(sources.slice(0, 5).map((s) => ({ title: String(s.title).slice(0, 80), url: s.url })))).slice(0, 1500) } : {})); r.pipe(res);
             r.on('data', () => this.touch());
           });
           up.on('error', () => { if (!res.headersSent) json(502, { error: 'The AI engine is not answering.' }); else res.end(); });

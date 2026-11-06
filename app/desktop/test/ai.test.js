@@ -54,6 +54,17 @@ function setup(models) { const d = fs.mkdtempSync(path.join(os.tmpdir(), 'npai-'
     g = await chat(ep, { messages: [{ role: 'user', content: 'hi' }] }); ok(/--threads 4/.test(g.body) && /-c 2048/.test(g.body), 'eco mode: half the CPU threads and a 2048 context'); await eco.stop(); await ea.stop();
     const full = new Llama({ dataDir: data, eco: () => false, cpus: 8 }), fa = create({ siteDir: data, filesDir: data, getName: () => 'x', setName: () => {}, version: '1', platform: 'linux', ai: full }), fp = await fa.start(0);
     g = await chat(fp, { messages: [{ role: 'user', content: 'hi' }] }); ok(!/--threads/.test(g.body) && /-c 4096/.test(g.body), 'on mains power: the engine decides the threads, full context'); await full.stop(); await fa.stop(); }
+  // ---------- reading the library: excerpts go to the model as a system note, sources come back in a header ----------
+  { let asked = null; const lib = new Llama({ dataDir: data, context: async (q) => { asked = q; return { text: '[Boiling]\nBring water to a rolling boil for one minute.', sources: [{ title: 'Boiling', url: '/wiki/content/water/A/Boiling' }] }; } });
+    const la = create({ siteDir: data, filesDir: data, getName: () => 'x', setName: () => {}, version: '1', platform: 'linux', ai: lib }), lp = await la.start(0);
+    let g = await chat(lp, { messages: [{ role: 'system', content: 'sys' }, { role: 'user', content: 'how do I purify water?' }], library: true });
+    ok(g.code === 200 && asked === 'how do I purify water?' && /Excerpts from the user's offline library/.test(g.body) && /rolling boil/.test(g.body), 'with "Use my library" on, the matching pages are given to the model');
+    let src = []; try { src = JSON.parse(decodeURIComponent(g.h['x-library-sources'])); } catch (e) { /* none */ } ok(src.length === 1 && src[0].title === 'Boiling' && src[0].url === '/wiki/content/water/A/Boiling', 'and the sources come back so the page can link them');
+    asked = null; g = await chat(lp, { messages: [{ role: 'user', content: 'hello' }], library: false }); ok(asked === null && !/Excerpts from/.test(g.body) && !g.h['x-library-sources'], 'with it off, the library is not searched');
+    asked = null; g = await chat(lp, { messages: [{ role: 'user', content: 'hello' }] }); ok(asked === null, 'it is only searched when the page asks for it');
+    const bad = new Llama({ dataDir: data, context: async () => { throw new Error('reader down'); } }), ba = create({ siteDir: data, filesDir: data, getName: () => 'x', setName: () => {}, version: '1', platform: 'linux', ai: bad }), bp = await ba.start(0);
+    g = await chat(bp, { messages: [{ role: 'user', content: 'hello' }], library: true }); ok(g.code === 200 && /MODEL=/.test(g.body), 'if the library cannot be searched the question is still answered');
+    await lib.stop(); await bad.stop(); await la.stop(); await ba.stop(); }
   // ---------- devices on the Wi-Fi share: chat yes, anything else no ----------
   fs.mkdirSync(path.join(data, 'ai-site'), { recursive: true }); const site = fs.mkdtempSync(path.join(os.tmpdir(), 'npaisite-')); fs.mkdirSync(path.join(site, 'ai')); fs.writeFileSync(path.join(site, 'ai', 'index.html'), '<title>CHAT</title>'); fs.writeFileSync(path.join(site, 'portal.html'), '<title>PORTAL</title>');
   const ai2 = new Llama({ dataDir: data, idleMs: 60000 });

@@ -8,6 +8,8 @@
   :root{--bg:#0d0f14;--panel:#12151c;--line:#272b36;--line2:#363c4b;--text:#e9ebf1;--mut:#8b92a3;--blue:#4aa3ff;--red:#ff5a6e;--mono:ui-monospace,"SF Mono",SFMono-Regular,Menlo,Consolas,monospace}
   *{box-sizing:border-box}
   html,body{height:100%}
+  .lib{font-size:12px;color:var(--mut);display:flex;gap:5px;align-items:center;white-space:nowrap;cursor:pointer}
+  .src{font-size:12px;color:var(--mut);margin:-4px 0 10px}.src a{color:var(--blue,#4aa3ff)}
   body{margin:0;background:var(--bg);color:var(--text);font:15px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;display:flex;flex-direction:column}
   header{display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--line);padding:10px 16px;flex:none;flex-wrap:wrap}
   header a{color:var(--text);text-decoration:none;font-family:var(--mono);font-size:11px;letter-spacing:.2em;text-transform:uppercase}
@@ -37,6 +39,7 @@
 <div id="log" aria-live="polite"></div>
 <form id="f">
   <textarea id="q" rows="1" placeholder="Ask a question&hellip;" aria-label="Your question" maxlength="8000"></textarea>
+  <label class="lib" title="Search the packs installed on this device and answer from the best matching pages"><input type="checkbox" id="lib" checked> Use my library</label>
   <button id="send" type="submit">Send</button>
   <button id="clear" class="ghost" type="button" title="Start a new conversation">New</button>
 </form>
@@ -44,9 +47,16 @@
 (function () {
   'use strict';
   var $ = function (id) { return document.getElementById(id); };
+  var LIBKEY = 'norwinprep.ai.library'; try { if (localStorage.getItem(LIBKEY) === '0') $('lib').checked = false; } catch (e) { /* storage blocked */ }
+  $('lib').addEventListener('change', function () { try { localStorage.setItem(LIBKEY, this.checked ? '1' : '0'); } catch (e) { /* ignore */ } });
   var SYSTEM = 'You are an offline assistant on a device with no internet, used when normal services may be unavailable. Give clear, practical, safe, step-by-step answers. Keep them short unless asked for detail. If something is a medical or safety emergency, say to contact emergency services if at all possible, and give first-aid steps while waiting. You cannot browse the web or look anything up, and you can be wrong, so say when you are unsure.';
   var history = [], busy = false, ctrl = null, canSelect = false;
   function say(cls, text) { var d = document.createElement('div'); d.className = cls; d.textContent = text; $('log').appendChild(d); $('log').scrollTop = $('log').scrollHeight; return d; }
+  function showSources(bot, src) {      // links to the pages the answer was based on, under the answer
+    var d = document.createElement('div'); d.className = 'src'; d.appendChild(document.createTextNode('From your library: '));
+    src.forEach(function (x, i) { if (!/^\/wiki\/content\/[A-Za-z0-9_.-]+\/[^\s"<>]+$/.test(x.url || '')) return; var a = document.createElement('a'); a.href = x.url; a.target = '_blank'; a.rel = 'noopener'; a.textContent = x.title; if (i) d.appendChild(document.createTextNode(' · ')); d.appendChild(a); });
+    if (d.querySelector('a')) bot.parentNode.insertBefore(d, bot.nextSibling);
+  }
   function setState(t) { $('state').textContent = t || ''; }
   function reset() { history = []; $('log').textContent = ''; say('note', 'Answers come from a small AI model running on this device. They can be wrong. For emergencies, contact emergency services if you can.'); }
 
@@ -75,8 +85,9 @@
     var bot = say('msg bot', '…'); var acc = ''; setState('thinking… the first answer can take a while while the model loads');
     ctrl = new AbortController();
     var msgs = [{ role: 'system', content: SYSTEM }].concat(history.slice(-12));
-    fetch('/ai/api/chat', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ messages: msgs, stream: true, max_tokens: 768 }), signal: ctrl.signal }).then(function (r) {
+    fetch('/ai/api/chat', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ messages: msgs, stream: true, max_tokens: 768, library: $('lib').checked }), signal: ctrl.signal }).then(function (r) {
       if (!r.ok) return r.json().then(function (j) { throw new Error(j.error || ('Error ' + r.status)); });
+      try { var src = JSON.parse(decodeURIComponent(r.headers.get('X-Library-Sources') || '[]')); if (src.length) showSources(bot, src); } catch (e) { /* no sources */ }
       var rd = r.body.getReader(), dec = new TextDecoder(), buf = '';
       function pump() {
         return rd.read().then(function (x) {

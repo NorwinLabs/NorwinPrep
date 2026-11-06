@@ -220,6 +220,10 @@ For the automatic pop-up the hotspot must answer on port 80 and be allowed to wr
 
 A short list on purpose: **maps** (a world overview and the 50 US state maps), **survival** (first aid, medicines, disaster guides, knots), **water filtration**, **cooking**, **electronics**, **coding**, a **dictionary** (Wiktionary) and the **local AI** (engine plus four model sizes). The content comes from Project NOMAD's lists (`scripts/import-nomad.py` fetches all of NOMAD's; `scripts/curate-catalog.py` cuts them down to this list). Anything else can be added back by editing the `GROUPS` in `scripts/curate-catalog.py`.
 
+## The AI reads your library
+
+In the AI chat, **Use my library** (on by default) makes the assistant search every installed pack for your question, read the best matching pages, answer from them and link the pages it used under the answer. It works offline, through the reader's own search. On battery it reads fewer, shorter pages to save power. Turn the option off for general chat.
+
 ## Credits
 
 The extra content packs, topics and US state maps are adapted from [Project NOMAD](https://github.com/Crosstalk-Solutions/project-nomad) (Apache-2.0). See `NOTICE` and `third_party/project-nomad/`.

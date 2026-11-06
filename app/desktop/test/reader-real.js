@@ -15,5 +15,13 @@ const get = (port, p) => new Promise((res, rej) => { http.get({ host: '127.0.0.1
   if (!reader.ready()) { console.log('reader NOT ready. lastError:', reader.lastError, '| log:', reader.log); await reader.restart(); console.log('after a second restart: ready =', reader.ready(), '| lastError:', reader.lastError, '| log:', reader.log); }
   let ok = false;
   if (reader.ready()) { const g = await get(reader.port, '/wiki/'); console.log('GET /wiki/ ->', g.code, g.body.slice(0, 120).replace(/\s+/g, ' ')); ok = g.code === 200 || g.code === 302; }
+  if (ok) {   // the AI reads the library: search the real pack the way the chat does
+    const { libraryContext } = require('../library-search');
+    try { console.log('catalogue:', (await get(reader.port, '/wiki/catalog/v2/entries?count=100')).body.slice(0, 600).replace(/\s+/g, ' ')); } catch (e) { console.log('catalogue failed:', e.message); }
+    const c = await libraryContext('what is the dose of paracetamol', { port: reader.port, root: '/wiki', maxChars: 2000, maxPages: 3 });
+    console.log('library sources:', JSON.stringify(c.sources), '| text starts:', c.text.slice(0, 200).replace(/\s+/g, ' '));
+    if (!c.text) { try { console.log('raw search page:', (await get(reader.port, '/wiki/search?pattern=paracetamol&pageLength=3')).body.slice(0, 1500).replace(/\s+/g, ' ')); } catch (e) { console.log('raw search failed:', e.message); } }
+    ok = ok && c.text.length > 100 && c.sources.length > 0; console.log(c.text.length > 100 ? 'ok   the AI can read the real library' : 'FAIL the AI could not read the real library');
+  }
   await reader.stop(); console.log(ok ? 'ALL PASSED' : 'FAILED'); process.exit(ok ? 0 : 1);
 })().catch((e) => { console.error('CRASH', e); process.exit(1); });
