@@ -687,7 +687,14 @@
     main.style.maxWidth = (cols * W + (cols - 1) * G + 32) + 'px';
   }
   window.addEventListener('resize', fitColumns);
+  // Rebuilding the list empties the page for a moment, which sends the scroll position to the top. Remember it and put it back, so a
+  // progress update never moves what you are looking at.
   function render() {
+    var y = window.pageYOffset || document.documentElement.scrollTop || 0;
+    renderNow();
+    if (y) { window.scrollTo(0, y); requestAnimationFrame(function () { if (Math.abs((window.pageYOffset || 0) - y) > 2) window.scrollTo(0, y); }); }
+  }
+  function renderNow() {
     var main = $('main'); main.textContent = ''; fitColumns();
     updateHiddenBtn();
     if (state.home) { renderHome(main); state.sig = signature(); return; }
@@ -714,7 +721,7 @@
   }
   function signature() {
     return state.mods.map(function (m) { return [m.id, m.installed, m.version, m.updateAvailable, m.size || '', m.bytes || '', m.job ? m.job.state : '', m.job && m.job.state === 'error' ? m.job.message : ''].join('|'); }).join(';')
-      + (state.tiers.length) + (state.topics.length) + state.home + state.type + state.sort + state.q + state.view + '|' + browse + offline + base + '|' + hiddenIds().join(',') + state.showHidden + '|' + (state.disk ? state.disk.free : '') + state.pending;
+      + (state.tiers.length) + (state.topics.length) + state.home + state.type + state.sort + state.q + state.view + '|' + browse + offline + base + '|' + hiddenIds().join(',') + state.showHidden + '|' + (state.disk ? Math.floor(state.disk.free / 1073741824) : '') + state.pending;   // whole GB only: it changes all the time during a download
   }
   // ---------- download queue: what is running, what is waiting, what just finished ----------
   var dlOpen = false;
@@ -744,12 +751,13 @@
     b.style.display = 'block'; b.classList.toggle('busy', n > 0);
     b.textContent = n ? 'Downloads \u00b7 ' + q.run.length + ' running' + (q.wait.length ? ', ' + q.wait.length + ' waiting' : '') : 'Downloads';
     p.style.display = dlOpen ? 'block' : 'none'; if (!dlOpen) return;
-    p.textContent = ''; p.appendChild(el('h3', null, 'Download queue'));
+    var keepTop = p.scrollTop; p.textContent = ''; p.appendChild(el('h3', null, 'Download queue'));
     if (!n) p.appendChild(el('div', 'st', 'Nothing is downloading.'));
     if (q.run.length) { p.appendChild(el('div', 'grp mono', 'Downloading')); q.run.forEach(function (m) { p.appendChild(dlRow(m, 'run')); }); }
     if (q.wait.length) { p.appendChild(el('div', 'grp mono', 'Waiting (' + q.wait.length + ')')); q.wait.forEach(function (m, i) { p.appendChild(dlRow(m, 'wait', i + 1)); }); }
     if (q.fin.length) { p.appendChild(el('div', 'grp mono', 'Finished')); q.fin.forEach(function (m) { p.appendChild(dlRow(m, 'fin')); }); }
     p.appendChild(el('div', 'st', 'Downloads run one after another. Keep the app open.'));
+    p.scrollTop = keepTop;
   }
   $('dlbtn').addEventListener('click', function () { dlOpen = !dlOpen; updateQueue(); });
   function patchProgress() {   // update running bars in place so they don't flicker
