@@ -72,6 +72,14 @@
   map.addControl(new maplibregl.NavigationControl(), 'bottom-right');
   map.addControl(new maplibregl.ScaleControl({ unit: 'imperial' }), 'bottom-left');
   info.textContent = files.length + ' offline map file' + (files.length > 1 ? 's' : '');
+  // open on the region that was downloaded (state map) instead of a fixed spot; a world map keeps the wide view
+  try {
+    const hs = await Promise.all(files.filter(n => !n.startsWith('world')).map(n => new pmtiles.PMTiles(location.origin + '/tiles/' + encodeURIComponent(n)).getHeader()));
+    if (hs.length) {
+      const b = [Math.min(...hs.map(h => h.minLon)), Math.min(...hs.map(h => h.minLat)), Math.max(...hs.map(h => h.maxLon)), Math.max(...hs.map(h => h.maxLat))];
+      if (b.every(Number.isFinite) && b[2] > b[0] && b[3] > b[1] && !location.hash) map.fitBounds([[b[0], b[1]], [b[2], b[3]]], { padding: 20, animate: false });
+    }
+  } catch (e) { /* keep the default view */ }
 })();
 </script>
 </body>
