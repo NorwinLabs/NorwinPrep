@@ -15,6 +15,12 @@ const get = (port, p) => new Promise((res, rej) => { http.get({ host: '127.0.0.1
   if (!reader.ready()) { console.log('reader NOT ready. lastError:', reader.lastError, '| log:', reader.log); await reader.restart(); console.log('after a second restart: ready =', reader.ready(), '| lastError:', reader.lastError, '| log:', reader.log); }
   let ok = false;
   if (reader.ready()) { const g = await get(reader.port, '/wiki/'); console.log('GET /wiki/ ->', g.code, g.body.slice(0, 120).replace(/\s+/g, ' ')); ok = g.code === 200 || g.code === 302; }
+  if (ok) {   // the Exit button: the real reader's own pages, through the app's proxy
+    const front = http.createServer((q, r) => reader.proxy(q, r)); await new Promise((res) => front.listen(0, '127.0.0.1', res));
+    const e1 = await get(front.address().port, '/wiki/'), e2 = await get(front.address().port, '/wiki/viewer');
+    const has = (x) => /id="np-exit"/.test(x.body); console.log('Exit button on /wiki/ ->', e1.code, has(e1), '| /wiki/viewer ->', e2.code, has(e2));
+    ok = ok && (e1.code === 200 || e1.code === 302) && (has(e1) || has(e2)); front.close(); console.log(has(e1) || has(e2) ? 'ok   the real reader\'s pages get the Exit button' : 'FAIL no Exit button on the real reader\'s pages');
+  }
   if (ok) {   // the AI reads the library: search the real pack the way the chat does
     const { libraryContext } = require('../library-search');
     try { console.log('catalogue:', (await get(reader.port, '/wiki/catalog/v2/entries?count=100')).body.slice(0, 600).replace(/\s+/g, ' ')); } catch (e) { console.log('catalogue failed:', e.message); }
