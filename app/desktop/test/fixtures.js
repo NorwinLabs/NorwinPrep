@@ -34,7 +34,8 @@ const server = http.createServer((q, r) => {
   const out = (code, body, h) => { r.writeHead(code, Object.assign({ 'Content-Length': Buffer.byteLength(body) }, h || {})); r.end(q.method === 'HEAD' ? undefined : body); };
   const p = q.url.split('?')[0];
   const zims = { ['/zim/other/zimgit-medicine_en_' + F.newZim + '.zim']: ZIM, '/zim/other/zimgit-water_en_2025-01.zim': WATER };
-  if (p === '/zim/other/') return out(200, Object.keys(zims).map((n) => { const b = n.split('/').pop(); return '<a href="' + b + '">' + b + '</a><a href="' + b + '.sha256">x</a>'; }).join('\n') + '<a href="zimgit-medicine_en_2024-06.zim">old</a>');
+  if (F.ghost === 'all') delete zims['/zim/other/zimgit-water_en_2025-01.zim'];   // listed by Kiwix but not downloadable (404)
+  if (p === '/zim/other/') return out(200, (F.ghost ? '<a href="zimgit-water_en_2025-06.zim">ghost</a>' : '') + (F.ghost === 'all' ? '<a href="zimgit-water_en_2025-01.zim">ghost2</a>' : '') + Object.keys(zims).map((n) => { const b = n.split('/').pop(); return '<a href="' + b + '">' + b + '</a><a href="' + b + '.sha256">x</a>'; }).join('\n') + '<a href="zimgit-medicine_en_2024-06.zim">old</a>');
   if (zims[p]) {
     const data = zims[p], rng = q.headers.range;
     if (rng && q.method !== 'HEAD') { const start = Number(rng.match(/bytes=(\d+)-/)[1]); return out(206, data.slice(start), { 'Content-Range': 'bytes ' + start + '-' + (data.length - 1) + '/' + data.length }); }

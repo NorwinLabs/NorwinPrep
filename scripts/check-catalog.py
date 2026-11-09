@@ -58,7 +58,13 @@ for m in mods:
         if not vs:
             near = sorted(set(re.findall(r'href="(%s[^"]*)\.zim"' % re.escape(i["prefix"].split("_")[0][:8]), html)))[:3]
             report(m, False, "no file %s_YYYY-MM.zim in %s (similar: %s)" % (i["prefix"], base, ", ".join(near) or "none")); continue
-        r = probe("%s%s_%s.zim" % (base, i["prefix"], vs[-1])); report(m, r is not None and not isinstance(r, str), "%s %s" % (vs[-1], r))
+        # like the app: the newest listed edition is sometimes not downloadable yet, so the newest of the last three that is counts
+        r = None; used = None; skipped = []
+        for v in reversed(vs[-3:]):
+            r = probe("%s%s_%s.zim" % (base, i["prefix"], v))
+            if r is not None and not isinstance(r, str): used = v; break
+            skipped.append(v)
+        report(m, used is not None, "%s %s%s" % (used or vs[-1], r, ("  (newer %s listed but not downloadable yet; the app uses the older one)" % ", ".join(skipped)) if skipped and used else ""))
     elif k == "pmtiles-file":
         r = probe(i["url"]); report(m, r is not None and not isinstance(r, str), "%s %s" % (i["file"], r))
     elif k == "maps":

@@ -34,7 +34,7 @@ OLLAMA_MODS = [
   _ollama("ollama-gemma3-4b", "Gemma 3 4B (Ollama, sees pictures)", "gemma3:4b", "Ask about a photo: a plant, a wound, a part", "Google's 4 billion parameter model through Ollama. It can look at a picture you attach in the chat (a plant, a rash, a broken part) as well as answer questions. Wants a laptop with 8 GB of memory.", 3350, 6, "m", "GOOGLE"),
   _ollama("ollama-qwen25-7b", "Qwen 2.5 7B (Ollama)", "qwen2.5:7b", "The most capable; needs a strong computer", "Alibaba's 7 billion parameter model through Ollama. Best answers; wants 16 GB of memory for comfort, 8 GB at least.", 4700, 8, "l", "ALIBABA"),
 ]
-for _m in OLLAMA_MODS: by.setdefault(_m["id"], _m)
+for _m in OLLAMA_MODS: by[_m["id"]] = _m
 cat["modules"] = [m for m in cat["modules"] if m["id"] not in {x["id"] for x in OLLAMA_MODS}] + [by[x["id"]] for x in OLLAMA_MODS]
 # Wikipedia (the same three sizes Project NOMAD offers) and the small built-in tools
 def _wiki(i, name, prefix, tag, mb, sc):
@@ -44,14 +44,14 @@ def _tool(i, name, tag, desc, icon, color, d):
     return {"id": i, "type": "tool", "category": "tools", "name": name, "tagline": tag, "description": desc, "by": "NORWINPREP", "source": "https://github.com/NorwinLabs/NorwinPrepDisk", "icon": icon, "color": color, "sizeClass": "s",
             "install": {"kind": "bundled", "dir": d}, "platforms": ["windows", "linux", "darwin"], "hosts": ["app"], "open": "/tools/%s/" % d}
 EXTRA = [
-  _wiki("wikipedia-top-mini", "Wikipedia: Quick Reference", "wikipedia_en_top_mini", "The 100,000 most-read articles, with few images.", 331, "s"),
-  _wiki("wikipedia-top-nopic", "Wikipedia: Popular Articles", "wikipedia_en_top_nopic", "The most-read articles without images. A good balance.", 2239, "m"),
-  _wiki("wikipedia-all-mini", "Wikipedia: Complete (compact)", "wikipedia_en_all_mini", "All 6 million+ articles in a condensed form (about 12 GB).", 12531, "xl"),
+  _wiki("wikipedia-top-mini", "Wikipedia: Quick Reference", "wikipedia_en_top_mini", "The 100,000 most-read articles, with few images.", 283, "s"),
+  _wiki("wikipedia-top-nopic", "Wikipedia: Popular Articles", "wikipedia_en_top_nopic", "The most-read articles without images. A good balance.", 2619, "m"),
+  _wiki("wikipedia-all-mini", "Wikipedia: Complete (compact)", "wikipedia_en_all_mini", "All 6 million+ articles in a condensed form (about 13 GB).", 13720, "xl"),
   _tool("checklists", "Checklists", "72-hour kit, bug-out bag, first aid and more", "Ready-made preparedness checklists you can tick off, change and print. They stay on this device.", "shield", "#3ecf8e", "checklists"),
   _tool("emergency-card", "Emergency card", "A printable page with your medical info and plan", "Fill in your blood type, allergies, contacts and meeting places, then print a page and a wallet card. Includes your saved map places and the Wi-Fi share details.", "cross", "#ff5a6e", "card"),
   _tool("signals", "Signals and radio", "Morse, spelling alphabet, distress signals, frequencies", "Morse with sound and light, the NATO spelling alphabet, ground-to-air signals, emergency radio frequencies and how to make a radio call.", "globe", "#f0b429", "signals"),
 ]
-for _m in EXTRA: by.setdefault(_m["id"], _m)
+for _m in EXTRA: by[_m["id"]] = _m
 cat["modules"] = [m for m in cat["modules"] if m["id"] not in {x["id"] for x in EXTRA}] + [by[x["id"]] for x in EXTRA]
 MAPS = ["map-world"] + [m["id"] for m in cat["modules"] if m["install"]["kind"] == "pmtiles-file"]
 KEEP = {i: c for c, ids in GROUPS for i in ids}; KEEP.update({i: "maps" for i in MAPS})
@@ -70,7 +70,7 @@ AI_ESS = ["ai-engine", "qwen25-05b"]
 WIKI_T = {"id": "wikipedia", "name": "Wikipedia", "description": "The encyclopedia, offline. Pick a size.", "icon": "book", "tiers": [
     tier("wiki-quick", "Quick reference", ["wikipedia-top-mini"], "100,000 top articles (about 0.3 GB).", True),
     tier("wiki-popular", "Popular articles", ["wikipedia-top-nopic"], "The most-read articles, no images (about 2 GB)."),
-    tier("wiki-all", "Everything", ["wikipedia-all-mini"], "All articles, condensed (about 12 GB).")]}
+    tier("wiki-all", "Everything", ["wikipedia-all-mini"], "All articles, condensed (about 13 GB).")]}
 PREP_T = {"id": "prep", "name": "Preparedness tools", "description": "Checklists, an emergency card and signal references. Tiny, and they work with no internet.", "icon": "check", "tiers": [
     tier("prep-tools", "All three tools", ["checklists", "emergency-card", "signals", "notes"], "Under 1 MB together.", True)]}
 TOPICS = [

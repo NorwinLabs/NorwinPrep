@@ -2625,7 +2625,7 @@
         "android"
       ],
       "origin": "project-nomad",
-      "approxMB": 331
+      "approxMB": 283
     },
     {
       "id": "wikipedia-top-nopic",
@@ -2652,7 +2652,7 @@
         "android"
       ],
       "origin": "project-nomad",
-      "approxMB": 2239
+      "approxMB": 2619
     },
     {
       "id": "wikipedia-all-mini",
@@ -2660,8 +2660,8 @@
       "category": "reference",
       "topic": "wikipedia",
       "name": "Wikipedia: Complete (compact)",
-      "tagline": "All 6 million+ articles in a condensed form (about 12 GB).",
-      "description": "All 6 million+ articles in a condensed form (about 12 GB). The Wikipedia pack from Kiwix; the AI can read it when \"Use my library\" is on.",
+      "tagline": "All 6 million+ articles in a condensed form (about 13 GB).",
+      "description": "All 6 million+ articles in a condensed form (about 13 GB). The Wikipedia pack from Kiwix; the AI can read it when \"Use my library\" is on.",
       "by": "KIWIX",
       "source": "https://library.kiwix.org/",
       "icon": "book",
@@ -2679,7 +2679,7 @@
         "android"
       ],
       "origin": "project-nomad",
-      "approxMB": 12531
+      "approxMB": 13720
     },
     {
       "id": "checklists",
@@ -2690,7 +2690,7 @@
       "description": "Ready-made preparedness checklists you can tick off, change and print. They stay on this device.",
       "by": "NORWINPREP",
       "source": "https://github.com/NorwinLabs/NorwinPrepDisk",
-      "icon": "check",
+      "icon": "shield",
       "color": "#3ecf8e",
       "sizeClass": "s",
       "install": {
@@ -2742,7 +2742,7 @@
       "description": "Morse with sound and light, the NATO spelling alphabet, ground-to-air signals, emergency radio frequencies and how to make a radio call.",
       "by": "NORWINPREP",
       "source": "https://github.com/NorwinLabs/NorwinPrepDisk",
-      "icon": "radio",
+      "icon": "globe",
       "color": "#f0b429",
       "sizeClass": "s",
       "install": {
@@ -3142,7 +3142,7 @@
           "id": "wiki-all",
           "name": "Everything",
           "recommended": false,
-          "description": "All articles, condensed (about 12 GB).",
+          "description": "All articles, condensed (about 13 GB).",
           "modules": [
             "wikipedia-all-mini"
           ]

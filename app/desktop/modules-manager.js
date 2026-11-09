@@ -141,6 +141,16 @@ class Manager {
   peek(key) { const h = this.cache.get(key.join('\u0000')); return h ? h.v : undefined; }
   zimBase(m) { return this.cfg.kiwix + '/zim/' + m.install.subdir + '/'; }
   zimVersions(html, prefix) { const re = new RegExp(esc(prefix) + '_(\\d{4}-\\d{2})\\.zim(?![\\w])', 'g'); const s = new Set(); let x; while ((x = re.exec(html))) s.add(x[1]); return [...s].sort(); }
+  // The newest edition Kiwix lists is sometimes not downloadable yet (the listing shows it, the file answers 404): use the newest one that really is
+  async bestEdition(m, force) {
+    const vs = await this.kiwixVersions(m, force); if (!vs.length) throw new ApiError(404, m.install.prefix + ' was not found in the Kiwix library');
+    let lastErr = null;
+    for (const v of vs.slice(-3).reverse()) {
+      try { const size = await this.headSize(this.zimBase(m) + m.install.prefix + '_' + v + '.zim'); return { ver: v, size }; }
+      catch (e) { if (e instanceof HttpError && [403, 404, 410].includes(e.status)) { lastErr = e; continue; } return { ver: v, size: null }; }   // any other problem (offline, slow): keep going with the newest, as before
+    }
+    throw new ApiError(404, m.install.prefix + ' is listed by Kiwix but cannot be downloaded right now (HTTP ' + (lastErr && lastErr.status) + '). Try again later.');
+  }
   async kiwixVersions(m, force) {
     try { const html = await this.cached(['list', this.zimBase(m)], () => this.text(this.zimBase(m)), 3600000, force); return this.zimVersions(html, m.install.prefix); }
     catch (e) { if (e instanceof HttpError && e.status === 404) return []; throw e; }
@@ -375,10 +385,8 @@ class Manager {
     const i = m.install, res = { id, name: m.name, free: this.disk().free, bytes: null, file: null, version: null };
     try {
       if (i.kind === 'zim') {
-        const vs = await this.kiwixVersions(m);
-        if (!vs.length) throw new ApiError(404, i.prefix + ' was not found in the Kiwix library');
-        const name = i.prefix + '_' + vs[vs.length - 1] + '.zim';
-        Object.assign(res, { file: name, version: vs[vs.length - 1].replace('-', '.'), bytes: await this.headSize(this.zimBase(m) + name) });
+        const be = await this.bestEdition(m), name = i.prefix + '_' + be.ver + '.zim';
+        Object.assign(res, { file: name, version: be.ver.replace('-', '.'), bytes: be.size });
       } else if (i.kind === 'app') {
         const rel = await this.latestRelease();
         const files = i.suffixes.flatMap((s) => Object.keys(rel.assets).filter((n) => n.endsWith('-' + s)));
@@ -589,10 +597,8 @@ class Manager {
 
   // ---------- installers
   async installZim(m) {
-    const i = m.install, zdir = this.d('zim'), vs = await this.kiwixVersions(m, true);
-    if (!vs.length) throw new ApiError(404, i.prefix + ' was not found in the Kiwix library');
-    const name = i.prefix + '_' + vs[vs.length - 1] + '.zim', url = this.zimBase(m) + name;
-    let size = null; try { size = await this.headSize(url); } catch (e) { /* unknown */ }
+    const i = m.install, zdir = this.d('zim'), be = await this.bestEdition(m, true);
+    const name = i.prefix + '_' + be.ver + '.zim', url = this.zimBase(m) + name, size = be.size;
     this.needSpace(size);
     const part = path.join(zdir, '.' + name + '.part'), sha = await this.sha(url + '.sha256');
     await this.download(m.id, url, part, sha, '');

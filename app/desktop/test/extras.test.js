@@ -47,6 +47,12 @@ const put = (root, rel, body) => { const f = path.join(root, ...rel.split('/'));
     m.settings.set({ autoUpdate: false }); m.settings.last = null; ok(!m.autoUpdateDue(at(3)), '...and never when switched off');
     const rr = await m.handle('POST', '/autoupdate', new URLSearchParams(), {}); ok(rr.code === 200 && Array.isArray(rr.body.started), '"Update now" works from the store'); }
 
+  // ---------- a newest edition that is listed but not downloadable yet (Kiwix does this for a while after publishing) ----------
+  { F.ghost = true; const lib = tmp('npghost-'), mk = () => new Manager({ catalog: merged(), dataDir: lib, githubApi: b, githubDl: b, kiwix: b, platform: 'linux', arch: 'x64', timeout: 5000 }); let m = mk();
+    const info = (await m.handle('GET', '/info', new URLSearchParams('id=water'), null)).body; ok(info.version === '2025.01' && /2025-01/.test(info.file), 'info names the newest edition that can really be downloaded, not the ghost one: ' + info.file);
+    m.enqueue('water', 'install'); for (let i = 0; i < 300 && !['done', 'error'].includes(m.jobs.water.state); i++) await sleep(25); ok(m.jobs.water.state === 'done' && fs.existsSync(path.join(lib, 'zim', 'zimgit-water_en_2025-01.zim')), 'the install falls back to the previous edition instead of failing with a bad link');
+    F.ghost = 'all'; m = mk(); m.enqueue('water', 'install'); for (let i = 0; i < 300 && !['done', 'error'].includes(m.jobs.water.state); i++) await sleep(25); ok(m.jobs.water.state === 'error' && /cannot be downloaded right now/.test(m.jobs.water.message), 'if none of the listed editions can be downloaded the message says so: ' + m.jobs.water.message.slice(0, 80)); F.ghost = false; }
+
   // ---------- storage list ----------
   { const lib = tmp('npsto-'), m = new Manager({ catalog: merged(), dataDir: lib, githubApi: b, githubDl: b, kiwix: b, platform: 'linux', arch: 'x64', timeout: 5000 });
     m.enqueue('water', 'install'); for (let i = 0; i < 300 && !(m.jobs.water.state === 'done'); i++) await sleep(25); m.enqueue('notes', 'install'); for (let i = 0; i < 100 && m.jobs.notes.state !== 'done'; i++) await sleep(25);

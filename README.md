@@ -62,7 +62,7 @@ API (pull, delete, list) is never reachable from the page or from devices on the
 
 ## Offline extras
 
-- **Wikipedia** (Kiwix): Quick Reference (about 0.3 GB), Popular Articles (about 2 GB) and Complete compact (about 12 GB). The AI reads them when "Use my library" is on.
+- **Wikipedia** (Kiwix): Quick Reference (about 0.3 GB), Popular Articles (about 2.6 GB) and Complete compact (about 13 GB). The AI reads them when "Use my library" is on.
 - **Checklists**, **Emergency card** and **Signals and radio** are small built-in tools (Tools in the store). Checklists have 72-hour-kit, bug-out-bag, first-aid, home-supplies, vehicle, power-outage and leaving-the-house templates you can tick off and print. The Emergency card prints a page and a wallet card with your medical info, contacts, meeting places, saved map places and (while sharing) the Wi-Fi details. Signals has Morse (sound and light), the NATO alphabet, distress and ground-to-air signals, and emergency radio frequencies. All of it stays on the device.
 - **Map places**: on the map, "Places" lets you pin spots (button, or right-click / long-press), and import or export them as GPX. The Emergency card can print them.
 - **AI chat**: *Save to notes* (with the library pages used), *Read aloud* (your system's voices), *Translate to...* (the model translates what you type), and *attach a picture* with an Ollama vision model (Gemma 3 4B). Pictures are only accepted for Ollama models.
