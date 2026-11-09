@@ -35,8 +35,9 @@ const chat = (port, body) => req(port, '/ai/api/chat', { method: 'POST', headers
   { const small = mk({ ramBytes: 0.5 * 1073741824 }); r = await info(small, 'ollama-llama32-3b'); ok(/probably too little/.test(r.body.note), 'a model that needs more memory than the computer has is flagged'); }
 
   // ---------- installing a model installs the engine first, then pulls with progress ----------
-  mgr.enqueue('ollama-qwen25-05b', 'install'); const seen = new Set(); let j;
-  for (let i = 0; i < 600; i++) { j = mgr.jobs['ollama-qwen25-05b']; seen.add(j.message); if (j.state === 'done' || j.state === 'error') break; await sleep(10); }
+  const seen = new Set(), setOrig = mgr.set.bind(mgr); mgr.set = (id, patch) => { if (patch && patch.message) seen.add(patch.message); return setOrig(id, patch); };   // every message the Downloads panel could show, not a sample
+  mgr.enqueue('ollama-qwen25-05b', 'install'); let j;
+  for (let i = 0; i < 600; i++) { j = mgr.jobs['ollama-qwen25-05b']; if (j.state === 'done' || j.state === 'error') break; await sleep(10); }
   ok(j.state === 'done', 'engine + model installed: ' + j.message);
   const odir = path.join(lib, 'ai', 'ollama');
   ok(fs.existsSync(path.join(odir, 'bin', 'ollama')) && fs.existsSync(path.join(odir, 'lib', 'ollama', 'libggml-base.so')) && (fs.statSync(path.join(odir, 'bin', 'ollama')).mode & 0o111) !== 0 && fs.readFileSync(path.join(odir, 'VERSION'), 'utf8').trim() === 'v9.9.9', 'Ollama is unpacked whole (bin/ and lib/ side by side), runnable, with its version recorded' + (HAS_ZSTD ? ' (from a .tar.zst)' : ''));
