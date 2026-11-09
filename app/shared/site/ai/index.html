@@ -27,6 +27,12 @@
   button{height:48px;padding:0 18px;border-radius:12px;border:1px solid #fff;background:#fff;color:#0d0f14;font-family:var(--mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;font-weight:700;cursor:pointer}
   button.ghost{background:transparent;color:var(--text);border-color:var(--line2)}
   button:disabled{opacity:.5;cursor:default}
+  .acts{display:flex;gap:6px;margin:-6px 0 10px;align-self:flex-start}
+  .acts button{height:28px;padding:0 10px;font-size:10px;background:transparent;color:var(--mut);border-color:var(--line2)}
+  .thumbs{display:flex;gap:6px;margin-top:6px}.thumbs img{height:64px;border-radius:8px;border:1px solid var(--line2)}
+  #pend{display:none;gap:6px;padding:0 16px;max-width:820px;width:100%;margin:0 auto;flex:none}#pend.on{display:flex}
+  #pend span{position:relative}#pend img{height:56px;border-radius:8px;border:1px solid var(--line2)}#pend button{position:absolute;top:-6px;right:-6px;height:20px;width:20px;padding:0;border-radius:50%;font-size:12px;line-height:1}
+  #attach{width:48px;padding:0}
   :focus-visible{outline:2px solid var(--blue);outline-offset:1px}
 </style>
 </head>
@@ -34,12 +40,16 @@
 <header>
   <a href="/">&larr; Back</a><span class="t">AI assistant</span>
   <select id="model" aria-label="Model" hidden></select>
+  <select id="tr" aria-label="Translate to" title="Translate: the assistant translates what you type instead of answering"></select>
   <span id="state" role="status"></span>
 </header>
 <div id="log" aria-live="polite"></div>
+<div id="pend" aria-live="polite"></div>
 <form id="f">
   <textarea id="q" rows="1" placeholder="Ask a question&hellip;" aria-label="Your question" maxlength="8000"></textarea>
   <label class="lib" title="Search the packs installed on this device and answer from the best matching pages"><input type="checkbox" id="lib" checked> Use my library</label>
+  <input id="file" type="file" accept="image/*" hidden>
+  <button id="attach" class="ghost" type="button" title="Attach a picture (needs a vision model such as Gemma 3 4B)" aria-label="Attach a picture" hidden>&#128247;</button>
   <button id="send" type="submit">Send</button>
   <button id="clear" class="ghost" type="button" title="Start a new conversation">New</button>
 </form>
@@ -50,7 +60,12 @@
   var LIBKEY = 'norwinprep.ai.library'; try { if (localStorage.getItem(LIBKEY) === '0') $('lib').checked = false; } catch (e) { /* storage blocked */ }
   $('lib').addEventListener('change', function () { try { localStorage.setItem(LIBKEY, this.checked ? '1' : '0'); } catch (e) { /* ignore */ } });
   var SYSTEM = 'You are an offline assistant on a device with no internet, used when normal services may be unavailable. Give clear, practical, safe, step-by-step answers. Keep them short unless asked for detail. If something is a medical or safety emergency, say to contact emergency services if at all possible, and give first-aid steps while waiting. You cannot browse the web or look anything up, and you can be wrong, so say when you are unsure.';
-  var history = [], busy = false, ctrl = null, canSelect = false;
+  var history = [], busy = false, ctrl = null, canSelect = false, pending = [], visionOk = false;
+  var VISION_RE = /^ollama:(gemma3:(4|12|27)b|llava|moondream|minicpm-v|llama3\.2-vision|qwen2\.5vl|qwen3-vl)/;
+  var LANGS = ['Spanish', 'French', 'German', 'Portuguese', 'Italian', 'Dutch', 'Russian', 'Ukrainian', 'Polish', 'Turkish', 'Arabic', 'Hindi', 'Bengali', 'Urdu', 'Chinese (Simplified)', 'Japanese', 'Korean', 'Vietnamese', 'Thai', 'Indonesian', 'Tagalog', 'Swahili', 'English'];
+  (function () { var t = $('tr'), o = document.createElement('option'); o.value = ''; o.textContent = 'Translate: off'; t.appendChild(o); LANGS.forEach(function (l) { var x = document.createElement('option'); x.value = l; x.textContent = 'Translate to ' + l; t.appendChild(x); }); })();
+  function errText(j, fallback) { var e = j && j.error; return typeof e === 'string' ? e : (e && e.message) || fallback; }
+  function stopSpeech() { try { if (window.speechSynthesis) window.speechSynthesis.cancel(); } catch (e) { /* none */ } }
   function say(cls, text) { var d = document.createElement('div'); d.className = cls; d.textContent = text; $('log').appendChild(d); $('log').scrollTop = $('log').scrollHeight; return d; }
   function showSources(bot, src) {      // links to the pages the answer was based on, under the answer
     var d = document.createElement('div'); d.className = 'src'; d.appendChild(document.createTextNode('From your library: '));
@@ -65,7 +80,7 @@
       canSelect = !!s.canSelect; var sel = $('model'); sel.textContent = '';
       (s.models || []).forEach(function (m) { var o = document.createElement('option'); o.value = m; o.textContent = m.replace(/\.gguf$/, '').replace(/^ollama:/, 'Ollama: '); if (m === s.active) o.selected = true; sel.appendChild(o); });
       sel.hidden = !(canSelect && (s.models || []).length > 1);
-      var ready = s.engine && (s.models || []).length > 0;
+      var ready = s.engine && (s.models || []).length > 0; visionOk = VISION_RE.test(s.active || ''); $('attach').hidden = !visionOk; if (!visionOk) { pending = []; drawPending(); }
       $('send').disabled = !ready;
       if (!ready) say('note err', !s.engine ? 'The AI engine is not installed. Open the Module Store and install an AI model.' : 'No AI model is installed yet. Open the Module Store and install one.');
       setState(s.running ? 'ready' : ready ? 'will start when you ask' : '');
@@ -75,19 +90,58 @@
   $('model').addEventListener('change', function () {
     setState('switching…');
     fetch('/ai/api/select', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-NorwinPrep': '1' }, body: JSON.stringify({ model: $('model').value }) })
-      .then(function (r) { return r.json().then(function (j) { if (!r.ok) throw new Error(j.error || 'failed'); }); }).then(function () { setState('will load on your next question'); }, function (e) { setState(e.message); });
+      .then(function (r) { return r.json().then(function (j) { if (!r.ok) throw new Error(j.error || 'failed'); }); }).then(function () { setState('will load on your next question'); loadStatus(); }, function (e) { setState(e.message); });
   });
-  $('clear').addEventListener('click', function () { if (ctrl) ctrl.abort(); reset(); });
+  $('clear').addEventListener('click', function () { if (ctrl) ctrl.abort(); stopSpeech(); pending = []; drawPending(); reset(); });
+
+  function drawPending() {
+    var b = $('pend'); b.textContent = ''; b.classList.toggle('on', pending.length > 0);
+    pending.forEach(function (u, i) { var w = document.createElement('span'), im = document.createElement('img'), x = document.createElement('button'); im.src = u; im.alt = 'Attached picture'; x.type = 'button'; x.textContent = '×'; x.setAttribute('aria-label', 'Remove picture'); x.addEventListener('click', function () { pending.splice(i, 1); drawPending(); }); w.appendChild(im); w.appendChild(x); b.appendChild(w); });
+  }
+  function shrink(file, cb) {        // a small JPEG is plenty for a model and keeps the request light
+    var r = new FileReader(); r.onload = function () {
+      var im = new Image(); im.onload = function () {
+        var max = 1024, q = 0.8, f = Math.min(1, max / Math.max(im.width, im.height)), c = document.createElement('canvas'); c.width = Math.max(1, Math.round(im.width * f)); c.height = Math.max(1, Math.round(im.height * f));
+        c.getContext('2d').drawImage(im, 0, 0, c.width, c.height); var u = c.toDataURL('image/jpeg', q); if (u.length > 1400000) u = c.toDataURL('image/jpeg', 0.55); cb(u.length <= 1500000 ? u : null);
+      }; im.onerror = function () { cb(null); }; im.src = r.result;
+    }; r.onerror = function () { cb(null); }; r.readAsDataURL(file);
+  }
+  $('attach').addEventListener('click', function () { $('file').click(); });
+  $('file').addEventListener('change', function () {
+    var f = this.files && this.files[0]; this.value = ''; if (!f) return;
+    shrink(f, function (u) { if (!u) { setState('That picture could not be used.'); return; } pending.push(u); pending = pending.slice(-2); drawPending(); });
+  });
+  function saveNote(q, a, src) {      // into the Notes tool (same device storage), so it can be searched and printed later
+    var notes = []; try { notes = JSON.parse(localStorage.getItem('norwinprep.notes') || '[]'); } catch (e) { notes = []; } if (!Array.isArray(notes)) notes = [];
+    var body = a + (src.length ? '\n\nFrom the library:\n' + src.map(function (x) { return '- ' + x.title + ' (' + location.origin + x.url + ')'; }).join('\n') : '') + '\n\n(Saved from the AI assistant, ' + new Date().toLocaleString() + ')';
+    notes.push({ id: 'ai' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5), title: ('Q: ' + q).slice(0, 120), body: body, t: Date.now() });
+    localStorage.setItem('norwinprep.notes', JSON.stringify(notes));
+  }
+  function actions(bot, q, a, src) {
+    var d = document.createElement('div'); d.className = 'acts';
+    var sv = document.createElement('button'); sv.type = 'button'; sv.className = 'ghost'; sv.textContent = 'Save to notes';
+    sv.addEventListener('click', function () { try { saveNote(q, a, src); sv.textContent = 'Saved'; sv.disabled = true; var l = document.createElement('a'); l.href = '/tools/notes/'; l.textContent = 'Open Notes'; l.style.cssText = 'font-size:12px;color:var(--blue);align-self:center'; d.appendChild(l); } catch (e) { sv.textContent = 'Could not save'; } });
+    d.appendChild(sv);
+    if (window.speechSynthesis) {
+      var rd = document.createElement('button'); rd.type = 'button'; rd.className = 'ghost'; rd.textContent = 'Read aloud';
+      rd.addEventListener('click', function () { if (window.speechSynthesis.speaking) { stopSpeech(); rd.textContent = 'Read aloud'; return; } var u = new SpeechSynthesisUtterance(a.replace(/[*_#`>]/g, '')); u.onend = u.onerror = function () { rd.textContent = 'Read aloud'; }; rd.textContent = 'Stop reading'; window.speechSynthesis.speak(u); });
+      d.appendChild(rd);
+    }
+    var at = bot.nextSibling; if (at && at.className === 'src') at = at.nextSibling; bot.parentNode.insertBefore(d, at);
+  }
 
   function ask(text) {
-    busy = true; $('send').textContent = 'Stop'; $('send').disabled = false;
-    history.push({ role: 'user', content: text }); say('msg user', text);
-    var bot = say('msg bot', '…'); var acc = ''; setState('thinking… the first answer can take a while while the model loads');
+    busy = true; $('send').textContent = 'Stop'; $('send').disabled = false; stopSpeech();
+    var lang = $('tr').value, pics = visionOk ? pending.slice() : []; pending = []; drawPending();
+    history.push({ role: 'user', content: text }); var um = say('msg user', text);
+    if (pics.length) { var th = document.createElement('div'); th.className = 'thumbs'; pics.forEach(function (u) { var im = document.createElement('img'); im.src = u; im.alt = 'Your picture'; th.appendChild(im); }); um.appendChild(th); }
+    var bot = say('msg bot', '…'); var acc = '', shown = []; setState(lang ? 'translating…' : 'thinking… the first answer can take a while while the model loads');
     ctrl = new AbortController();
-    var msgs = [{ role: 'system', content: SYSTEM }].concat(history.slice(-12));
-    fetch('/ai/api/chat', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ messages: msgs, stream: true, max_tokens: 768, library: $('lib').checked }), signal: ctrl.signal }).then(function (r) {
-      if (!r.ok) return r.json().then(function (j) { throw new Error(j.error || ('Error ' + r.status)); });
-      try { var src = JSON.parse(decodeURIComponent(r.headers.get('X-Library-Sources') || '[]')); if (src.length) showSources(bot, src); } catch (e) { /* no sources */ }
+    var sys = lang ? 'You are a translator. Translate everything the user writes into ' + lang + '. Reply with the translation only: no explanations, no notes, no quotation marks. Keep names, numbers and units unchanged.' : SYSTEM;
+    var msgs = [{ role: 'system', content: sys }].concat(lang ? [{ role: 'user', content: text }] : history.slice(-12));
+    fetch('/ai/api/chat', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ messages: msgs, stream: true, max_tokens: 768, library: !lang && $('lib').checked, images: pics, temperature: lang ? 0.2 : 0.7 }), signal: ctrl.signal }).then(function (r) {
+      if (!r.ok) return r.json().then(function (j) { throw new Error(errText(j, 'Error ' + r.status)); });
+      try { var src = JSON.parse(decodeURIComponent(r.headers.get('X-Library-Sources') || '[]')); if (src.length) { showSources(bot, src); shown = src.filter(function (x) { return /^\/wiki\/content\//.test(x.url || ''); }); } } catch (e) { /* no sources */ }
       var rd = r.body.getReader(), dec = new TextDecoder(), buf = '';
       function pump() {
         return rd.read().then(function (x) {
@@ -102,7 +156,7 @@
       }
       return pump();
     }).catch(function (e) { if (e.name === 'AbortError') { if (!acc) bot.textContent = '(stopped)'; } else { bot.className = 'msg bot err'; bot.textContent = e.message; } })
-      .then(function () { if (acc) history.push({ role: 'assistant', content: acc }); else history.pop(); busy = false; ctrl = null; $('send').textContent = 'Send'; setState('ready'); });
+      .then(function () { if (acc) { history.push({ role: 'assistant', content: acc }); actions(bot, text, acc, shown); } else history.pop(); busy = false; ctrl = null; $('send').textContent = 'Send'; setState('ready'); });
   }
   $('f').addEventListener('submit', function (e) {
     e.preventDefault();

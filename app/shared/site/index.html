@@ -202,6 +202,7 @@
     <button class="sq mono" data-t="electronics">Electronics</button>
     <button class="sq mono" data-t="coding">Coding</button>
     <button class="sq mono" data-t="dictionary">Dictionary</button>
+    <button class="sq mono" data-t="reference">Wikipedia</button>
     <button class="sq mono" data-t="ai">AI</button>
     <button class="sq mono" data-t="tools">Tools</button>
     <button class="sq mono" data-t="apps">Apps</button>
@@ -329,7 +330,7 @@
     b.appendChild(bv); f.appendChild(b);
     return f;
   }
-  var CATS = ['maps', 'survival', 'water', 'cooking', 'electronics', 'coding', 'dictionary', 'ai', 'tools', 'apps'];
+  var CATS = ['maps', 'survival', 'water', 'cooking', 'electronics', 'coding', 'dictionary', 'reference', 'ai', 'tools', 'apps'];
   function catOf(m) { return CATS.indexOf(m.category) >= 0 ? m.category : (m.type === 'maps' ? 'maps' : m.type === 'app' ? 'apps' : m.type === 'tool' ? 'tools' : 'survival'); }
   function typeLabel(t) { return t === 'model' ? 'AI model' : t === 'app' ? 'App' : t === 'maps' ? 'Map' : t === 'tool' ? 'Tool' : 'Content'; }
   function openHref(m) { return base + (/^\/tools\/[a-z0-9-]+\/$/.test(m.open || '') ? m.open : m.type === 'maps' ? '/maps/' : m.type === 'app' ? '/apps/' : '/wiki/'); }

@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Signals and radio &ndash; NorwinPrep</title>
+<style>
+  :root{--bg:#0d0f14;--panel:#12151c;--line:#272b36;--line2:#363c4b;--text:#e9ebf1;--mut:#8b92a3;--blue:#4aa3ff;--amber:#f0b429;--mono:ui-monospace,"SF Mono",SFMono-Regular,Menlo,Consolas,monospace}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);font:15px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+  header{height:48px;display:flex;align-items:center;gap:14px;border-bottom:1px solid var(--line);padding:0 16px}
+  header a{color:var(--text);text-decoration:none;font-family:var(--mono);font-size:11px;letter-spacing:.2em;text-transform:uppercase}
+  header span{color:var(--mut);font-family:var(--mono);font-size:11px;letter-spacing:.28em;text-transform:uppercase}
+  main{max-width:960px;margin:0 auto;padding:16px}
+  nav{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+  nav button{height:34px;padding:0 14px;border-radius:999px;border:1px solid var(--line2);background:transparent;color:var(--text);font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;cursor:pointer}
+  nav button.on{background:#fff;color:#0d0f14;border-color:#fff}
+  section{display:none}section.on{display:block}
+  h2{font-size:18px;margin:18px 0 6px}
+  .note{border:1px solid #5a4a14;background:#221c0a;color:var(--amber);border-radius:12px;padding:10px 14px;margin:10px 0;font-size:13px}
+  table{width:100%;border-collapse:collapse}
+  th,td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+  th{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--mut)}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+  .cell{border:1px solid var(--line);border-radius:12px;background:var(--panel);padding:8px 10px}
+  .cell b{font-size:20px;display:inline-block;width:1.4em}.cell code{font-family:var(--mono);letter-spacing:.2em;color:var(--blue)}
+  .cell small{display:block;color:var(--mut)}
+  textarea,select,input{background:var(--panel);color:var(--text);border:1px solid var(--line2);border-radius:10px;padding:8px 10px;font:inherit;width:100%}
+  .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:8px 0}.row input[type=range]{width:160px;padding:0}
+  button.go{height:38px;padding:0 16px;border-radius:10px;border:1px solid #fff;background:#fff;color:#0d0f14;font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;font-weight:700;cursor:pointer}
+  #out{font-family:var(--mono);font-size:20px;letter-spacing:.15em;word-break:break-all;margin:10px 0;min-height:30px}
+  #flash{height:90px;border-radius:14px;background:#000;border:1px solid var(--line2);margin:8px 0}#flash.on{background:#fff}
+  .sig{font-size:44px;font-weight:700;font-family:var(--mono);width:70px;text-align:center}
+  :focus-visible{outline:2px solid var(--blue);outline-offset:1px}
+</style>
+</head>
+<body>
+<header><a href="/">&larr; Home</a><span>Signals and radio</span></header>
+<main>
+  <nav id="tabs" role="tablist"></nav>
+
+  <section id="s-morse">
+    <h2>Morse code</h2>
+    <div class="row"><textarea id="txt" rows="2" maxlength="200" aria-label="Text to send">SOS</textarea></div>
+    <div id="out" aria-live="polite"></div>
+    <div id="flash" aria-hidden="true"></div>
+    <div class="row"><button class="go" id="play" type="button">Play (sound + flash)</button><button class="go" id="stop" type="button" style="background:transparent;color:inherit;border-color:var(--line2)">Stop</button>
+      <label>Speed <input id="wpm" type="range" min="5" max="25" value="12"> <span id="wpmv">12</span> words/min</label></div>
+    <div class="note">Hold the screen up as a light signal, or tap the phone's torch in the same pattern. Dot = short, dash = three times as long.</div>
+    <h2>The alphabet</h2><div class="grid" id="chart"></div>
+  </section>
+
+  <section id="s-phon">
+    <h2>Spelling alphabet (NATO)</h2><div class="grid" id="phon"></div>
+    <div class="note">Say numbers one digit at a time: 9 = "niner", 5 = "fife", 3 = "tree". Say "I spell" before spelling a word.</div>
+  </section>
+
+  <section id="s-dist">
+    <h2>Distress signals</h2>
+    <table><tr><th>Signal</th><th>Meaning</th></tr>
+    <tr><td><b>Three of anything</b></td><td>Three whistle blasts, three shots, three fires in a triangle, three flashes of a light: repeat after a minute. This is understood almost everywhere as "I need help".</td></tr>
+    <tr><td><b>SOS</b> &middot;&middot;&middot; &minus;&minus;&minus; &middot;&middot;&middot;</td><td>Morse for distress: by sound, light, tapping, or laid out on the ground.</td></tr>
+    <tr><td><b>MAYDAY</b> (said 3 times)</td><td>Voice distress call on a radio: "Mayday, Mayday, Mayday, this is [name], my position is [where], I need [what], [how many] people."</td></tr>
+    <tr><td><b>PAN-PAN</b> (said 3 times)</td><td>Urgent, but no immediate danger to life.</td></tr>
+    <tr><td><b>Bright cloth, mirror flash, smoke</b></td><td>Orange or red cloth on high ground; flash a mirror toward aircraft; green leaves on a fire make white smoke.</td></tr>
+    <tr><td><b>Both arms raised in a V</b></td><td>"Yes, I need help" (arms in a straight line, one up one down, means "no help needed").</td></tr></table>
+    <h2>Ground to air</h2>
+    <p>Make the letters at least 3 metres (10 ft) tall, with contrast against the ground (rocks on snow, branches on sand), in an open place.</p>
+    <table><tr><th></th><th>Meaning</th></tr>
+    <tr><td class="sig">V</td><td>I need assistance</td></tr><tr><td class="sig">X</td><td>I need medical assistance</td></tr><tr><td class="sig">N</td><td>No / negative</td></tr><tr><td class="sig">Y</td><td>Yes / affirmative</td></tr><tr><td class="sig">&uarr;</td><td>Proceeding in this direction (arrow)</td></tr></table>
+  </section>
+
+  <section id="s-freq">
+    <h2>Radio frequencies worth knowing</h2>
+    <div class="note">Distress frequencies are for real emergencies only. Most radio services need a licence or are limited by country and power: check the rules where you live before you transmit. This list is a starting point, not legal advice.</div>
+    <table><tr><th>Frequency</th><th>Service</th><th>Use</th></tr>
+    <tr><td>121.500 MHz</td><td>Aircraft emergency</td><td>International civil aviation distress ("guard"). Aircraft often monitor it.</td></tr>
+    <tr><td>156.800 MHz</td><td>Marine VHF channel 16</td><td>International distress, safety and calling for boats.</td></tr>
+    <tr><td>146.520 MHz</td><td>Amateur 2 m (North America)</td><td>National simplex calling frequency. A licence is needed to transmit.</td></tr>
+    <tr><td>446.000 MHz</td><td>Amateur 70 cm (North America)</td><td>National simplex calling frequency. A licence is needed to transmit.</td></tr>
+    <tr><td>27.065 MHz</td><td>CB channel 9 (USA)</td><td>The emergency channel. No licence in the USA.</td></tr>
+    <tr><td>27.185 MHz</td><td>CB channel 19 (USA)</td><td>Road traffic; truckers.</td></tr>
+    <tr><td>162.400&ndash;162.550 MHz</td><td>NOAA weather radio (USA)</td><td>Receive only: forecasts and warnings.</td></tr>
+    <tr><td>446.00625&ndash;446.09375 MHz</td><td>PMR446 (Europe), channels 1&ndash;8</td><td>License-free handhelds. Channel n = 446.00625 + (n&minus;1) &times; 0.0125 MHz.</td></tr></table>
+    <h2>FRS / GMRS handheld channels (USA)</h2>
+    <p>FRS needs no licence; GMRS does (it allows more power). Channels 8&ndash;14 are FRS only, at low power.</p>
+    <div class="grid" id="frs"></div>
+  </section>
+
+  <section id="s-tips">
+    <h2>Making a radio call</h2>
+    <ol><li>Listen first, so you do not talk over someone.</li><li>Press and hold to talk, wait a second, then speak slowly and clearly.</li><li>Say who you are calling, then who you are: "Base, this is Scout."</li><li>Keep it short. Say "over" when you finish and expect an answer; "out" when the conversation is done.</li><li>In an emergency say "Mayday" three times, then where you are, what is wrong and how many people need help.</li><li>Save the battery: turn the radio off between scheduled check-in times (for example, on the hour).</li></ol>
+    <h2>Whistle codes</h2>
+    <table><tr><th>Blasts</th><th>Meaning</th></tr><tr><td>3 (repeat)</td><td>I need help</td></tr><tr><td>1</td><td>Where are you? / Here I am</td></tr><tr><td>2</td><td>Come to me</td></tr></table>
+  </section>
+</main>
+<script>
+(function () {
+  'use strict';
+  var $ = function (id) { return document.getElementById(id); };
+  var MORSE = { A: '.-', B: '-...', C: '-.-.', D: '-..', E: '.', F: '..-.', G: '--.', H: '....', I: '..', J: '.---', K: '-.-', L: '.-..', M: '--', N: '-.', O: '---', P: '.--.', Q: '--.-', R: '.-.', S: '...', T: '-', U: '..-', V: '...-', W: '.--', X: '-..-', Y: '-.--', Z: '--..',
+    0: '-----', 1: '.----', 2: '..---', 3: '...--', 4: '....-', 5: '.....', 6: '-....', 7: '--...', 8: '---..', 9: '----.', '.': '.-.-.-', ',': '--..--', '?': '..--..', '/': '-..-.', '=': '-...-', '-': '-....-', '(': '-.--.', ')': '-.--.-', '@': '.--.-.', '!': '-.-.--', ':': '---...', "'": '.----.' };
+  var NATO = ['Alfa', 'Bravo', 'Charlie', 'Delta', 'Echo', 'Foxtrot', 'Golf', 'Hotel', 'India', 'Juliett', 'Kilo', 'Lima', 'Mike', 'November', 'Oscar', 'Papa', 'Quebec', 'Romeo', 'Sierra', 'Tango', 'Uniform', 'Victor', 'Whiskey', 'X-ray', 'Yankee', 'Zulu'];
+  var FRS = [462.5625, 462.5875, 462.6125, 462.6375, 462.6625, 462.6875, 462.7125, 467.5625, 467.5875, 467.6125, 467.6375, 467.6625, 467.6875, 467.7125, 462.5500, 462.5750, 462.6000, 462.6250, 462.6500, 462.6750, 462.7000, 462.7250];
+  // words are separated by "/"; letters by a space
+  function morse(text) { return String(text).toUpperCase().split(/\s+/).filter(Boolean).map(function (w) { return w.split('').map(function (c) { return MORSE[c] || ''; }).filter(Boolean).join(' '); }).join(' / '); }
+  function el(t, c, x) { var e = document.createElement(t); if (c) e.className = c; if (x !== undefined) e.textContent = x; return e; }
+  var TABS = [['morse', 'Morse'], ['phon', 'Spelling'], ['dist', 'Distress'], ['freq', 'Frequencies'], ['tips', 'Radio tips']];
+  TABS.forEach(function (t, i) { var b = el('button', i === 0 ? 'on' : '', t[1]); b.type = 'button'; b.setAttribute('role', 'tab'); b.addEventListener('click', function () { show(t[0]); }); b.dataset.t = t[0]; $('tabs').appendChild(b); });
+  function show(k) { TABS.forEach(function (t) { $('s-' + t[0]).classList.toggle('on', t[0] === k); }); Array.prototype.forEach.call($('tabs').children, function (b) { b.classList.toggle('on', b.dataset.t === k); }); }
+  show('morse');
+  Object.keys(MORSE).filter(function (k) { return /^[A-Z0-9]$/.test(k); }).forEach(function (k) { var c = el('div', 'cell'); c.appendChild(el('b', '', k)); c.appendChild(el('code', '', MORSE[k].replace(/\./g, '·').replace(/-/g, '−'))); $('chart').appendChild(c); });
+  NATO.forEach(function (w, i) { var c = el('div', 'cell'); c.appendChild(el('b', '', String.fromCharCode(65 + i))); c.appendChild(document.createTextNode(w)); $('phon').appendChild(c); });
+  FRS.forEach(function (f, i) { var c = el('div', 'cell'); c.appendChild(el('b', '', String(i + 1))); c.appendChild(document.createTextNode(f.toFixed(4) + ' MHz')); c.appendChild(el('small', '', i < 7 ? 'FRS / GMRS' : i < 14 ? 'FRS (low power) / GMRS' : 'FRS / GMRS')); $('frs').appendChild(c); });
+
+  function show2() { $('out').textContent = morse($('txt').value).replace(/\./g, '·').replace(/-/g, '−'); }
+  $('txt').addEventListener('input', show2); show2(); $('wpm').addEventListener('input', function () { $('wpmv').textContent = $('wpm').value; });
+  var actx = null, token = 0;
+  function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
+  async function play() {
+    var my = ++token, unit = 1200 / Number($('wpm').value), code = morse($('txt').value);       // PARIS standard: one dot = 1200/wpm ms
+    try { actx = actx || new (window.AudioContext || window.webkitAudioContext)(); if (actx.resume) await actx.resume(); } catch (e) { actx = null; }
+    for (var i = 0; i < code.length && my === token; i++) {
+      var ch = code[i];
+      if (ch === '.' || ch === '-') { var d = (ch === '.' ? 1 : 3) * unit; beep(d); $('flash').classList.add('on'); await sleep(d); $('flash').classList.remove('on'); await sleep(unit); }
+      else if (ch === ' ') { if (code[i - 1] !== '/' && code[i + 1] !== '/') await sleep(2 * unit); }       // letter gap = 3 units (1 already after the last signal)
+      else if (ch === '/') await sleep(4 * unit);                                                            // word gap = 7 units
+    }
+    $('flash').classList.remove('on');
+  }
+  function beep(ms) { if (!actx) return; try { var o = actx.createOscillator(), g = actx.createGain(); o.frequency.value = 650; g.gain.value = 0.2; o.connect(g); g.connect(actx.destination); o.start(); o.stop(actx.currentTime + ms / 1000); } catch (e) { /* no audio */ } }
+  $('play').addEventListener('click', play); $('stop').addEventListener('click', function () { token++; $('flash').classList.remove('on'); });
+  window.__signals = { morse: morse }; document.body.setAttribute('data-ready', '1');
+})();
+</script>
+</body>
+</html>

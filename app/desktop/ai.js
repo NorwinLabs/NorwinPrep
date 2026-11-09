@@ -17,7 +17,7 @@ class Llama {
     this.o = Object.assign({ platform: process.platform, spawn, idleMs: 15 * 60000, startTimeout: 180000, ctx: 4096, eco: () => false, cpus: os.cpus().length }, o);
     this.base = path.join(this.o.dataDir, 'ai'); this.engineDir = path.join(this.base, 'engine'); this.modelDir = path.join(this.base, 'models');
     this.child = null; this.port = 0; this.up = false; this.starting = null; this.lastError = ''; this.model = null; this.idle = null; this.log = '';
-    this.probePath = '/health'; this.chatPath = '/v1/chat/completions'; this.needsModel = true;
+    this.probePath = '/health'; this.chatPath = '/v1/chat/completions'; this.needsModel = true; this.vision = false;
   }
   // how to start the engine for `model` (Ollama overrides this)
   spawnSpec(model) {
@@ -88,10 +88,13 @@ class Llama {
       return readBody(2048, (b) => { let m; try { m = JSON.parse(b).model; } catch (e) { return json(400, { error: 'invalid JSON' }); } this.select(String(m)).then(() => json(200, this.status()), (e) => json(e.code || 500, { error: e.message })); });
     }
     if (route === '/chat' && req.method === 'POST') {
-      return readBody(262144, (b) => {
+      return readBody(3500000, (b) => {
         let j; try { j = JSON.parse(b); } catch (e) { return json(400, { error: 'invalid JSON' }); }
         const msgs = Array.isArray(j.messages) ? j.messages.slice(-40).filter((m) => m && ['system', 'user', 'assistant'].includes(m.role) && typeof m.content === 'string').map((m) => ({ role: m.role, content: m.content.slice(0, 16000) })) : [];
         if (!msgs.length) return json(400, { error: 'no messages' });
+        // pictures (Ollama vision models only): up to 2 small JPEG/PNG/WebP data URLs, attached to the last question
+        const images = Array.isArray(j.images) ? j.images.filter((u) => typeof u === 'string' && u.length <= 1500000 && /^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+\/]+=*$/.test(u)).slice(0, 2) : [];
+        if (images.length && !this.vision) return json(400, { error: 'Pictures need an Ollama vision model (for example Gemma 3 4B). Install one from the Module Store and choose it here.' });
         const wantLib = j.library === true && typeof this.o.context === 'function';
         let sources = [];
         const body = this.shape({ messages: msgs, stream: j.stream !== false, temperature: Math.min(2, Math.max(0, Number(j.temperature) || 0.7)), max_tokens: Math.min(2048, Math.max(1, parseInt(j.max_tokens, 10) || 768)) });
@@ -108,7 +111,9 @@ class Llama {
           } catch (e) { /* no library: answer without it */ }
         };
         const go = async () => {
-          await withLibrary(); this.touch(); const payload = JSON.stringify(body);
+          await withLibrary(); this.touch();
+          if (images.length) { const at = body.messages.map((m) => m.role).lastIndexOf('user'); if (at >= 0) body.messages[at] = { role: 'user', content: [{ type: 'text', text: body.messages[at].content }].concat(images.map((u) => ({ type: 'image_url', image_url: { url: u } }))) }; }
+          const payload = JSON.stringify(body);
           const up = http.request({ host: '127.0.0.1', port: this.port, method: 'POST', path: this.chatPath, headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(payload) } }, (r) => {
             res.writeHead(r.statusCode, Object.assign({ 'Content-Type': r.headers['content-type'] || 'application/json', 'Cache-Control': 'no-store', 'X-Accel-Buffering': 'no' }, sources.length ? { 'X-Library-Sources': encodeURIComponent(JSON.stringify(sources.slice(0, 5).map((s) => ({ title: String(s.title).slice(0, 80), url: s.url })))).slice(0, 1500) } : {})); r.pipe(res);
             r.on('data', () => this.touch());
@@ -141,7 +146,7 @@ class OllamaEngine extends Llama {
   constructor(o) {
     super(o);
     this.engineDir = path.join(this.base, 'ollama'); this.modelDir = path.join(this.base, 'ollama-models');
-    this.probePath = '/api/version'; this.needsModel = false;
+    this.probePath = '/api/version'; this.needsModel = false; this.vision = true;
   }
   binary() {
     const exe = this.o.platform === 'win32' ? 'ollama.exe' : 'ollama', c = [path.join(this.engineDir, 'bin', exe), path.join(this.engineDir, exe)];

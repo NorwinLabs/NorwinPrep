@@ -13,10 +13,17 @@
   #msg{position:absolute;inset:0;display:none;align-items:center;justify-content:center;text-align:center;
     color:#e8eddf;font:16px/1.5 system-ui,sans-serif;padding:2rem;z-index:1}
   code{background:#0006;padding:2px 6px;border-radius:4px}
+  #pinbtn{pointer-events:auto;background:#1c231acc;color:#e8eddf;font:14px system-ui,sans-serif;padding:8px 12px;border-radius:8px;border:0;cursor:pointer;margin-left:auto}
+  #pins{position:absolute;z-index:3;top:54px;right:8px;width:280px;max-height:70vh;overflow:auto;background:#1c231af2;color:#e8eddf;font:14px system-ui,sans-serif;border-radius:10px;padding:10px;display:none}
+  #pins h3{margin:0 0 6px;font-size:15px}#pins .r{display:flex;gap:6px;align-items:center;padding:5px 0;border-bottom:1px solid #fff2}#pins .r b{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer}
+  #pins button,#pins label.b{background:#e8eddf;color:#10140f;border:0;border-radius:6px;padding:5px 9px;font:12px system-ui,sans-serif;cursor:pointer;display:inline-block}
+  #pins button.x{background:transparent;color:#ff9aa6}#pins .acts{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}#pins input[type=file]{display:none}#pins small{color:#b9c2ad}
+  .pin{width:18px;height:18px;border-radius:50% 50% 50% 0;background:#e5484d;border:2px solid #fff;transform:rotate(-45deg);box-shadow:0 1px 4px #0008;cursor:pointer}
 </style>
 </head>
 <body>
-<div id="bar"><a href="/">&larr; Home</a><span id="info">Loading maps&hellip;</span></div>
+<div id="bar"><a href="/">&larr; Home</a><span id="info">Loading maps&hellip;</span><button id="pinbtn" type="button" aria-expanded="false">Places</button></div>
+<div id="pins" role="dialog" aria-label="My places"></div>
 <div id="msg"></div>
 <div id="map"></div>
 <script src="vendor/maplibre-gl.js"></script>
@@ -80,6 +87,48 @@
       if (b.every(Number.isFinite) && b[2] > b[0] && b[3] > b[1] && !location.hash) map.fitBounds([[b[0], b[1]], [b[2], b[3]]], { padding: 20, animate: false });
     }
   } catch (e) { /* keep the default view */ }
+
+  // ---------- my places: pins kept on this device (shared with the Emergency card), GPX import and export ----------
+  const KEY = 'norwinprep.pins', panel = document.getElementById('pins'), btn = document.getElementById('pinbtn'); let pins = [], markers = {};
+  const load = () => { try { const a = JSON.parse(localStorage.getItem(KEY) || '[]'); pins = Array.isArray(a) ? a.filter(p => p && isFinite(p.lat) && isFinite(p.lon) && typeof p.id === 'string').slice(0, 500) : []; } catch (e) { pins = []; } };
+  const save = () => { try { localStorage.setItem(KEY, JSON.stringify(pins)); } catch (e) { /* storage blocked */ } };
+  const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+  const el = (t, c, x) => { const e = document.createElement(t); if (c) e.className = c; if (x !== undefined) e.textContent = x; return e; };
+  const esc = (s) => String(s).replace(/[<>&"']/g, (c) => '&#' + c.charCodeAt(0) + ';');
+  function toGpx() {
+    return '<?xml version="1.0" encoding="UTF-8"?>\n<gpx version="1.1" creator="NorwinPrep" xmlns="http://www.topografix.com/GPX/1/1">\n' + pins.map(p => '  <wpt lat="' + Number(p.lat).toFixed(6) + '" lon="' + Number(p.lon).toFixed(6) + '"><name>' + esc(p.name || 'Place') + '</name></wpt>').join('\n') + '\n</gpx>\n';
+  }
+  function fromGpx(text) {
+    const doc = new DOMParser().parseFromString(text, 'application/xml'); if (doc.querySelector('parsererror')) throw new Error('That is not a GPX file.');
+    const out = []; doc.querySelectorAll('wpt').forEach(w => { const lat = Number(w.getAttribute('lat')), lon = Number(w.getAttribute('lon')); if (lat >= -90 && lat <= 90 && lon >= -180 && lon <= 180) { const n = w.querySelector('name'); out.push({ id: uid(), name: (n ? n.textContent : 'Place').trim().slice(0, 80) || 'Place', lat, lon, t: Date.now() }); } });
+    return out;
+  }
+  function draw() {
+    Object.values(markers).forEach(m => m.remove()); markers = {};
+    pins.forEach(p => {
+      const d = el('div', 'pin'); d.title = p.name;
+      markers[p.id] = new maplibregl.Marker({ element: d, anchor: 'bottom' }).setLngLat([p.lon, p.lat]).addTo(map);
+      d.addEventListener('click', (e) => { e.stopPropagation(); new maplibregl.Popup({ offset: 18 }).setLngLat([p.lon, p.lat]).setText(p.name + '  (' + p.lat.toFixed(5) + ', ' + p.lon.toFixed(5) + ')').addTo(map); });
+    });
+    panel.textContent = ''; panel.appendChild(el('h3', '', 'My places (' + pins.length + ')'));
+    pins.forEach(p => {
+      const r = el('div', 'r'), n = el('b', '', p.name), x = el('button', 'x', 'Delete'); x.type = 'button'; n.title = 'Show on the map';
+      n.addEventListener('click', () => map.flyTo({ center: [p.lon, p.lat], zoom: Math.max(map.getZoom(), 13) }));
+      x.addEventListener('click', () => { pins = pins.filter(q => q.id !== p.id); save(); draw(); });
+      r.appendChild(n); r.appendChild(x); panel.appendChild(r);
+    });
+    if (!pins.length) panel.appendChild(el('small', '', 'No places yet. Press "Add a place here" to pin the middle of the map, or right-click (long-press) anywhere on the map.'));
+    const acts = el('div', 'acts'), add = el('button', '', 'Add a place here'), ex = el('button', '', 'Export GPX'), im = el('label', 'b', 'Import GPX'), f = el('input'); add.type = 'button'; ex.type = 'button'; f.type = 'file'; f.accept = '.gpx,application/gpx+xml,text/xml'; im.appendChild(f);
+    add.addEventListener('click', () => addPin(map.getCenter().lng, map.getCenter().lat));
+    ex.addEventListener('click', () => { const a = el('a'); a.href = URL.createObjectURL(new Blob([toGpx()], { type: 'application/gpx+xml' })); a.download = 'norwinprep-places.gpx'; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000); });
+    f.addEventListener('change', async () => { try { const got = fromGpx(await f.files[0].text()); pins = pins.concat(got).slice(0, 500); save(); draw(); info.textContent = 'Imported ' + got.length + ' place' + (got.length === 1 ? '' : 's'); } catch (e) { info.textContent = e.message; } });
+    acts.appendChild(add); acts.appendChild(ex); acts.appendChild(im); panel.appendChild(acts);
+    panel.appendChild(el('small', '', 'Places stay on this device. The Emergency card can print them.'));
+  }
+  function addPin(lon, lat) { const name = prompt('Name this place', 'Place ' + (pins.length + 1)); if (name === null) return; pins.push({ id: uid(), name: name.trim().slice(0, 80) || 'Place', lat, lon, t: Date.now() }); save(); draw(); }
+  btn.addEventListener('click', () => { const on = panel.style.display !== 'block'; panel.style.display = on ? 'block' : 'none'; btn.setAttribute('aria-expanded', String(on)); });
+  map.on('contextmenu', (e) => addPin(e.lngLat.lng, e.lngLat.lat));
+  load(); draw(); window.__pins = { toGpx, fromGpx, get: () => pins };
 })();
 </script>
 </body>

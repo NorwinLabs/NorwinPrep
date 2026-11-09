@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Checklists &ndash; NorwinPrep</title>
+<style>
+  :root{--bg:#0d0f14;--panel:#12151c;--line:#272b36;--line2:#363c4b;--text:#e9ebf1;--mut:#8b92a3;--blue:#4aa3ff;--green:#3ecf8e;--red:#ff5a6e;--mono:ui-monospace,"SF Mono",SFMono-Regular,Menlo,Consolas,monospace}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);font:15px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;min-height:100vh;display:flex;flex-direction:column}
+  header{height:48px;display:flex;align-items:center;gap:14px;border-bottom:1px solid var(--line);padding:0 16px;flex:none}
+  header a{color:var(--text);text-decoration:none;font-family:var(--mono);font-size:11px;letter-spacing:.2em;text-transform:uppercase}
+  header span{color:var(--mut);font-family:var(--mono);font-size:11px;letter-spacing:.28em;text-transform:uppercase}
+  main{flex:1;display:flex;gap:16px;padding:16px;max-width:1000px;width:100%;margin:0 auto}
+  aside{width:250px;flex:none;display:flex;flex-direction:column;gap:8px}
+  .lst{border:1px solid var(--line);border-radius:14px;padding:9px 12px;cursor:pointer;background:var(--panel)}
+  .lst.on{border-color:var(--blue)}.lst small{display:block;color:var(--mut)}
+  .bar{height:5px;border-radius:3px;background:var(--line);margin-top:6px;overflow:hidden}.bar i{display:block;height:100%;background:var(--green)}
+  section{flex:1;min-width:0}
+  h2{margin:0 0 4px;font-size:20px}
+  .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:8px 0}
+  select,input[type=text]{background:var(--panel);color:var(--text);border:1px solid var(--line2);border-radius:10px;height:36px;padding:0 10px;font:inherit}
+  input[type=text]{flex:1;min-width:140px}
+  button{height:36px;padding:0 14px;border-radius:10px;border:1px solid #fff;background:#fff;color:#0d0f14;font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;font-weight:700;cursor:pointer}
+  button.ghost{background:transparent;color:var(--text);border-color:var(--line2)}button.del{background:transparent;color:var(--red);border-color:#5a2630}
+  ul{list-style:none;margin:0;padding:0}
+  li{display:flex;gap:10px;align-items:flex-start;padding:9px 4px;border-bottom:1px solid var(--line)}
+  li input{width:20px;height:20px;margin-top:2px;flex:none;accent-color:var(--green)}
+  li.done span{color:var(--mut);text-decoration:line-through}
+  li button{margin-left:auto;height:26px;padding:0 8px;background:transparent;color:var(--mut);border-color:var(--line2)}
+  .grp{font-family:var(--mono);font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--mut);margin:16px 0 2px}
+  .empty{color:var(--mut);padding:30px 0}
+  @media(max-width:700px){main{flex-direction:column}aside{width:100%}}
+  @media print{body{background:#fff;color:#000}header,aside,.row,li button{display:none!important}main{display:block;padding:0}li{border-color:#bbb}li.done span{color:#555}li input{accent-color:#000}.grp{color:#333}.bar{display:none}}
+  :focus-visible{outline:2px solid var(--blue);outline-offset:1px}
+</style>
+</head>
+<body>
+<header><a href="/">&larr; Home</a><span>Checklists</span></header>
+<main>
+  <aside>
+    <div class="row" style="margin:0"><select id="tpl" aria-label="Start from a template"></select><button id="add" type="button">Add</button></div>
+    <div id="lists" role="list"></div>
+    <small style="color:var(--mut)">Lists stay on this device. Tick items off as you pack or prepare; print a list to keep on paper.</small>
+  </aside>
+  <section id="main"></section>
+</main>
+<script>
+(function () {
+  'use strict';
+  var KEY = 'norwinprep.checklists', $ = function (id) { return document.getElementById(id); };
+  // each template: group -> items. "[n]" counts are per person, so adjust them for your household.
+  var TPL = {
+    'kit72': { name: '72-hour kit', groups: {
+      'Water and food': ['Water: 4 litres (1 gallon) per person per day, for 3 days', 'Non-perishable food for 3 days (tins, bars, dried fruit, nuts)', 'Manual can opener', 'Water purification tablets or a filter', 'Cups, plates, cutlery', 'Baby food / formula / pet food if needed'],
+      'Light, power, communication': ['Torch (flashlight) with spare batteries', 'Hand-crank or battery radio', 'Power bank and phone charger cables', 'Whistle to signal for help', 'Pen and paper', 'Copy of the offline map and emergency card (printed)'],
+      'Health and hygiene': ['First-aid kit', 'Prescription medicines (7+ days) and a list of them', 'Dust masks', 'Soap, hand sanitiser, wet wipes', 'Toilet paper, bin bags, ties', 'Glasses / contact lens supplies'],
+      'Shelter and tools': ['Blankets or sleeping bags', 'Change of clothes, sturdy shoes, rain gear', 'Multi-tool or pliers, wrench to shut off gas/water', 'Duct tape and plastic sheeting', 'Matches in a waterproof case, lighter', 'Cash in small notes', 'Copies of ID, insurance and contacts in a waterproof bag'] } },
+    'bug': { name: 'Bug-out bag', groups: {
+      'Carry': ['Backpack that fits you (not over 20% of body weight)', 'Water bottles (1 L each) and a filter', '2 days of high-energy food', 'Headlamp + spare batteries', 'Poncho or tarp, emergency blanket', 'Warm layer, spare socks, hat, gloves'],
+      'Tools': ['Knife or multi-tool', 'Paracord (15 m)', 'Fire starters (lighter, ferro rod, tinder)', 'Compass and printed map of your area', 'Whistle, signal mirror', 'Small first-aid kit and personal medicines', 'Power bank, cables, radio'],
+      'Papers and money': ['ID and insurance copies (waterproof)', 'Cash in small notes', 'Emergency contact card', 'Rendezvous points written on paper'] } },
+    'aid': { name: 'First-aid kit', groups: {
+      'Wounds': ['Adhesive bandages, assorted', 'Sterile gauze pads and rolls', 'Medical tape', 'Antiseptic wipes', 'Antibiotic ointment', 'Tourniquet and pressure bandage', 'Triangular bandage / sling', 'Elastic bandage', 'Burn dressings or gel'],
+      'Tools': ['Scissors (trauma shears)', 'Tweezers', 'Disposable gloves', 'CPR face shield', 'Thermometer', 'Safety pins', 'Instant cold packs', 'Emergency blanket'],
+      'Medicines': ['Pain relief (paracetamol / ibuprofen)', 'Antihistamine', 'Anti-diarrhoea tablets and oral rehydration salts', 'Personal prescriptions', 'Hydrocortisone cream', 'Eye wash'],
+      'Reference': ['First-aid guide (the offline medicine pack in NorwinPrep)', 'List of allergies and conditions in the family'] } },
+    'home': { name: 'Home supplies (2 weeks)', groups: {
+      'Water': ['14 days of water (4 L per person per day)', 'Large container for extra water', 'Bleach (unscented) or purification tablets'],
+      'Food': ['Rice, pasta, beans, oats', 'Tinned vegetables, fruit, fish, meat', 'Cooking oil, salt, sugar, spices', 'Peanut butter, crackers, biscuits', 'Powdered or long-life milk', 'Pet food'],
+      'Cooking and heat': ['Camping stove and fuel', 'Matches and lighters', 'Pots, pan, cutlery', 'Charcoal or firewood (outdoors only)', 'Extra blankets and warm clothes', 'Carbon monoxide alarm (never use stoves indoors)'],
+      'Other': ['Batteries of the right sizes', 'Candles / lanterns', 'Toilet paper, soap, bin bags', 'Prescription medicines (30 days)', 'Games, books, cards for the family'] } },
+    'car': { name: 'Vehicle kit', groups: {
+      'Car': ['Jumper cables', 'Spare tyre, jack and wheel wrench', 'Tyre inflator or sealant', 'Torch and spare batteries', 'Reflective triangles or flares', 'Tow strap', 'Fire extinguisher', 'Ice scraper / shovel (winter)'],
+      'People': ['Water and snacks', 'Blanket and warm clothes', 'First-aid kit', 'Phone charger', 'Printed map', 'Rain poncho', 'Gloves'] } },
+    'power': { name: 'Power outage', groups: {
+      'Before': ['Charge phones, power banks and torches', 'Fill the bath / containers with water', 'Set fridge and freezer to coldest, keep doors closed', 'Know where the main switch is'],
+      'During': ['Use torches, not candles, where possible', 'Unplug sensitive equipment', 'Never run a generator or stove indoors', 'Check on neighbours who are elderly or ill', 'Listen to the battery radio for updates'],
+      'After': ['Throw out food that was above 4 degrees C for more than 2 hours', 'Reset clocks and appliances', 'Refill water containers'] } },
+    'leave': { name: 'Leaving the house', groups: {
+      'Last 5 minutes': ['Take the bug-out bags and the emergency card', 'Medicines and phone chargers', 'Pets and their carriers', 'Turn off gas, water and electricity if told to', 'Lock up and leave a note saying where you went', 'Message your out-of-area contact'] } }
+  };
+  var lists = [], cur = null;
+  function load() { try { var a = JSON.parse(localStorage.getItem(KEY) || '[]'); lists = Array.isArray(a) ? a.filter(function (l) { return l && typeof l.id === 'string' && Array.isArray(l.items); }) : []; } catch (e) { lists = []; } }
+  function save() { try { localStorage.setItem(KEY, JSON.stringify(lists)); } catch (e) { /* storage blocked */ } }
+  function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
+  function find(id) { return lists.filter(function (l) { return l.id === id; })[0]; }
+  function prog(l) { var d = l.items.filter(function (i) { return i.done; }).length; return { d: d, n: l.items.length, p: l.items.length ? Math.round(d / l.items.length * 100) : 0 }; }
+  function el(t, c, x) { var e = document.createElement(t); if (c) e.className = c; if (x !== undefined) e.textContent = x; return e; }
+  function drawLists() {
+    var box = $('lists'); box.textContent = '';
+    lists.forEach(function (l) {
+      var p = prog(l), d = el('div', 'lst' + (l.id === cur ? ' on' : '')); d.setAttribute('role', 'listitem'); d.tabIndex = 0;
+      d.appendChild(el('b', '', l.name)); d.appendChild(el('small', '', p.d + ' of ' + p.n + ' done'));
+      var b = el('div', 'bar'), i = el('i'); i.style.width = p.p + '%'; b.appendChild(i); d.appendChild(b);
+      var go = function () { cur = l.id; draw(); }; d.addEventListener('click', go); d.addEventListener('keydown', function (e) { if (e.key === 'Enter') go(); });
+      box.appendChild(d);
+    });
+  }
+  function drawMain() {
+    var m = $('main'); m.textContent = ''; var l = cur && find(cur);
+    if (!l) { m.appendChild(el('div', 'empty', lists.length ? 'Choose a list on the left.' : 'No lists yet. Pick a template on the left and press Add, or start an empty list.')); return; }
+    var p = prog(l); m.appendChild(el('h2', '', l.name)); m.appendChild(el('div', '', p.d + ' of ' + p.n + ' done (' + p.p + '%)'));
+    var row = el('div', 'row'), inp = el('input'); inp.type = 'text'; inp.placeholder = 'Add an item'; inp.maxLength = 200; inp.setAttribute('aria-label', 'New item');
+    var add = el('button', '', 'Add item'); add.type = 'button';
+    var doAdd = function () { var t = inp.value.trim(); if (!t) return; l.items.push({ t: t, done: false, g: 'Mine' }); save(); draw(); };
+    add.addEventListener('click', doAdd); inp.addEventListener('keydown', function (e) { if (e.key === 'Enter') doAdd(); });
+    var reset = el('button', 'ghost', 'Untick all'); reset.type = 'button'; reset.addEventListener('click', function () { l.items.forEach(function (i) { i.done = false; }); save(); draw(); });
+    var pr = el('button', 'ghost', 'Print'); pr.type = 'button'; pr.addEventListener('click', function () { window.print(); });
+    var del = el('button', 'del', 'Delete list'); del.type = 'button'; del.addEventListener('click', function () { if (!confirm('Delete "' + l.name + '"?')) return; lists = lists.filter(function (x) { return x.id !== l.id; }); cur = lists[0] ? lists[0].id : null; save(); draw(); });
+    row.appendChild(inp); row.appendChild(add); row.appendChild(reset); row.appendChild(pr); row.appendChild(del); m.appendChild(row);
+    var groups = [], seen = {}; l.items.forEach(function (i) { var g = i.g || 'Items'; if (!seen[g]) { seen[g] = []; groups.push(g); } seen[g].push(i); });
+    groups.forEach(function (g) {
+      if (groups.length > 1) m.appendChild(el('div', 'grp', g));
+      var ul = el('ul');
+      seen[g].forEach(function (it) {
+        var li = el('li', it.done ? 'done' : ''), cb = el('input'); cb.type = 'checkbox'; cb.checked = !!it.done; cb.setAttribute('aria-label', it.t);
+        cb.addEventListener('change', function () { it.done = cb.checked; save(); draw(); });
+        var s = el('span', '', it.t), x = el('button', '', '×'); x.type = 'button'; x.title = 'Remove this item'; x.setAttribute('aria-label', 'Remove ' + it.t);
+        x.addEventListener('click', function () { l.items = l.items.filter(function (y) { return y !== it; }); save(); draw(); });
+        li.appendChild(cb); li.appendChild(s); li.appendChild(x); ul.appendChild(li);
+      });
+      m.appendChild(ul);
+    });
+  }
+  function draw() { drawLists(); drawMain(); }
+  function fromTemplate(k) {
+    var t = TPL[k]; var l = { id: uid(), name: k === 'blank' ? 'My list' : t.name, items: [] };
+    if (t) Object.keys(t.groups).forEach(function (g) { t.groups[g].forEach(function (x) { l.items.push({ t: x, done: false, g: g }); }); });
+    lists.push(l); cur = l.id; save(); draw();
+  }
+  var sel = $('tpl'); Object.keys(TPL).concat(['blank']).forEach(function (k) { var o = el('option', '', k === 'blank' ? 'Empty list' : TPL[k].name); o.value = k; sel.appendChild(o); });
+  $('add').addEventListener('click', function () { fromTemplate(sel.value); });
+  window.__checklists = { TPL: TPL };
+  load(); cur = lists[0] ? lists[0].id : null; draw(); document.body.setAttribute('data-ready', '1');
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Emergency card &ndash; NorwinPrep</title>
+<style>
+  :root{--bg:#0d0f14;--panel:#12151c;--line:#272b36;--line2:#363c4b;--text:#e9ebf1;--mut:#8b92a3;--blue:#4aa3ff;--mono:ui-monospace,"SF Mono",SFMono-Regular,Menlo,Consolas,monospace}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);font:15px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+  header{height:48px;display:flex;align-items:center;gap:14px;border-bottom:1px solid var(--line);padding:0 16px}
+  header a{color:var(--text);text-decoration:none;font-family:var(--mono);font-size:11px;letter-spacing:.2em;text-transform:uppercase}
+  header span{color:var(--mut);font-family:var(--mono);font-size:11px;letter-spacing:.28em;text-transform:uppercase}
+  .wrap{display:flex;gap:20px;padding:16px;max-width:1100px;margin:0 auto;flex-wrap:wrap}
+  form{flex:1 1 320px;min-width:0;display:flex;flex-direction:column;gap:8px}
+  label{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--mut);display:flex;flex-direction:column;gap:3px}
+  input,textarea{background:var(--panel);color:var(--text);border:1px solid var(--line2);border-radius:10px;padding:8px 10px;font:15px system-ui,sans-serif;text-transform:none;letter-spacing:0}
+  textarea{resize:vertical;min-height:54px}
+  h3{margin:10px 0 0;font-size:13px;font-family:var(--mono);letter-spacing:.18em;text-transform:uppercase}
+  .two{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px}input,textarea{min-width:0;width:100%}input[type=checkbox]{width:auto}
+  button{height:38px;padding:0 16px;border-radius:10px;border:1px solid #fff;background:#fff;color:#0d0f14;font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;font-weight:700;cursor:pointer}
+  button.ghost{background:transparent;color:var(--text);border-color:var(--line2)}
+  .prev{flex:1 1 420px;min-width:300px}
+  .sheet{background:#fff;color:#000;border-radius:6px;padding:18px;font:14px/1.45 system-ui,sans-serif}
+  .sheet h1{margin:0 0 2px;font-size:22px}.sheet h2{margin:14px 0 4px;font-size:13px;text-transform:uppercase;letter-spacing:.1em;border-bottom:1px solid #000}
+  .sheet table{width:100%;border-collapse:collapse}.sheet td{padding:2px 6px 2px 0;vertical-align:top}.sheet td:first-child{width:34%;font-weight:600}
+  .big{border:2px solid #000;padding:6px 10px;margin:8px 0;font-weight:700}
+  .cut{margin-top:16px;border:1px dashed #000;width:3.4in;min-height:2.1in;padding:8px;font-size:11px;line-height:1.3;page-break-inside:avoid}
+  .cut b{font-size:13px}
+  small.hint{color:var(--mut)}
+  @media print{body{background:#fff}header,form,.noprint{display:none!important}.wrap{display:block;padding:0}.sheet{padding:0}}
+  :focus-visible{outline:2px solid var(--blue);outline-offset:1px}
+</style>
+</head>
+<body>
+<header><a href="/">&larr; Home</a><span>Emergency card</span></header>
+<div class="wrap">
+  <form id="f" autocomplete="off">
+    <small class="hint">Fill in what you want on paper. It stays on this device and is never sent anywhere. Then press Print (or save as PDF) and keep copies in your bag, car and wallet.</small>
+    <h3>You</h3>
+    <div class="two"><label>Name<input name="name" maxlength="80"></label><label>Date of birth<input name="dob" maxlength="30"></label></div>
+    <div class="two"><label>Blood type<input name="blood" maxlength="10"></label><label>Language(s)<input name="lang" maxlength="60"></label></div>
+    <label>Allergies<textarea name="allergies" maxlength="300"></textarea></label>
+    <label>Medical conditions and medicines<textarea name="medical" maxlength="500"></textarea></label>
+    <h3>Contacts</h3>
+    <div class="two"><label>Contact 1<input name="c1" maxlength="100" placeholder="Name and number"></label><label>Contact 2<input name="c2" maxlength="100" placeholder="Name and number"></label></div>
+    <label>Out-of-area contact (someone far away everyone calls)<input name="far" maxlength="100"></label>
+    <label>Doctor / hospital<input name="doc" maxlength="120"></label>
+    <h3>Plan</h3>
+    <label>Meeting place near home<input name="meet1" maxlength="150"></label>
+    <label>Meeting place outside the neighbourhood<input name="meet2" maxlength="150"></label>
+    <label>Notes (utility shut-offs, pets, keys, neighbours)<textarea name="notes" maxlength="500"></textarea></label>
+    <label style="flex-direction:row;align-items:center;gap:8px;text-transform:none;letter-spacing:0"><input type="checkbox" id="pins" checked> Include my saved map places</label>
+    <label style="flex-direction:row;align-items:center;gap:8px;text-transform:none;letter-spacing:0"><input type="checkbox" id="wifi" checked> Include the Wi-Fi share name and password when sharing is on</label>
+    <div class="two"><button type="button" id="print">Print / save as PDF</button><button type="button" id="clear" class="ghost">Clear</button></div>
+  </form>
+  <div class="prev"><div class="sheet" id="sheet" aria-live="polite"></div></div>
+</div>
+<script>
+(function () {
+  'use strict';
+  var KEY = 'norwinprep.card', PINS = 'norwinprep.pins', $ = function (id) { return document.getElementById(id); }, share = null;
+  var FIELDS = ['name', 'dob', 'blood', 'lang', 'allergies', 'medical', 'c1', 'c2', 'far', 'doc', 'meet1', 'meet2', 'notes'];
+  function read() { try { var o = JSON.parse(localStorage.getItem(KEY) || '{}'); return o && typeof o === 'object' ? o : {}; } catch (e) { return {}; } }
+  function write(o) { try { localStorage.setItem(KEY, JSON.stringify(o)); } catch (e) { /* storage blocked */ } }
+  function pins() { try { var a = JSON.parse(localStorage.getItem(PINS) || '[]'); return Array.isArray(a) ? a.filter(function (p) { return p && isFinite(p.lat) && isFinite(p.lon); }).slice(0, 30) : []; } catch (e) { return []; } }
+  function el(t, c, x) { var e = document.createElement(t); if (c) e.className = c; if (x !== undefined) e.textContent = x; return e; }
+  function row(tb, k, v) { if (!v) return; var tr = el('tr'); tr.appendChild(el('td', '', k)); tr.appendChild(el('td', '', v)); tb.appendChild(tr); }
+  function section(s, title, rows) { var any = rows.some(function (r) { return r[1]; }); if (!any) return; s.appendChild(el('h2', '', title)); var tb = el('table'); rows.forEach(function (r) { row(tb, r[0], r[1]); }); s.appendChild(tb); }
+  function draw() {
+    var v = read(), s = $('sheet'); s.textContent = '';
+    s.appendChild(el('h1', '', v.name || 'Emergency card'));
+    if (v.allergies || v.blood) s.appendChild(el('div', 'big', (v.blood ? 'Blood type: ' + v.blood + '   ' : '') + (v.allergies ? 'Allergies: ' + v.allergies : '')));
+    section(s, 'About me', [['Date of birth', v.dob], ['Languages', v.lang], ['Medical', v.medical], ['Doctor / hospital', v.doc]]);
+    section(s, 'Call', [['Contact 1', v.c1], ['Contact 2', v.c2], ['Out-of-area contact', v.far]]);
+    section(s, 'Our plan', [['Meet near home', v.meet1], ['Meet farther away', v.meet2], ['Notes', v.notes]]);
+    if ($('pins').checked && pins().length) { s.appendChild(el('h2', '', 'Places')); var tb = el('table'); pins().forEach(function (p) { row(tb, p.name || 'Place', Number(p.lat).toFixed(5) + ', ' + Number(p.lon).toFixed(5)); }); s.appendChild(tb); }
+    if ($('wifi').checked && share && share.active) { s.appendChild(el('h2', '', 'NorwinPrep Wi-Fi')); var t2 = el('table'); row(t2, 'Network', share.ssid); row(t2, 'Password', share.password); row(t2, 'Then open', share.url); s.appendChild(t2); }
+    var c = el('div', 'cut'); c.appendChild(el('b', '', v.name || 'Emergency card'));
+    [(v.blood ? 'Blood: ' + v.blood : ''), (v.allergies ? 'Allergies: ' + v.allergies : ''), (v.medical ? 'Medical: ' + v.medical : ''), (v.c1 ? 'Call: ' + v.c1 : ''), (v.c2 ? 'Call: ' + v.c2 : ''), (v.far ? 'Far contact: ' + v.far : ''), (v.meet1 ? 'Meet: ' + v.meet1 : '')].forEach(function (x) { if (x) c.appendChild(el('div', '', x)); });
+    var h = el('div', 'noprint'); h.style.marginTop = '8px'; h.style.fontSize = '11px'; h.textContent = 'Wallet card: cut along the dotted line.'; s.appendChild(c); s.appendChild(h);
+  }
+  var f = $('f'); var v0 = read(); FIELDS.forEach(function (k) { if (f.elements[k] && typeof v0[k] === 'string') f.elements[k].value = v0[k]; });
+  f.addEventListener('input', function () { var o = {}; FIELDS.forEach(function (k) { o[k] = f.elements[k].value; }); write(o); draw(); });
+  $('pins').addEventListener('change', draw); $('wifi').addEventListener('change', draw);
+  $('print').addEventListener('click', function () { window.print(); });
+  $('clear').addEventListener('click', function () { if (!confirm('Clear everything on this card?')) return; try { localStorage.removeItem(KEY); } catch (e) { /* ignore */ } FIELDS.forEach(function (k) { f.elements[k].value = ''; }); draw(); });
+  fetch('/api/share', { cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : null; }).then(function (j) { share = j; draw(); }, function () { /* not the owner's device or no sharing */ });
+  draw(); document.body.setAttribute('data-ready', '1');
+})();
+</script>
+</body>
+</html>

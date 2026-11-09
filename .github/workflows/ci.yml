@@ -62,6 +62,7 @@ jobs:
           node test/main-scope.test.js
           node test/library.test.js
           node test/exit-button.test.js
+          node test/site-pages.test.js
       - name: Module manager, reader and Wi-Fi share tests
         run: |
           node test/modules.test.js

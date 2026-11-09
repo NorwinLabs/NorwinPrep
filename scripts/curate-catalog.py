@@ -13,7 +13,9 @@ GROUPS = [   # (category, [module ids])
   ("electronics", ["electronics", "arduino-stackexchange-com-en-all", "raspberrypi-stackexchange-com-en-all", "ham-stackexchange-com-en-all"]),
   ("coding",      ["freecodecamp-en-all", "devdocs-en-python", "devdocs-en-javascript", "devdocs-en-html", "devdocs-en-css", "devdocs-en-bash", "devdocs-en-git"]),
   ("dictionary",  ["wiktionary"]),
-  ("ai",          ["ai-engine", "qwen25-05b", "qwen25-15b", "llama32-3b", "qwen25-7b", "ollama-engine", "ollama-qwen25-05b", "ollama-qwen25-15b", "ollama-llama32-3b", "ollama-qwen25-7b"]),
+  ("reference",   ["wikipedia-top-mini", "wikipedia-top-nopic", "wikipedia-all-mini"]),
+  ("tools",       ["notes", "checklists", "emergency-card", "signals"]),
+  ("ai",          ["ai-engine", "qwen25-05b", "qwen25-15b", "llama32-3b", "qwen25-7b", "ollama-engine", "ollama-qwen25-05b", "ollama-qwen25-15b", "ollama-llama32-3b", "ollama-qwen25-7b", "ollama-gemma3-4b"]),
   ("tools",       ["reader", "notes"]),
   ("apps",        ["app-android", "app-windows", "app-pi64", "app-pi32", "app-linux"]),
 ]
@@ -29,10 +31,28 @@ OLLAMA_MODS = [
   _ollama("ollama-qwen25-05b", "Qwen 2.5 0.5B (Ollama)", "qwen2.5:0.5b", "Tiny and quick, for old computers", "Alibaba's smallest Qwen model through Ollama. Runs on almost anything; answers are short and simple. About 0.5 GB of memory.", 400, None, "s", "ALIBABA"),
   _ollama("ollama-qwen25-15b", "Qwen 2.5 1.5B (Ollama)", "qwen2.5:1.5b", "Good answers on an ordinary laptop", "Alibaba's 1.5 billion parameter model through Ollama. A good balance for most computers. About 2 GB of memory.", 990, 2, "m", "ALIBABA"),
   _ollama("ollama-llama32-3b", "Llama 3.2 3B (Ollama)", "llama3.2:3b", "Better answers, needs a real computer", "Meta's 3 billion parameter model through Ollama. Clearly stronger; wants a laptop with 8 GB of memory or a Raspberry Pi 5. About 4 GB of memory.", 2000, 4, "m", "META"),
+  _ollama("ollama-gemma3-4b", "Gemma 3 4B (Ollama, sees pictures)", "gemma3:4b", "Ask about a photo: a plant, a wound, a part", "Google's 4 billion parameter model through Ollama. It can look at a picture you attach in the chat (a plant, a rash, a broken part) as well as answer questions. Wants a laptop with 8 GB of memory.", 3350, 6, "m", "GOOGLE"),
   _ollama("ollama-qwen25-7b", "Qwen 2.5 7B (Ollama)", "qwen2.5:7b", "The most capable; needs a strong computer", "Alibaba's 7 billion parameter model through Ollama. Best answers; wants 16 GB of memory for comfort, 8 GB at least.", 4700, 8, "l", "ALIBABA"),
 ]
 for _m in OLLAMA_MODS: by.setdefault(_m["id"], _m)
 cat["modules"] = [m for m in cat["modules"] if m["id"] not in {x["id"] for x in OLLAMA_MODS}] + [by[x["id"]] for x in OLLAMA_MODS]
+# Wikipedia (the same three sizes Project NOMAD offers) and the small built-in tools
+def _wiki(i, name, prefix, tag, mb, sc):
+    return {"id": i, "type": "content", "category": "reference", "topic": "wikipedia", "name": name, "tagline": tag, "description": tag + " The Wikipedia pack from Kiwix; the AI can read it when \"Use my library\" is on.", "by": "KIWIX", "source": "https://library.kiwix.org/",
+            "icon": "book", "color": "#8b92a3", "sizeClass": sc, "install": {"kind": "zim", "subdir": "wikipedia", "prefix": prefix}, "platforms": ["windows", "linux", "darwin", "android"], "origin": "project-nomad", "approxMB": mb}
+def _tool(i, name, tag, desc, icon, color, d):
+    return {"id": i, "type": "tool", "category": "tools", "name": name, "tagline": tag, "description": desc, "by": "NORWINPREP", "source": "https://github.com/NorwinLabs/NorwinPrepDisk", "icon": icon, "color": color, "sizeClass": "s",
+            "install": {"kind": "bundled", "dir": d}, "platforms": ["windows", "linux", "darwin"], "hosts": ["app"], "open": "/tools/%s/" % d}
+EXTRA = [
+  _wiki("wikipedia-top-mini", "Wikipedia: Quick Reference", "wikipedia_en_top_mini", "The 100,000 most-read articles, with few images.", 331, "s"),
+  _wiki("wikipedia-top-nopic", "Wikipedia: Popular Articles", "wikipedia_en_top_nopic", "The most-read articles without images. A good balance.", 2239, "m"),
+  _wiki("wikipedia-all-mini", "Wikipedia: Complete (compact)", "wikipedia_en_all_mini", "All 6 million+ articles in a condensed form (about 12 GB).", 12531, "xl"),
+  _tool("checklists", "Checklists", "72-hour kit, bug-out bag, first aid and more", "Ready-made preparedness checklists you can tick off, change and print. They stay on this device.", "shield", "#3ecf8e", "checklists"),
+  _tool("emergency-card", "Emergency card", "A printable page with your medical info and plan", "Fill in your blood type, allergies, contacts and meeting places, then print a page and a wallet card. Includes your saved map places and the Wi-Fi share details.", "cross", "#ff5a6e", "card"),
+  _tool("signals", "Signals and radio", "Morse, spelling alphabet, distress signals, frequencies", "Morse with sound and light, the NATO spelling alphabet, ground-to-air signals, emergency radio frequencies and how to make a radio call.", "globe", "#f0b429", "signals"),
+]
+for _m in EXTRA: by.setdefault(_m["id"], _m)
+cat["modules"] = [m for m in cat["modules"] if m["id"] not in {x["id"] for x in EXTRA}] + [by[x["id"]] for x in EXTRA]
 MAPS = ["map-world"] + [m["id"] for m in cat["modules"] if m["install"]["kind"] == "pmtiles-file"]
 KEEP = {i: c for c, ids in GROUPS for i in ids}; KEEP.update({i: "maps" for i in MAPS})
 missing = [i for i in KEEP if i not in by]
@@ -47,6 +67,12 @@ for m in cat["modules"]:
 
 def tier(tid, name, mods, desc, rec=False): return {"id": tid, "name": name, "recommended": rec, "description": desc, "modules": [i for i in mods if i in ids]}
 AI_ESS = ["ai-engine", "qwen25-05b"]
+WIKI_T = {"id": "wikipedia", "name": "Wikipedia", "description": "The encyclopedia, offline. Pick a size.", "icon": "book", "tiers": [
+    tier("wiki-quick", "Quick reference", ["wikipedia-top-mini"], "100,000 top articles (about 0.3 GB).", True),
+    tier("wiki-popular", "Popular articles", ["wikipedia-top-nopic"], "The most-read articles, no images (about 2 GB)."),
+    tier("wiki-all", "Everything", ["wikipedia-all-mini"], "All articles, condensed (about 12 GB).")]}
+PREP_T = {"id": "prep", "name": "Preparedness tools", "description": "Checklists, an emergency card and signal references. Tiny, and they work with no internet.", "icon": "check", "tiers": [
+    tier("prep-tools", "All three tools", ["checklists", "emergency-card", "signals", "notes"], "Under 1 MB together.", True)]}
 TOPICS = [
   {"id": "survival", "name": "Survival", "description": "First aid, medicines, emergency planning, knots and wilderness skills.", "icon": "cross", "tiers": [
     tier("survival-essential", "Essential", ["medicine", "post-disaster", "www-ready-gov-en", "zimgit-knots-en"], "First aid, disaster guides, Ready.gov and knots. Start here.", True),
@@ -70,6 +96,7 @@ TOPICS = [
     tier("ai-best", "Best", ["ai-engine", "qwen25-7b"], "The most capable; needs about 8 GB of memory."),
     tier("ai-ollama-small", "Ollama: Small", ["ollama-engine", "ollama-qwen25-05b"], "The same idea through Ollama (about 0.4 GB)."),
     tier("ai-ollama-balanced", "Ollama: Balanced", ["ollama-engine", "ollama-qwen25-15b"], "Ollama with a better model; needs about 2 GB of memory."),
+    tier("ai-ollama-vision", "Ollama: Sees pictures", ["ollama-engine", "ollama-gemma3-4b"], "Attach a photo in the chat and ask about it; needs about 6 GB of memory."),
     tier("ai-ollama-better", "Ollama: Better", ["ollama-engine", "ollama-llama32-3b"], "Ollama with a stronger model; needs about 4 GB of memory.")]},
 ]
 # maps: one topic, a tier per NOMAD region
@@ -80,6 +107,7 @@ mt = [tier("maps-world", "World overview", ["map-world"], "A small map of the wh
 for r in regions:
     mt.append(tier(r["id"], r["name"].replace(" (maps)", ""), r["tiers"][0]["modules"], "State maps for this region."))
 TOPICS.append({"id": "maps", "name": "Offline maps", "description": "Street maps that work with no signal. Pick your region.", "icon": "map", "tiers": mt})
+TOPICS.insert(len(TOPICS) - 1, WIKI_T); TOPICS.insert(len(TOPICS) - 1, PREP_T)
 cat["topics"] = [t for t in TOPICS if t["tiers"] and all(t2["modules"] for t2 in t["tiers"])]
 cat["tiers"] = [
   {"id": "essential", "name": "Essential", "blurb": "The basics: first aid, water, disaster guides, a world map and a small AI.", "modules": [i for i in ["reader", "water", "medicine", "post-disaster", "www-ready-gov-en", "zimgit-knots-en", "map-world", "ai-engine", "qwen25-05b"] if i in ids]},

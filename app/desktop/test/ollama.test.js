@@ -23,7 +23,7 @@ const chat = (port, body) => req(port, '/ai/api/chat', { method: 'POST', headers
   // ---------- the catalog ----------
   const cat = JSON.parse(fs.readFileSync(path.join(__dirname, '..', '..', 'shared', 'site', 'catalog.json'), 'utf8'));
   const eng = cat.modules.find((m) => m.id === 'ollama-engine'), oms = cat.modules.filter((m) => m.install.kind === 'ollama-model');
-  ok(eng && eng.install.kind === 'ollama' && eng.category === 'ai' && oms.length === 4 && oms.every((m) => m.type === 'model' && m.open === '/ai/' && m.approxMB > 0), 'the store lists Ollama and four Ollama models in the AI category');
+  ok(eng && eng.install.kind === 'ollama' && eng.category === 'ai' && oms.length === 5 && oms.every((m) => m.type === 'model' && m.open === '/ai/' && m.approxMB > 0), 'the store lists Ollama and five Ollama models in the AI category');
   ok(cat.topics.find((t) => t.id === 'ai').tiers.some((t) => /^ai-ollama/.test(t.id) && t.modules.includes('ollama-engine')), 'easy setup offers an Ollama choice');
 
   // ---------- which download is chosen (real asset names, GPU add-ons and installers ignored) ----------
@@ -59,6 +59,12 @@ const chat = (port, body) => req(port, '/ai/api/chat', { method: 'POST', headers
   let src = []; try { src = JSON.parse(decodeURIComponent(g.h['x-library-sources'])); } catch (e) { /* none */ } ok(src.length === 1 && src[0].title === 'Boiling', 'and the sources come back for the page to link');
   g = await req(port, '/ai/api/api/tags'); ok(g.code === 404, 'Ollama\'s own API (list, pull, delete...) is not reachable through the app');
   g = await req(port, '/ai/api/api/pull', { method: 'POST', body: '{"model":"x"}' }); ok(g.code === 404, '...nor can a page start a download');
+  // pictures go to Ollama vision models as image parts of the last question; anything that is not a small image data URL is dropped
+  { const PNG = 'data:image/png;base64,' + Buffer.from('fakepng').toString('base64');
+    g = await chat(port, { messages: [{ role: 'user', content: 'what plant is this?' }], images: [PNG, 'http://evil.example/x.png', 'data:text/html;base64,AAAA', PNG] });
+    const pb = JSON.parse(JSON.parse(g.body.split('data: ').filter((x) => /BODY=/.test(x))[0].trim()).choices[0].delta.content.replace(/^BODY=/, '')), last = pb.messages[pb.messages.length - 1];
+    ok(g.code === 200 && Array.isArray(last.content) && last.content[0].type === 'text' && last.content[0].text === 'what plant is this?' && last.content.length === 3 && last.content[1].image_url.url === PNG, 'a picture is passed to Ollama as an image part of the question (links and non-images are dropped, at most 2)');
+    g = await chat(port, { messages: [{ role: 'user', content: 'x' }], images: ['data:image/png;base64,' + 'A'.repeat(1600000)] }); ok(g.code === 200 && !/image_url/.test(g.body), 'an oversized picture is dropped'); }
   ok(hub.up, 'running'); await sleep(900); ok(!hub.up, 'it stops by itself after a quiet spell');
 
   // ---------- both engines side by side ----------
@@ -67,6 +73,7 @@ const chat = (port, body) => req(port, '/ai/api/chat', { method: 'POST', headers
   st = hub.status(); ok(JSON.stringify(st.models) === '["tiny.gguf","ollama:qwen2.5:0.5b"]' && st.engines.llama && st.engines.ollama, 'a llama.cpp model and an Ollama model are listed together');
   g = await req(port, '/ai/api/select', { method: 'POST', headers: { 'X-NorwinPrep': '1' }, body: JSON.stringify({ model: 'tiny.gguf' }) }); ok(g.code === 200 && JSON.parse(g.body).active === 'tiny.gguf', 'the owner can pick the llama.cpp model');
   g = await chat(port, { messages: [{ role: 'user', content: 'x' }] }); ok(/MODEL=tiny\.gguf/.test(g.body) && !/OLLAMA/.test(g.body), 'and that question is answered by llama.cpp');
+  g = await chat(port, { messages: [{ role: 'user', content: 'what is this?' }], images: ['data:image/png;base64,AAAA'] }); ok(g.code === 400 && /vision model/.test(JSON.parse(g.body).error), 'llama.cpp models cannot take pictures: the page is told to use an Ollama vision model');
   g = await req(port, '/ai/api/select', { method: 'POST', headers: { 'X-NorwinPrep': '1' }, body: JSON.stringify({ model: 'ollama:qwen2.5:0.5b' }) }); ok(g.code === 200 && JSON.parse(g.body).active === 'ollama:qwen2.5:0.5b', 'and back to the Ollama model');
   g = await chat(port, { messages: [{ role: 'user', content: 'x' }] }); ok(/OLLAMA MODEL=qwen2\.5:0\.5b/.test(g.body), 'answered by Ollama again');
   for (const bad of ['ollama:nope:1b', 'ollama:../x:1', '../x.gguf', 'nope.gguf']) { g = await req(port, '/ai/api/select', { method: 'POST', headers: { 'X-NorwinPrep': '1' }, body: JSON.stringify({ model: bad }) }); ok(g.code === 404, 'switching to "' + bad + '" is refused'); }

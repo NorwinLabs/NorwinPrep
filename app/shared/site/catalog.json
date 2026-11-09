@@ -2545,6 +2545,34 @@
       "open": "/ai/"
     },
     {
+      "id": "ollama-gemma3-4b",
+      "type": "model",
+      "category": "ai",
+      "name": "Gemma 3 4B (Ollama, sees pictures)",
+      "tagline": "Ask about a photo: a plant, a wound, a part",
+      "description": "Google's 4 billion parameter model through Ollama. It can look at a picture you attach in the chat (a plant, a rash, a broken part) as well as answer questions. Wants a laptop with 8 GB of memory.",
+      "by": "GOOGLE",
+      "source": "https://ollama.com/library/gemma3",
+      "icon": "chip",
+      "color": "#2b8fd9",
+      "sizeClass": "m",
+      "approxMB": 3350,
+      "install": {
+        "kind": "ollama-model",
+        "name": "gemma3:4b",
+        "minRamGB": 6
+      },
+      "platforms": [
+        "windows",
+        "linux",
+        "darwin"
+      ],
+      "hosts": [
+        "app"
+      ],
+      "open": "/ai/"
+    },
+    {
       "id": "ollama-qwen25-7b",
       "type": "model",
       "category": "ai",
@@ -2571,6 +2599,165 @@
         "app"
       ],
       "open": "/ai/"
+    },
+    {
+      "id": "wikipedia-top-mini",
+      "type": "content",
+      "category": "reference",
+      "topic": "wikipedia",
+      "name": "Wikipedia: Quick Reference",
+      "tagline": "The 100,000 most-read articles, with few images.",
+      "description": "The 100,000 most-read articles, with few images. The Wikipedia pack from Kiwix; the AI can read it when \"Use my library\" is on.",
+      "by": "KIWIX",
+      "source": "https://library.kiwix.org/",
+      "icon": "book",
+      "color": "#8b92a3",
+      "sizeClass": "s",
+      "install": {
+        "kind": "zim",
+        "subdir": "wikipedia",
+        "prefix": "wikipedia_en_top_mini"
+      },
+      "platforms": [
+        "windows",
+        "linux",
+        "darwin",
+        "android"
+      ],
+      "origin": "project-nomad",
+      "approxMB": 331
+    },
+    {
+      "id": "wikipedia-top-nopic",
+      "type": "content",
+      "category": "reference",
+      "topic": "wikipedia",
+      "name": "Wikipedia: Popular Articles",
+      "tagline": "The most-read articles without images. A good balance.",
+      "description": "The most-read articles without images. A good balance. The Wikipedia pack from Kiwix; the AI can read it when \"Use my library\" is on.",
+      "by": "KIWIX",
+      "source": "https://library.kiwix.org/",
+      "icon": "book",
+      "color": "#8b92a3",
+      "sizeClass": "m",
+      "install": {
+        "kind": "zim",
+        "subdir": "wikipedia",
+        "prefix": "wikipedia_en_top_nopic"
+      },
+      "platforms": [
+        "windows",
+        "linux",
+        "darwin",
+        "android"
+      ],
+      "origin": "project-nomad",
+      "approxMB": 2239
+    },
+    {
+      "id": "wikipedia-all-mini",
+      "type": "content",
+      "category": "reference",
+      "topic": "wikipedia",
+      "name": "Wikipedia: Complete (compact)",
+      "tagline": "All 6 million+ articles in a condensed form (about 12 GB).",
+      "description": "All 6 million+ articles in a condensed form (about 12 GB). The Wikipedia pack from Kiwix; the AI can read it when \"Use my library\" is on.",
+      "by": "KIWIX",
+      "source": "https://library.kiwix.org/",
+      "icon": "book",
+      "color": "#8b92a3",
+      "sizeClass": "xl",
+      "install": {
+        "kind": "zim",
+        "subdir": "wikipedia",
+        "prefix": "wikipedia_en_all_mini"
+      },
+      "platforms": [
+        "windows",
+        "linux",
+        "darwin",
+        "android"
+      ],
+      "origin": "project-nomad",
+      "approxMB": 12531
+    },
+    {
+      "id": "checklists",
+      "type": "tool",
+      "category": "tools",
+      "name": "Checklists",
+      "tagline": "72-hour kit, bug-out bag, first aid and more",
+      "description": "Ready-made preparedness checklists you can tick off, change and print. They stay on this device.",
+      "by": "NORWINPREP",
+      "source": "https://github.com/NorwinLabs/NorwinPrepDisk",
+      "icon": "check",
+      "color": "#3ecf8e",
+      "sizeClass": "s",
+      "install": {
+        "kind": "bundled",
+        "dir": "checklists"
+      },
+      "platforms": [
+        "windows",
+        "linux",
+        "darwin"
+      ],
+      "hosts": [
+        "app"
+      ],
+      "open": "/tools/checklists/"
+    },
+    {
+      "id": "emergency-card",
+      "type": "tool",
+      "category": "tools",
+      "name": "Emergency card",
+      "tagline": "A printable page with your medical info and plan",
+      "description": "Fill in your blood type, allergies, contacts and meeting places, then print a page and a wallet card. Includes your saved map places and the Wi-Fi share details.",
+      "by": "NORWINPREP",
+      "source": "https://github.com/NorwinLabs/NorwinPrepDisk",
+      "icon": "cross",
+      "color": "#ff5a6e",
+      "sizeClass": "s",
+      "install": {
+        "kind": "bundled",
+        "dir": "card"
+      },
+      "platforms": [
+        "windows",
+        "linux",
+        "darwin"
+      ],
+      "hosts": [
+        "app"
+      ],
+      "open": "/tools/card/"
+    },
+    {
+      "id": "signals",
+      "type": "tool",
+      "category": "tools",
+      "name": "Signals and radio",
+      "tagline": "Morse, spelling alphabet, distress signals, frequencies",
+      "description": "Morse with sound and light, the NATO spelling alphabet, ground-to-air signals, emergency radio frequencies and how to make a radio call.",
+      "by": "NORWINPREP",
+      "source": "https://github.com/NorwinLabs/NorwinPrepDisk",
+      "icon": "radio",
+      "color": "#f0b429",
+      "sizeClass": "s",
+      "install": {
+        "kind": "bundled",
+        "dir": "signals"
+      },
+      "platforms": [
+        "windows",
+        "linux",
+        "darwin"
+      ],
+      "hosts": [
+        "app"
+      ],
+      "open": "/tools/signals/"
     }
   ],
   "tiers": [
@@ -2906,6 +3093,16 @@
           ]
         },
         {
+          "id": "ai-ollama-vision",
+          "name": "Ollama: Sees pictures",
+          "recommended": false,
+          "description": "Attach a photo in the chat and ask about it; needs about 6 GB of memory.",
+          "modules": [
+            "ollama-engine",
+            "ollama-gemma3-4b"
+          ]
+        },
+        {
           "id": "ai-ollama-better",
           "name": "Ollama: Better",
           "recommended": false,
@@ -2913,6 +3110,61 @@
           "modules": [
             "ollama-engine",
             "ollama-llama32-3b"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "wikipedia",
+      "name": "Wikipedia",
+      "description": "The encyclopedia, offline. Pick a size.",
+      "icon": "book",
+      "tiers": [
+        {
+          "id": "wiki-quick",
+          "name": "Quick reference",
+          "recommended": true,
+          "description": "100,000 top articles (about 0.3 GB).",
+          "modules": [
+            "wikipedia-top-mini"
+          ]
+        },
+        {
+          "id": "wiki-popular",
+          "name": "Popular articles",
+          "recommended": false,
+          "description": "The most-read articles, no images (about 2 GB).",
+          "modules": [
+            "wikipedia-top-nopic"
+          ]
+        },
+        {
+          "id": "wiki-all",
+          "name": "Everything",
+          "recommended": false,
+          "description": "All articles, condensed (about 12 GB).",
+          "modules": [
+            "wikipedia-all-mini"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "prep",
+      "name": "Preparedness tools",
+      "description": "Checklists, an emergency card and signal references. Tiny, and they work with no internet.",
+      "icon": "check",
+      "tiers": [
+        {
+          "id": "prep-tools",
+          "name": "All three tools",
+          "recommended": true,
+          "description": "Under 1 MB together.",
+          "modules": [
+            "checklists",
+            "emergency-card",
+            "signals",
+            "notes"
           ]
         }
       ]
