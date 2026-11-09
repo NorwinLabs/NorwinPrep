@@ -154,6 +154,14 @@
   body.home .toolbar{display:none}
   #dlbtn{position:fixed;left:12px;bottom:10px;z-index:40;display:none;background:var(--panel);color:#fff;border:1px solid var(--line2);border-radius:var(--pill);padding:6px 14px;font-size:13px;cursor:pointer}
   #dlbtn:hover{border-color:#fff} #dlbtn.busy{border-color:var(--green)}
+  #stbtn{position:fixed;left:12px;bottom:10px;z-index:40;display:none;background:var(--panel);color:#fff;border:1px solid var(--line2);border-radius:var(--pill);padding:6px 14px;font-size:13px;cursor:pointer}
+  #stbtn:hover{border-color:#fff} body.hasdl #dlbtn{left:150px}
+  #stpanel{position:fixed;left:12px;bottom:48px;z-index:46;width:min(94vw,440px);max-height:78vh;overflow:auto;display:none;background:#12151c;border:1px solid var(--line2);border-radius:var(--r);padding:14px 16px;box-shadow:0 8px 28px #000b}
+  #stpanel h3{margin:0 0 8px;font-size:15px} #stpanel h4{margin:16px 0 6px;font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--mut);font-family:var(--mono)}
+  .strow{display:flex;gap:8px;align-items:center;padding:5px 0;border-top:1px solid var(--line);font-size:13px} .strow span.n{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap} .strow span.s{color:var(--mut);font-family:var(--mono);font-size:12px}
+  .stbar{height:8px;border-radius:4px;background:var(--line);overflow:hidden;margin:6px 0} .stbar i{display:block;height:100%;background:var(--blue)} .stbar.low i{background:var(--red)}
+  .stopt{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:8px 0;font-size:13px} .stopt select{background:var(--panel);color:var(--text);border:1px solid var(--line2);border-radius:8px;height:28px}
+  .stwarn{border:1px solid #5a2630;background:#2a1217;color:#ffb3bd;border-radius:10px;padding:8px 10px;margin:8px 0;font-size:13px}
   #dlpanel{position:fixed;left:12px;bottom:48px;z-index:45;width:min(94vw,420px);max-height:70vh;overflow:auto;display:none;background:#12151c;border:1px solid var(--line2);border-radius:var(--r);padding:14px 16px;box-shadow:0 8px 28px #000b}
   #dlpanel h3{margin:0 0 8px;font-size:15px} #dlpanel .grp{margin:12px 0 4px;color:var(--mut)}
   .dlrow{display:flex;flex-direction:column;gap:4px;padding:8px 0;border-top:1px solid var(--line)}
@@ -225,6 +233,8 @@
 
 <button id="dlbtn" type="button" aria-haspopup="dialog">Downloads</button>
 <div id="dlpanel" role="dialog" aria-label="Download queue" aria-live="polite"></div>
+<button id="stbtn" type="button" aria-haspopup="dialog">Storage &amp; settings</button>
+<div id="stpanel" role="dialog" aria-label="Storage and settings"></div>
 <div class="veil" id="veil" role="dialog" aria-modal="true"><div class="modal" id="modal"></div></div>
 <div class="toast" id="toast" role="status"></div>
 
@@ -743,10 +753,12 @@
     }
     r.appendChild(top);
     if (kind === 'run') { var bar = el('div', 'bar' + (j.percent ? '' : ' ind')), f = el('i'); f.style.width = (j.percent || 0) + '%'; bar.appendChild(f); r.appendChild(bar); }
+    if (kind === 'run' && /^Paused: running on battery/.test(j.message || '')) { var fs0 = btn('Download anyway', 'sm', function () { fs0.disabled = true; api('POST', '/force-start', { id: m.id }, undefined, true).then(function () { toast('Starting now'); load(); }).catch(function (e) { fs0.disabled = false; toast(e.message); }); }); r.appendChild(fs0); }
     r.appendChild(el('div', 'st' + (j.state === 'error' ? ' bad' : ''), kind === 'wait' ? 'Waiting for ' + (pos === 1 ? 'the current download' : (pos - 1) + ' ahead') : j.message));
     return r;
   }
   function updateQueue() {
+    $('stbtn').style.display = localMgr ? 'block' : 'none'; document.body.classList.toggle('hasdl', !!localMgr);
     var q = jobsNow(), n = q.run.length + q.wait.length, b = $('dlbtn'), p = $('dlpanel');
     if (!n && !q.fin.length) { b.style.display = 'none'; p.style.display = 'none'; dlOpen = false; return; }
     b.style.display = 'block'; b.classList.toggle('busy', n > 0);
@@ -764,6 +776,57 @@
   // clicking anywhere outside the panel (or pressing Esc) closes it
   document.addEventListener('click', function (e) { if (dlOpen && !e.target.closest('#dlpanel') && !e.target.closest('#dlbtn')) { dlOpen = false; updateQueue(); } });
   document.addEventListener('keydown', function (e) { if (dlOpen && e.key === 'Escape') { dlOpen = false; updateQueue(); } });
+  // ---------- storage and settings (this device's own module manager) ----------
+  var stOpen = false, stTimer = null;
+  function stFetch() {
+    return Promise.all([api('GET', '/storage', undefined, undefined, true), api('GET', '/settings', undefined, undefined, true), api('GET', '/status', undefined, undefined, true)]);
+  }
+  function stSet(patch) { return api('POST', '/settings', { set: patch }, undefined, true).then(function () { return stRender(); }).catch(function (e) { toast(e.message); stRender(); }); }
+  function stRender() {
+    var p = $('stpanel'); if (!stOpen) { p.style.display = 'none'; return Promise.resolve(); }
+    return stFetch().then(function (r) {
+      var sto = r[0], cfg = r[1], stat = r[2], se = cfg.settings, keep = p.scrollTop; p.textContent = ''; p.style.display = 'block';
+      p.appendChild(el('h3', null, 'Storage and settings'));
+      var free = sto.disk.free, total = sto.disk.total, pct = total ? Math.min(100, Math.round((total - free) / total * 100)) : 0, low = free < 5 * 1073741824 || free < total * 0.08;
+      p.appendChild(el('div', 'st', human(sto.used) + ' used by your modules · ' + human(free) + ' free of ' + human(total)));
+      var bar = el('div', 'stbar' + (low ? ' low' : '')), bi = el('i'); bi.style.width = pct + '%'; bar.appendChild(bi); p.appendChild(bar);
+      if (low) p.appendChild(el('div', 'stwarn', 'This device is running low on space. Remove something below before downloading more.'));
+      p.appendChild(el('h4', null, 'What is using space'));
+      if (!sto.items.length) p.appendChild(el('div', 'st', 'Nothing is installed yet.'));
+      sto.items.slice(0, 40).forEach(function (it) {
+        var row = el('div', 'strow'); row.appendChild(el('span', 'n', it.name)); row.appendChild(el('span', 's', human(it.bytes)));
+        var rm = btn('Remove', 'sm', function () { if (!confirm('Remove ' + it.name + ' and free ' + human(it.bytes) + '?')) return; rm.disabled = true; api('POST', '/remove', { id: it.id }, undefined, true).then(function () { toast('Removing ' + it.name); load(); setTimeout(stRender, 1200); }).catch(function (e) { rm.disabled = false; toast(e.message); }); });
+        row.appendChild(rm); p.appendChild(row);
+      });
+      p.appendChild(el('h4', null, 'Updates'));
+      var o1 = el('label', 'stopt'), c1 = el('input'); c1.type = 'checkbox'; c1.checked = se.autoUpdate; c1.addEventListener('change', function () { stSet({ autoUpdate: c1.checked }); });
+      o1.appendChild(c1); o1.appendChild(document.createTextNode('Update my modules by themselves at night, while plugged in')); p.appendChild(o1);
+      var o2 = el('div', 'stopt'), hs = el('select'), ms = el('select'); hs.setAttribute('aria-label', 'Hour');
+      for (var h = 0; h < 24; h++) { var oh = el('option', null, (h < 10 ? '0' : '') + h + ':00'); oh.value = h; if (h === se.autoUpdateHour) oh.selected = true; hs.appendChild(oh); }
+      [0.5, 1, 2, 5, 20, 100].forEach(function (g) { var om = el('option', null, 'up to ' + g + ' GB each'); om.value = g; if (g === se.autoUpdateMaxGB) om.selected = true; ms.appendChild(om); });
+      hs.addEventListener('change', function () { stSet({ autoUpdateHour: Number(hs.value) }); }); ms.addEventListener('change', function () { stSet({ autoUpdateMaxGB: Number(ms.value) }); });
+      o2.appendChild(document.createTextNode('Start around')); o2.appendChild(hs); o2.appendChild(ms); p.appendChild(o2);
+      var o3 = el('div', 'stopt'); o3.appendChild(btn('Check for updates now', 'sm', function () { toast('Checking…'); api('POST', '/autoupdate', {}, undefined, true).then(function (r2) { toast(r2.note || 'Done'); load(); stRender(); }).catch(function (e) { toast(e.message); }); }));
+      if (cfg.last && cfg.last.note) o3.appendChild(el('span', 'st', 'Last: ' + cfg.last.note)); p.appendChild(o3);
+      p.appendChild(el('h4', null, 'Power'));
+      var o4 = el('label', 'stopt'), c4 = el('input'); c4.type = 'checkbox'; c4.checked = se.pauseOnBattery; c4.addEventListener('change', function () { stSet({ pauseOnBattery: c4.checked }); });
+      o4.appendChild(c4); o4.appendChild(document.createTextNode('Pause downloads while running on battery' + (cfg.battery ? ' (on battery now)' : ''))); p.appendChild(o4);
+      if (cfg.canTransfer) {
+        p.appendChild(el('h4', null, 'Copy to another device'));
+        p.appendChild(el('div', 'st', 'Copy your content packs, maps, AI models and tools to a USB drive, or load them from one. Programs are downloaded again on the other computer.'));
+        var tr = stat.transfer, busy = tr && tr.state === 'running', o5 = el('div', 'stopt');
+        var b1 = btn('Copy my library to a drive…', 'sm', function () { startXfer('export'); }), b2 = btn('Load a library from a drive…', 'sm', function () { startXfer('import'); }); b1.disabled = b2.disabled = !!busy; o5.appendChild(b1); o5.appendChild(b2); p.appendChild(o5);
+        if (tr) { var tb = el('div', 'stbar'), ti = el('i'); ti.style.width = (tr.percent || 0) + '%'; tb.appendChild(ti); if (busy) p.appendChild(tb); p.appendChild(el('div', 'st' + (tr.state === 'error' ? ' bad' : ''), (tr.action === 'export' ? 'Copy: ' : 'Load: ') + tr.message));
+          if (busy) p.appendChild(btn('Cancel', 'sm', function () { api('POST', '/transfer-cancel', {}, undefined, true).then(stRender); })); }
+      }
+      p.scrollTop = keep; clearTimeout(stTimer);
+      var xs = stat.transfer && stat.transfer.state === 'running'; if (stOpen) stTimer = setTimeout(stRender, xs ? 1000 : 8000);
+    }).catch(function (e) { $('stpanel').textContent = 'Could not load: ' + e.message; });
+  }
+  function startXfer(action) { api('POST', '/transfer', { action: action }, undefined, true).then(stRender).catch(function (e) { toast(e.message); }); }
+  $('stbtn').addEventListener('click', function () { stOpen = !stOpen; if (!stOpen) clearTimeout(stTimer); stRender(); });
+  document.addEventListener('click', function (e) { if (stOpen && !e.target.closest('#stpanel') && !e.target.closest('#stbtn') && !e.target.closest('.modal')) { stOpen = false; clearTimeout(stTimer); $('stpanel').style.display = 'none'; } });
+  document.addEventListener('keydown', function (e) { if (stOpen && e.key === 'Escape') { stOpen = false; clearTimeout(stTimer); $('stpanel').style.display = 'none'; } });
   function patchProgress() {   // update running bars in place so they don't flicker
     state.mods.forEach(function (m) {
       if (!active(m)) return;

@@ -24,6 +24,8 @@ const vkey = (v) => (String(v || '').match(/\d+/g) || []).map(Number);
 const vgt = (a, b) => { const x = vkey(a), y = vkey(b); for (let i = 0; i < Math.max(x.length, y.length); i++) { if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0); } return false; };
 const { unzip } = require('./unzip');
 const { OLLAMA_NAME_RE, ollamaManifestPath } = require('./ai');
+const { Settings } = require('./settings');
+const transfer = require('./library-transfer');
 const esc = (s) => String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 // ---------------------------------------------------------------- catalog
@@ -122,7 +124,9 @@ class Manager {
     this.byid = Object.fromEntries(this.mods.map((m) => [m.id, m]));
     this.jobs = {}; this.queue = []; this.working = false; this.cache = new Map();
     this.sizes = { running: false, ok: 0, fail: 0 }; this.lastRefresh = 0;
+    this.settings = this.cfg.settings || new Settings(this.cfg.dataDir); this.xfer = null;
   }
+  onBattery() { try { return !!(this.cfg.onBattery && this.cfg.onBattery()); } catch (e) { return false; } }
   d(kind) { const p = path.join(this.cfg.dataDir, kind); fs.mkdirSync(p, { recursive: true }); return p; }
   get plat() { return this.cfg.platform === 'win32' ? 'windows' : this.cfg.platform; }
 
@@ -365,7 +369,7 @@ class Manager {
     }
     return out;
   }
-  status() { const jobs = {}; for (const [k, j] of Object.entries(this.jobs)) jobs[k] = { state: j.state, percent: j.percent, message: j.message, action: j.action, t: j.t }; return { jobs, disk: this.disk() }; }
+  status() { const jobs = {}; for (const [k, j] of Object.entries(this.jobs)) jobs[k] = { state: j.state, percent: j.percent, message: j.message, action: j.action, t: j.t }; return { jobs, disk: this.disk(), transfer: this.transferState() }; }
   async info(id) {
     const m = this.byid[id]; if (!m) throw new ApiError(404, 'unknown module');
     const i = m.install, res = { id, name: m.name, free: this.disk().free, bytes: null, file: null, version: null };
@@ -464,6 +468,65 @@ class Manager {
     this.queue.splice(i, 1); delete this.jobs[id];
   }
   set(id, patch) { Object.assign(this.jobs[id], patch); }
+  // "Pause downloads on battery": the job waits (and says why) until the computer is plugged in or the setting is turned off
+  async waitForPower(id) {
+    const poll = this.cfg.powerPollMs || 10000;
+    while (this.settings.get().pauseOnBattery && this.onBattery() && !(this.jobs[id] && this.jobs[id].force)) {
+      this.set(id, { message: 'Paused: running on battery. It continues when the charger is plugged in.' });
+      await new Promise((r) => setTimeout(r, poll));
+    }
+  }
+  forceStart(id) { const j = this.jobs[id]; if (!j || (j.state !== 'running' && j.state !== 'queued')) throw new ApiError(409, 'Nothing to start'); j.force = true; }
+
+  // ---------- scheduled updates: while plugged in, in the night hours chosen, update modules that have a newer edition (never more than the size limit)
+  autoUpdateDue(now) {
+    const s = this.settings.get(); if (!s.autoUpdate) return false;
+    const d = new Date(now || Date.now()), h = d.getHours(), inWindow = ((h - s.autoUpdateHour + 24) % 24) < 3;
+    return inWindow && (!this.settings.last || (d.getTime() - this.settings.last.t) > 20 * 3600000);
+  }
+  async autoUpdate(opts) {
+    opts = opts || {}; const s = this.settings.get(), started = [];
+    if (!opts.force && !s.autoUpdate) return { started, note: 'Scheduled updates are off.' };
+    if (this.onBattery()) return { started, note: 'Skipped: running on battery.' };
+    if (this.working || this.queue.length) return { started, note: 'Skipped: downloads are already running.' };
+    try { await this.refresh(); } catch (e) { if (!(e instanceof ApiError && e.code === 429)) return { started, note: 'Skipped: could not reach the download servers.' }; }
+    for (let i = 0; i < 40 && this.sizes.running; i++) await new Promise((r) => setTimeout(r, 250));
+    const cap = (opts.maxGB || s.autoUpdateMaxGB) * 1073741824, skippedBig = [];
+    for (const m of this.catalog()) {
+      if (!m.updateAvailable || !['zim', 'static-site', 'python-wheel', 'llama-cpp', 'ollama'].includes(this.byid[m.id].install.kind)) continue;
+      if ((m.bytes || 0) > cap) { skippedBig.push(m.name); continue; }
+      try { this.enqueue(m.id, 'install'); started.push(m.id); } catch (e) { /* already in progress */ }
+    }
+    const note = started.length ? 'Updating ' + started.length + ' module' + (started.length === 1 ? '' : 's') + '.' + (skippedBig.length ? ' Too large for the limit: ' + skippedBig.join(', ') + '.' : '') : (skippedBig.length ? 'Everything small is up to date. Too large for the limit: ' + skippedBig.join(', ') + '.' : 'Everything is up to date.');
+    this.settings.setLast({ started, note }); return { started, note };
+  }
+  async autoUpdateTick() { if (this.autoUpdateDue()) return this.autoUpdate(); return null; }
+
+  // ---------- copy the library to a drive / load one from a drive (desktop; the folder is chosen in a native dialog)
+  transferState() { return this.xfer ? { state: this.xfer.state, percent: this.xfer.percent, message: this.xfer.message, action: this.xfer.action } : null; }
+  async startTransfer(action) {
+    if (!['export', 'import'].includes(action)) throw new ApiError(400, 'unknown action');
+    if (!this.cfg.pickFolder) throw new ApiError(501, 'Copying a library needs the desktop app.');
+    if (this.xfer && this.xfer.state === 'running') throw new ApiError(409, 'A copy is already running');
+    if (this.working || this.queue.length) throw new ApiError(409, 'Wait for the downloads to finish first');
+    const dir = await this.cfg.pickFolder(action === 'export' ? 'Choose the USB drive or folder to copy your library to' : 'Choose the library folder (or the drive it is on)');
+    if (!dir || typeof dir !== 'string') throw new ApiError(409, 'No folder was chosen');
+    const x = this.xfer = { state: 'running', percent: 0, message: 'Starting…', action, cancel: false }; let last = 0;
+    const onP = (done, total, rel) => { const now = Date.now(); if (now - last < 250 && done < total) return; last = now; x.percent = total ? Math.min(99, Math.floor(done * 100 / total)) : 0; x.message = human(done) + ' of ' + human(total) + ' · ' + rel.split('/').slice(-1)[0]; };
+    (async () => {
+      try {
+        const r = action === 'export' ? await transfer.exportLibrary(this.cfg.dataDir, dir, onP, () => x.cancel) : await transfer.importLibrary(this.cfg.dataDir, dir, onP, () => x.cancel);
+        if (action === 'import') { try { await this.cfg.onLibraryChange(); } catch (e) { /* reader restarts next time */ } }
+        x.state = 'done'; x.percent = 100; x.message = (action === 'export' ? 'Copied ' : 'Loaded ') + r.copied + ' file' + (r.copied === 1 ? '' : 's') + (r.skipped ? ' (' + r.skipped + ' were already there)' : '') + ', ' + human(r.bytes) + '.';
+      } catch (e) { x.state = 'error'; x.percent = 0; x.message = e.cancelled ? 'Cancelled.' : String((e && e.message) || e).slice(0, 220); }
+    })();
+    return this.transferState();
+  }
+  // what is using the space, biggest first (the Storage panel)
+  storage() {
+    const items = this.catalog().filter((m) => m.installed).map((m) => ({ id: m.id, name: m.name, type: m.type, bytes: m.bytes || 0, category: m.category })).sort((a, b) => b.bytes - a.bytes);
+    return { items, used: items.reduce((a, x) => a + x.bytes, 0), disk: this.disk() };
+  }
   async pump() {
     if (this.working) return; this.working = true;
     try {
@@ -471,6 +534,7 @@ class Manager {
         const [id, action] = this.queue.shift(), m = this.byid[id];
         this.set(id, { state: 'running', message: 'Starting…' });
         try {
+          if (action !== 'remove' && m.install.kind !== 'bundled') await this.waitForPower(id);
           if (action === 'remove') await this.remove(m);
           else {
             if (m.type === 'content') await this.ensureReader(id);
@@ -773,10 +837,17 @@ class Manager {
         if (route === '/catalog') return { code: 200, body: { modules: this.catalog(), disk: this.disk(), sizesPending: this.sizesPending() } };
         if (route === '/status') return { code: 200, body: this.status() };
         if (route === '/info') return { code: 200, body: await this.info(query.get('id') || '') };
+        if (route === '/settings') return { code: 200, body: { settings: this.settings.get(), last: this.settings.last, battery: this.onBattery(), canTransfer: !!this.cfg.pickFolder } };
+        if (route === '/storage') return { code: 200, body: this.storage() };
         throw new ApiError(404, 'Not found');
       }
       if (route === '/refresh') return { code: 200, body: await this.refresh() };
       if (route === '/pin') return { code: 200, body: { ok: true } };            // no PIN on this device: it is your own app
+      if (route === '/settings') { try { return { code: 200, body: { settings: this.settings.set(body && body.set) } }; } catch (e) { throw new ApiError(400, e.message); } }
+      if (route === '/autoupdate') return { code: 200, body: await this.autoUpdate({ force: true }) };
+      if (route === '/force-start') { this.forceStart(String((body && body.id) || '')); return { code: 200, body: { ok: true } }; }
+      if (route === '/transfer') return { code: 202, body: await this.startTransfer(String((body && body.action) || '')) };
+      if (route === '/transfer-cancel') { if (this.xfer && this.xfer.state === 'running') this.xfer.cancel = true; return { code: 200, body: { ok: true } }; }
       if (route === '/cancel') { this.cancel(String((body && body.id) || '')); return { code: 200, body: { ok: true } }; }
       if (route === '/install' || route === '/remove') {
         const j = this.enqueue(String((body && body.id) || ''), route.slice(1));

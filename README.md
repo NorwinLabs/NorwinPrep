@@ -60,6 +60,14 @@ in the same picker on the chat page ("Ollama: ..." for these). On Linux the Olla
 **Use my library** works the same with Ollama: the best matching pages from your installed Kiwix packs are given to the model and linked as sources. Only chat is exposed; Ollama's own
 API (pull, delete, list) is never reachable from the page or from devices on the Wi-Fi.
 
+## Offline extras
+
+- **Wikipedia** (Kiwix): Quick Reference (about 0.3 GB), Popular Articles (about 2 GB) and Complete compact (about 12 GB). The AI reads them when "Use my library" is on.
+- **Checklists**, **Emergency card** and **Signals and radio** are small built-in tools (Tools in the store). Checklists have 72-hour-kit, bug-out-bag, first-aid, home-supplies, vehicle, power-outage and leaving-the-house templates you can tick off and print. The Emergency card prints a page and a wallet card with your medical info, contacts, meeting places, saved map places and (while sharing) the Wi-Fi details. Signals has Morse (sound and light), the NATO alphabet, distress and ground-to-air signals, and emergency radio frequencies. All of it stays on the device.
+- **Map places**: on the map, "Places" lets you pin spots (button, or right-click / long-press), and import or export them as GPX. The Emergency card can print them.
+- **AI chat**: *Save to notes* (with the library pages used), *Read aloud* (your system's voices), *Translate to...* (the model translates what you type), and *attach a picture* with an Ollama vision model (Gemma 3 4B). Pictures are only accepted for Ollama models.
+- **Storage & settings** (desktop, bottom left of the store): what is using space (with Remove), scheduled updates (at night, while plugged in, with a size limit per module), pause downloads on battery (with "Download anyway"), and **Copy to another device**: copy your content, maps, AI models and tools to a USB drive, or load them from one, so a new computer needs no internet for them. Programs (the reader, AI engines) are downloaded again on the other computer, and only allow-listed file types and paths are ever read from a drive.
+
 ## Install on any device, share over Wi-Fi
 
 The desktop app (Windows, Linux x64/arm64/armv7l incl. Raspberry Pi) is its own installer: the Module Store installs content, maps and the

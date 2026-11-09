@@ -27,6 +27,8 @@
       "local-server.js",
       "updater.js",
       "modules-manager.js",
+      "settings.js",
+      "library-transfer.js",
       "unzip.js",
       "autostart.js",
       "kolibri.js",

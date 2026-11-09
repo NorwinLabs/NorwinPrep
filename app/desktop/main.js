@@ -1,5 +1,5 @@
 'use strict';
-const { app, BrowserWindow, Menu, shell } = require('electron');
+const { app, BrowserWindow, Menu, shell, dialog } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const os = require('os');
@@ -86,9 +86,13 @@ async function startServer() {
   ai = new Hub({ dataDir, context: (q, eco) => (reader && reader.ready() ? libraryContext(q, { port: reader.port, root: '/wiki', maxChars: eco ? 1200 : 3000, maxPages: eco ? 2 : 3 }) : null), eco: () => { try { return require('electron').powerMonitor.isOnBatteryPower(); } catch (e) { return false; } } });
   const modules = new Manager({
     pythonCheck: (requires) => kolibri.findPython(requires), onKolibriChange: () => kolibri.stop(), onAiChange: () => ai.stop(), ollama: ai.ollama,
+    onBattery: () => { try { return require('electron').powerMonitor.isOnBatteryPower(); } catch (e) { return false; } },
+    pickFolder: async (title) => { const r = await dialog.showOpenDialog(win || undefined, { title, properties: ['openDirectory', 'createDirectory'] }); return r.canceled || !r.filePaths[0] ? null : r.filePaths[0]; },
     catalog: path.join(siteDir, 'catalog.json'), dataDir, onLibraryChange: () => reader.restart(),
     bundledDir: siteDir, kiwix: env.NORWINPREP_KIWIX_BASE || undefined, githubApi: env.NORWINPREP_API_BASE || undefined, githubDl: env.NORWINPREP_DL_BASE || undefined, protomaps: env.NORWINPREP_PROTOMAPS_BASE || undefined
   });
+  // scheduled updates (off unless the user turns them on in the store): checked every 30 minutes, run only in the chosen night hours and on mains power
+  { const tick = () => { modules.autoUpdateTick().catch(() => {}); }, t1 = setInterval(tick, 30 * 60000), t2 = setTimeout(tick, 3 * 60000); if (t1.unref) t1.unref(); if (t2.unref) t2.unref(); }
   share = new Share({
     dataDir: app.getPath('userData'), onActive: (on) => kolibri.setShared(on),
     makeServer: () => createShare({ siteDir, ai, kolibriInfo: () => kolibri.info(), siteRoot: (d) => modules.siteRoot(d), siteList: () => modules.listSites(), mapsDir: path.join(dataDir, 'maps'), appsDir: path.join(dataDir, 'apps'), reader, getName: () => name, version: app.getVersion(), auth: share.authFor(), onClient: (ip, n) => deviceJoined(n) })
