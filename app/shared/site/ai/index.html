@@ -63,7 +63,7 @@
   function loadStatus() {
     return fetch('/ai/api/status', { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (s) {
       canSelect = !!s.canSelect; var sel = $('model'); sel.textContent = '';
-      (s.models || []).forEach(function (m) { var o = document.createElement('option'); o.value = m; o.textContent = m.replace(/\.gguf$/, ''); if (m === s.active) o.selected = true; sel.appendChild(o); });
+      (s.models || []).forEach(function (m) { var o = document.createElement('option'); o.value = m; o.textContent = m.replace(/\.gguf$/, '').replace(/^ollama:/, 'Ollama: '); if (m === s.active) o.selected = true; sel.appendChild(o); });
       sel.hidden = !(canSelect && (s.models || []).length > 1);
       var ready = s.engine && (s.models || []).length > 0;
       $('send').disabled = !ready;

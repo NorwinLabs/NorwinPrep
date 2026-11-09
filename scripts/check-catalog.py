@@ -105,6 +105,22 @@ for m in mods:
                 report(dict(id="ai-engine/" + label), bool(hit), "%s %s %s" % (rel["tag_name"], hit[0]["name"] if hit else "NO MATCHING BUILD (the app will say so)", hit[0]["size"] if hit else ""))
             print("     all llama.cpp assets:", [x["name"] for x in rel["assets"]])
         except Exception as e: report(m, False, str(e))
+    elif k == "ollama":
+        try:
+            rel = json.loads(get("%s/repos/%s/releases/latest" % (GH, i["repo"]))[2]); bad_re = re.compile(r"rocm|jetpack|cuda|vulkan|mlx|sycl|setup|\.exe$|\.dmg$|sha256|\.sig$", re.I)
+            for label, os_t, arch_t in (("linux-x64", "linux", ("amd64", "x64", "x86_64")), ("linux-arm64", "linux", ("arm64", "aarch64")), ("windows-x64", "windows", ("amd64", "x64", "x86_64")), ("windows-arm64", "windows", ("arm64", "aarch64")), ("macos", "darwin", None)):
+                hit = [x for x in rel["assets"] if re.match(r"ollama-", x["name"], re.I) and re.search(r"\.(tgz|tar\.gz|zip|tar\.zst)$", x["name"]) and not bad_re.search(x["name"])
+                       and os_t in re.split(r"[^a-z0-9_]+", x["name"].lower()) and (arch_t is None or any(w in arch_t for w in re.split(r"[^a-z0-9_]+", x["name"].lower())))]
+                hit.sort(key=lambda x: (x["name"].endswith(".tar.zst"), x["size"]))
+                report(dict(id="ollama/" + label), bool(hit), "%s %s %s" % (rel["tag_name"], hit[0]["name"] if hit else "NO MATCHING BUILD (the app will say so)", hit[0]["size"] if hit else ""))
+        except Exception as e: report(m, False, str(e))
+    elif k == "ollama-model":
+        try:
+            name, tag = i["name"].split(":"); repo = name if "/" in name else "library/" + name
+            req = urllib.request.Request("https://registry.ollama.ai/v2/%s/manifests/%s" % (repo, tag), headers=dict(UA, Accept="application/vnd.docker.distribution.manifest.v2+json"))
+            man = json.loads(urllib.request.urlopen(req, timeout=60).read()); total = sum(l["size"] for l in man["layers"]) + man["config"]["size"]
+            report(m, abs(total / 1048576 - m["approxMB"]) < m["approxMB"] * 0.1 + 20, "registry says %d MB, catalog says %d MB" % (total / 1048576, m["approxMB"]))
+        except Exception as e: report(m, False, str(e))
     elif k == "gguf":
         try:
             tree = json.loads(get("https://huggingface.co/api/models/%s/tree/main" % i["repo"])[2]); f = [t for t in tree if t.get("path") == i["file"]]

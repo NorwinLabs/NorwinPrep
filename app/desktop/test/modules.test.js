@@ -25,10 +25,10 @@ const reset = () => { Object.assign(F, { shaOk: true, shaMissing: false, newZim:
   // ---------- catalog ----------
   const forLinux = loadCatalog(CATALOG, 'linux'), forWin = loadCatalog(CATALOG, 'windows'), forAndroid = loadCatalog(CATALOG, 'android');
   { const shipped = loadCatalog(SHIPPED, 'linux'), cats = new Set(shipped.map((m) => m.category));
-    ok(shipped.length === 88 && shipped.some((m) => m.id === 'reader') && shipped.filter((m) => m.type === 'maps').length === 51, 'the shipped catalog is the short list: ' + shipped.length + ' modules, 51 of them maps');
+    ok(shipped.length === 93 && shipped.some((m) => m.id === 'reader') && shipped.filter((m) => m.type === 'maps').length === 51, 'the shipped catalog is the short list: ' + shipped.length + ' modules, 51 of them maps');
     ok(['maps', 'survival', 'water', 'cooking', 'electronics', 'coding', 'dictionary', 'ai'].every((c) => cats.has(c)), 'it covers maps, survival, water, cooking, electronics, coding, dictionary and AI');
     ok(!shipped.some((m) => ['cyberchef', 'kolibri', 'gardening', 'wikipedia-full', 'map-usa'].includes(m.id)), 'the niche modules are gone'); }
-  ok(forLinux.length >= 88 && forLinux.some((m) => m.id === 'reader') && forWin.some((m) => m.type === 'maps'), 'desktop sees the modules including the reader and maps (' + forLinux.length + ' with the test extras)');
+  ok(forLinux.length >= 93 && forLinux.some((m) => m.id === 'reader') && forWin.some((m) => m.type === 'maps'), 'desktop sees the modules including the reader and maps (' + forLinux.length + ' with the test extras)');
   ok(forAndroid.length > 15 && forAndroid.every((m) => m.type === 'content'), 'Android only sees content packs (' + forAndroid.length + ')');
   for (const bad of [{ id: '../x', type: 'content', sizeClass: 's', install: { kind: 'zim', subdir: 'a', prefix: 'b' } }, { id: 'ok1', type: 'content', sizeClass: 's', install: { kind: 'zim', subdir: '../etc', prefix: 'b' } },
     { id: 'ok2', type: 'content', sizeClass: 's', install: { kind: 'shell', cmd: 'rm -rf /' } }, { id: 'ok3', type: 'maps', sizeClass: 's', install: { kind: 'maps', file: '../x.pmtiles', maxzoom: 7 } },

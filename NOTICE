@@ -9,5 +9,5 @@ Project NOMAD (https://github.com/Crosstalk-Solutions/project-nomad)
   third_party/project-nomad/LICENSE. The importer is scripts/import-nomad.py.
   Maps are downloaded at install time from Crosstalk-Solutions/project-nomad-maps.
 
-Kiwix, Kolibri, CyberChef, llama.cpp, Protomaps and Hugging Face-hosted models
+Kiwix, Kolibri, CyberChef, llama.cpp, Ollama (MIT, and the models in its library), Protomaps and Hugging Face-hosted models
 are downloaded from their own publishers and keep their own licences.

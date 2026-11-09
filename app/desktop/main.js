@@ -10,7 +10,7 @@ const { Reader } = require('./reader');
 const { Share } = require('./share');
 const { Autostart } = require('./autostart');
 const { Kolibri } = require('./kolibri');
-const { Llama } = require('./ai');
+const { Hub } = require('./ai');
 const { libraryContext } = require('./library-search');
 const updaterLib = require('./updater');
 const { spawn, execFile } = require('child_process');
@@ -83,9 +83,9 @@ async function startServer() {
   reader = new Reader({ binDir: path.join(dataDir, 'reader'), zimDir: path.join(dataDir, 'zim') });
   const env = process.env;
   kolibri = new Kolibri({ dataDir });
-  ai = new Llama({ dataDir, context: (q, eco) => (reader && reader.ready() ? libraryContext(q, { port: reader.port, root: '/wiki', maxChars: eco ? 1200 : 3000, maxPages: eco ? 2 : 3 }) : null), eco: () => { try { return require('electron').powerMonitor.isOnBatteryPower(); } catch (e) { return false; } } });
+  ai = new Hub({ dataDir, context: (q, eco) => (reader && reader.ready() ? libraryContext(q, { port: reader.port, root: '/wiki', maxChars: eco ? 1200 : 3000, maxPages: eco ? 2 : 3 }) : null), eco: () => { try { return require('electron').powerMonitor.isOnBatteryPower(); } catch (e) { return false; } } });
   const modules = new Manager({
-    pythonCheck: (requires) => kolibri.findPython(requires), onKolibriChange: () => kolibri.stop(), onAiChange: () => ai.stop(),
+    pythonCheck: (requires) => kolibri.findPython(requires), onKolibriChange: () => kolibri.stop(), onAiChange: () => ai.stop(), ollama: ai.ollama,
     catalog: path.join(siteDir, 'catalog.json'), dataDir, onLibraryChange: () => reader.restart(),
     bundledDir: siteDir, kiwix: env.NORWINPREP_KIWIX_BASE || undefined, githubApi: env.NORWINPREP_API_BASE || undefined, githubDl: env.NORWINPREP_DL_BASE || undefined, protomaps: env.NORWINPREP_PROTOMAPS_BASE || undefined
   });

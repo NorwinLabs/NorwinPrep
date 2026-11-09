@@ -23,6 +23,7 @@ const human = (n) => { const u = ['B', 'KB', 'MB', 'GB', 'TB']; let i = 0; n = N
 const vkey = (v) => (String(v || '').match(/\d+/g) || []).map(Number);
 const vgt = (a, b) => { const x = vkey(a), y = vkey(b); for (let i = 0; i < Math.max(x.length, y.length); i++) { if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0); } return false; };
 const { unzip } = require('./unzip');
+const { OLLAMA_NAME_RE, ollamaManifestPath } = require('./ai');
 const esc = (s) => String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 // ---------------------------------------------------------------- catalog
@@ -53,6 +54,10 @@ function loadCatalog(file, platform) {
       if (!/^[A-Za-z0-9._-]+\/[A-Za-z0-9._-]+$/.test(i.repo || '')) throw new Error('bad llama-cpp spec for ' + m.id);
     } else if (i.kind === 'gguf') {
       if (!/^[A-Za-z0-9._-]+\/[A-Za-z0-9._-]+$/.test(i.repo || '') || !/^[A-Za-z0-9][A-Za-z0-9._-]{0,120}\.gguf$/.test(i.file || '') || (i.minRamGB !== undefined && !(i.minRamGB > 0 && i.minRamGB < 512))) throw new Error('bad gguf spec for ' + m.id);
+    } else if (i.kind === 'ollama') {
+      if (!/^[A-Za-z0-9._-]+\/[A-Za-z0-9._-]+$/.test(i.repo || '')) throw new Error('bad ollama spec for ' + m.id);
+    } else if (i.kind === 'ollama-model') {
+      if (!OLLAMA_NAME_RE.test(i.name || '') || (i.minRamGB !== undefined && !(i.minRamGB > 0 && i.minRamGB < 512)) || !(m.approxMB > 0 && m.approxMB < 200000)) throw new Error('bad ollama-model spec for ' + m.id);
     } else if (i.kind === 'python-wheel') {
       if (!/^[a-z0-9][a-z0-9._-]{0,60}$/.test(i.package || '') || !/^[a-z0-9-]+$/.test(i.dir || '')) throw new Error('bad python-wheel spec for ' + m.id);
     } else if (i.kind === 'bundled') {
@@ -112,7 +117,7 @@ class Manager {
     cfg = Object.fromEntries(Object.entries(cfg || {}).filter(([, v]) => v !== undefined));   // an unset option (undefined) must keep its default, not replace it: Object.assign would copy the undefined and every download address would become "undefined/..."
     this.cfg = Object.assign({ timeout: 30000, kiwix: 'https://download.kiwix.org', githubApi: 'https://api.github.com', githubDl: 'https://github.com',
       protomaps: 'https://build.protomaps.com', protomapsMeta: null, slug: 'NorwinLabs/NorwinPrepDisk', pmtilesRepo: 'protomaps/go-pmtiles', platform: process.platform,
-      arch: process.arch, pypi: 'https://pypi.org', nomadMaps: 'https://github.com', hf: 'https://huggingface.co', onAiChange: async () => true, ramBytes: os.totalmem(), pythonCheck: async () => true, onKolibriChange: async () => true, bundledDir: path.join(__dirname, 'site'), onLibraryChange: async () => true, run: spawn }, cfg);
+      arch: process.arch, pypi: 'https://pypi.org', nomadMaps: 'https://github.com', hf: 'https://huggingface.co', onAiChange: async () => true, ollama: null, ramBytes: os.totalmem(), pythonCheck: async () => true, onKolibriChange: async () => true, bundledDir: path.join(__dirname, 'site'), onLibraryChange: async () => true, run: spawn }, cfg);
     this.mods = loadCatalog(this.cfg.catalog, this.cfg.platform === 'win32' ? 'windows' : this.cfg.platform);
     this.byid = Object.fromEntries(this.mods.map((m) => [m.id, m]));
     this.jobs = {}; this.queue = []; this.working = false; this.cache = new Map();
@@ -188,6 +193,19 @@ class Manager {
       const f = path.join(this.cfg.dataDir, 'ai', 'models', i.file);
       try { const st = fs.statSync(f); return { version: ((/-(Q\d[A-Za-z0-9_]*)\.gguf$/i.exec(i.file) || [])[1] || 'GGUF').toUpperCase(), files: [i.file], bytes: st.size, updated: st.mtimeMs / 1000 }; } catch (e) { return null; }
     }
+    if (i.kind === 'ollama-model') {
+      try {
+        const f = ollamaManifestPath(path.join(this.cfg.dataDir, 'ai', 'ollama-models'), i.name), st = fs.statSync(f), man = JSON.parse(fs.readFileSync(f, 'utf8'));
+        const bytes = (man.layers || []).reduce((a, l) => a + Number(l.size || 0), Number((man.config || {}).size || 0));
+        return { version: i.name.split(':')[1], files: [i.name], bytes: bytes || st.size, updated: st.mtimeMs / 1000 };
+      } catch (e) { return null; }
+    }
+    if (i.kind === 'ollama') {
+      const dir = path.join(this.cfg.dataDir, 'ai', 'ollama'), exe = this.plat === 'windows' ? 'ollama.exe' : 'ollama', bin = [path.join(dir, 'bin', exe), path.join(dir, exe)].find((f) => fs.existsSync(f));
+      if (!bin) return null;
+      let ver = '?'; try { ver = fs.readFileSync(path.join(dir, 'VERSION'), 'utf8').trim(); } catch (e) { /* unknown */ }
+      return { version: ver, files: ['ollama'], bytes: dirSize(dir), updated: fs.statSync(bin).mtimeMs / 1000 };
+    }
     if (i.kind === 'llama-cpp') {
       const dir = path.join(this.cfg.dataDir, 'ai', 'engine'), bin = path.join(dir, this.plat === 'windows' ? 'llama-server.exe' : 'llama-server');
       if (!fs.existsSync(bin)) return null;
@@ -223,6 +241,7 @@ class Manager {
     if (i.kind === 'static-site') { const r = this.peek(['site', i.repo]); return r ? r.tag.replace(/^v/, '') : null; }
     if (i.kind === 'python-wheel') { const r = this.peek(['pypi', i.package]); return r ? r.version : null; }
     if (i.kind === 'llama-cpp') { const r = this.peek(['llama', i.repo]); return r ? r.tag : null; }
+    if (i.kind === 'ollama') { const r = this.peek(['ollama', i.repo]); return r ? r.tag : null; }
     return null;
   }
   knownSize(m) {
@@ -240,6 +259,8 @@ class Manager {
     if (i.kind === 'static-site') { const r = this.peek(['site', i.repo]); return r ? r.size : null; }
     if (i.kind === 'python-wheel') { const r = this.peek(['pypi', i.package]); return r ? r.size : null; }
     if (i.kind === 'llama-cpp') { const r = this.peek(['llama', i.repo]); return r ? r.size : null; }
+    if (i.kind === 'ollama') { const r = this.peek(['ollama', i.repo]); return r ? r.size : null; }
+    if (i.kind === 'ollama-model') return m.approxMB ? m.approxMB * 1048576 : null;
     if (i.kind === 'pmtiles-file') { const s = this.peek(['size', i.url]); return s || null; }
     if (i.kind === 'gguf') { const t = this.peek(['hf', i.repo]); return t && t[i.file] ? t[i.file].size : null; }
     return null;
@@ -259,6 +280,22 @@ class Manager {
       if (!c.length) throw new ApiError(412, 'There is no ready-made AI engine for this computer (' + this.cfg.platform + ' ' + this.cfg.arch + ') in the latest llama.cpp release.');
       const a = c[0], dg = /^sha256:([0-9a-f]{64})$/i.exec(a.digest || '');
       if (!/^[A-Za-z0-9._-]+$/.test(j.tag_name || '')) throw new ApiError(502, 'unexpected release tag');
+      return { tag: j.tag_name, name: a.name, size: Number(a.size || 0), sha: dg ? dg[1].toLowerCase() : null, url: this.cfg.githubDl + '/' + i.repo + '/releases/download/' + j.tag_name + '/' + a.name };
+    }, 3600000, force);
+  }
+  // The newest Ollama release and the build for this computer. Real names: ollama-linux-amd64.tar.zst, ollama-linux-arm64.tar.zst, ollama-windows-amd64.zip, ollama-windows-arm64.zip, Ollama-darwin.zip (the Mac app);
+  // GPU add-ons (rocm, jetpack...) are separate files and are never picked: the CPU engine inside the main file also uses a GPU if one is present.
+  async ollamaRelease(m, force) {
+    const i = m.install, osTok = { linux: 'linux', win32: 'windows', darwin: 'darwin' }[this.cfg.platform], archTok = { x64: ['amd64', 'x64', 'x86_64'], arm64: ['arm64', 'aarch64'] }[this.cfg.arch];
+    return this.cached(['ollama', i.repo], async () => {
+      if (!osTok || !archTok) throw new ApiError(412, 'There is no ready-made Ollama for this computer (' + this.cfg.platform + ' ' + this.cfg.arch + ').');
+      const j = JSON.parse(await this.text(this.cfg.githubApi + '/repos/' + i.repo + '/releases/latest')), bad = /rocm|jetpack|cuda|vulkan|mlx|sycl|setup|\.exe$|\.dmg$|sha256|\.sig$/i;
+      if (!/^[A-Za-z0-9._-]+$/.test(j.tag_name || '')) throw new ApiError(502, 'unexpected release tag');
+      const words = (n) => n.toLowerCase().split(/[^a-z0-9_]+/), ext = (n) => (/\.(tgz|tar\.gz|zip|tar\.zst)$/.exec(n) || [])[1];
+      const c = (j.assets || []).filter((a) => /^ollama-/i.test(a.name || '') && ext(a.name) && /^[A-Za-z0-9._-]+$/.test(a.name) && !bad.test(a.name) && words(a.name).includes(osTok)
+        && (osTok === 'darwin' || words(a.name).some((w) => archTok.includes(w)))).sort((a, b) => (ext(a.name) === 'tar.zst') - (ext(b.name) === 'tar.zst') || a.size - b.size);   // a format every computer can unpack comes first
+      if (!c.length) throw new ApiError(412, 'There is no ready-made Ollama for this computer (' + this.cfg.platform + ' ' + this.cfg.arch + ') in the latest release.');
+      const a = c[0], dg = /^sha256:([0-9a-f]{64})$/i.exec(a.digest || '');
       return { tag: j.tag_name, name: a.name, size: Number(a.size || 0), sha: dg ? dg[1].toLowerCase() : null, url: this.cfg.githubDl + '/' + i.repo + '/releases/download/' + j.tag_name + '/' + a.name };
     }, 3600000, force);
   }
@@ -355,6 +392,12 @@ class Manager {
       } else if (i.kind === 'llama-cpp') {
         const r = await this.llamaRelease(m, true);
         Object.assign(res, { file: r.name, version: r.tag, bytes: r.size, note: 'A small program that runs AI models on your processor. It is installed automatically with your first model.' });
+      } else if (i.kind === 'ollama') {
+        const r = await this.ollamaRelease(m, true);
+        Object.assign(res, { file: r.name, version: r.tag, bytes: r.size, note: 'Ollama, a popular program for running AI models on your own computer. The app keeps its own copy and its models in your library folder; nothing is installed system-wide.' + (/zst$/.test(r.name) ? ' Unpacking needs the zstd tool (package "zstd" on Linux).' : '') });
+      } else if (i.kind === 'ollama-model') {
+        const ram = this.cfg.ramBytes, need = (i.minRamGB || 0) * 1073741824;
+        Object.assign(res, { file: i.name, version: i.name.split(':')[1], bytes: m.approxMB * 1048576, note: 'Downloaded from the Ollama library by Ollama itself.' + (i.minRamGB ? ' Wants about ' + i.minRamGB + ' GB of free memory; this computer has ' + (ram / 1073741824).toFixed(1) + ' GB in total.' + (need > ram * 0.8 ? ' That is probably too little: it may be very slow or fail.' : '') : '') });
       } else if (i.kind === 'gguf') {
         const t = await this.hfFiles(i.repo, true), f = t[i.file]; if (!f) throw new ApiError(404, i.file + ' was not found on Hugging Face');
         const ram = this.cfg.ramBytes, need = (i.minRamGB || 0) * 1073741824;
@@ -401,6 +444,7 @@ class Manager {
     try { await this.latestRelease(true); } catch (e) { if (!(e instanceof HttpError)) throw e; }
     for (const r of new Set(this.mods.filter((x) => x.install.kind === 'gguf').map((x) => x.install.repo))) { try { await this.hfFiles(r, true); } catch (e) { if (!(e instanceof HttpError) && !(e instanceof ApiError)) throw e; } }
     for (const m of this.mods.filter((x) => x.install.kind === 'llama-cpp')) { try { await this.llamaRelease(m, true); } catch (e) { if (!(e instanceof HttpError) && !(e instanceof ApiError)) throw e; } }
+    for (const m of this.mods.filter((x) => x.install.kind === 'ollama')) { try { await this.ollamaRelease(m, true); } catch (e) { if (!(e instanceof HttpError) && !(e instanceof ApiError)) throw e; } }
     for (const m of this.mods.filter((x) => x.install.kind === 'python-wheel')) { try { await this.pypiRelease(m, true); } catch (e) { if (!(e instanceof HttpError) && !(e instanceof ApiError)) throw e; } }
     for (const m of this.mods.filter((x) => x.install.kind === 'static-site')) { try { await this.siteRelease(m, true); } catch (e) { if (!(e instanceof HttpError) && !(e instanceof ApiError)) throw e; } }
   }
@@ -430,8 +474,8 @@ class Manager {
           if (action === 'remove') await this.remove(m);
           else {
             if (m.type === 'content') await this.ensureReader(id);
-            if (m.type === 'model') await this.ensureEngine(id);
-            await ({ zim: this.installZim, maps: this.installMaps, app: this.installApp, 'kiwix-tools': this.installReader, 'static-site': this.installSite, 'python-wheel': this.installWheel, 'llama-cpp': this.installLlama, gguf: this.installGguf, 'pmtiles-file': this.installPmFile, bundled: this.installBundled })[m.install.kind].call(this, m);
+            if (m.type === 'model') await this.ensureEngine(id, m.install.kind === 'ollama-model' ? 'ollama' : 'llama-cpp');
+            await ({ zim: this.installZim, maps: this.installMaps, app: this.installApp, 'kiwix-tools': this.installReader, 'static-site': this.installSite, 'python-wheel': this.installWheel, 'llama-cpp': this.installLlama, gguf: this.installGguf, ollama: this.installOllama, 'ollama-model': this.installOllamaModel, 'pmtiles-file': this.installPmFile, bundled: this.installBundled })[m.install.kind].call(this, m);
           }
           this.set(id, { state: 'done', percent: 100, message: action === 'remove' ? 'Removed' : 'Installed' });
         } catch (e) {
@@ -623,10 +667,38 @@ class Manager {
       fs.chmodSync(path.join(dest, path.basename(bin)), 0o755); fs.writeFileSync(path.join(dest, 'VERSION'), r.tag + '\n');
     } finally { fs.rmSync(tmp, { recursive: true, force: true }); }
   }
-  async ensureEngine(forId) {          // the first model pulls the engine in automatically
-    const em = this.mods.find((x) => x.install.kind === 'llama-cpp'); if (!em || this.installed(em)) return;
+  async ensureEngine(forId, kind) {    // the first model pulls its engine in automatically
+    kind = kind || 'llama-cpp'; const em = this.mods.find((x) => x.install.kind === kind); if (!em || this.installed(em)) return;
     this.set(forId, { message: 'Installing the AI engine first…' });
-    await this.installLlama(em, forId);
+    await (kind === 'ollama' ? this.installOllama(em, forId) : this.installLlama(em, forId));
+  }
+  async installOllama(m, jid) {        // Ollama: the release archive is unpacked as it is (the program needs its lib/ folder beside bin/)
+    jid = jid || m.id; const r = await this.ollamaRelease(m, true);
+    this.needSpace(r.size * 4);       // the download plus what it unpacks to
+    const base = this.d('ai'), tmp = fs.mkdtempSync(path.join(base, '.dl-')), part = path.join(tmp, r.name);
+    try {
+      await this.download(jid, r.url, part, r.sha, 'Ollama: ');
+      this.set(jid, { percent: 99, message: 'Unpacking…' });
+      const out = path.join(tmp, 'x');
+      try { await this.extract(part, out); }          // tar opens .zip (Windows 10+, macOS) and .tar.zst (Linux, with the zstd tool); a 1.6 GB zip is never read into memory
+      catch (e) {
+        if (/\.zip$/.test(r.name) && r.size < 1500 * 1048576) { fs.rmSync(out, { recursive: true, force: true }); unzip(fs.readFileSync(part), out, 6000 * 1024 * 1024); }
+        else throw new ApiError(500, /zst$/.test(r.name) ? 'Could not unpack Ollama: this computer needs the zstd tool (install the "zstd" package, then try again).' : 'Could not unpack Ollama (' + (e.msg || e.message) + ')');
+      }
+      const exe = this.plat === 'windows' ? 'ollama.exe' : 'ollama', bin = this.findFile(out, exe);
+      if (!bin) throw new ApiError(502, 'ollama was not in the download');
+      const root = path.basename(path.dirname(bin)) === 'bin' ? path.dirname(path.dirname(bin)) : path.dirname(bin);
+      fs.chmodSync(bin, 0o755); fs.writeFileSync(path.join(root, 'VERSION'), r.tag + '\n');
+      const dest = path.join(base, 'ollama'); await this.cfg.onAiChange('stop'); fs.rmSync(dest, { recursive: true, force: true });
+      fs.renameSync(root, dest);       // same folder tree, links and all (the models are kept apart, in ai/ollama-models)
+    } finally { fs.rmSync(tmp, { recursive: true, force: true }); }
+  }
+  async installOllamaModel(m) {        // a model from Ollama's own library, pulled by the engine
+    const i = m.install; if (!this.cfg.ollama) throw new ApiError(500, 'Ollama is not available in this build');
+    this.needSpace(m.approxMB * 1048576 * 1.05);
+    this.set(m.id, { message: m.name + ': starting Ollama…' });
+    try { await this.cfg.ollama.pull(i.name, (p) => { if (this.jobs[m.id]) this.set(m.id, p); }); }
+    catch (e) { throw new ApiError(502, 'Ollama could not download ' + i.name + ': ' + e.message); }
   }
   async installGguf(m) {              // one model file from Hugging Face, checked against the SHA-256 Hugging Face records for it
     const i = m.install, t = await this.hfFiles(i.repo, true), f = t[i.file];
@@ -683,6 +755,8 @@ class Manager {
     const k = m.install.kind;
     if (k === 'kiwix-tools') { fs.rmSync(path.join(this.cfg.dataDir, 'reader'), { recursive: true, force: true }); await this.restartLibrary(); return; }
     if (k === 'gguf') { await this.cfg.onAiChange('stop'); fs.unlinkSync(path.join(this.d('ai'), 'models', m.install.file)); return; }
+    if (k === 'ollama-model') { if (this.cfg.ollama) await this.cfg.ollama.removeModel(m.install.name); else fs.rmSync(ollamaManifestPath(path.join(this.d('ai'), 'ollama-models'), m.install.name), { force: true }); return; }
+    if (k === 'ollama') { await this.cfg.onAiChange('stop'); fs.rmSync(path.join(this.d('ai'), 'ollama'), { recursive: true, force: true }); return; }
     if (k === 'llama-cpp') { await this.cfg.onAiChange('stop'); fs.rmSync(path.join(this.d('ai'), 'engine'), { recursive: true, force: true }); return; }
     if (k === 'python-wheel') {            // the program goes; accounts and lessons in <data>/<dir>/home stay
       await this.cfg.onKolibriChange('stop'); fs.rmSync(path.join(this.cfg.dataDir, m.install.dir, 'app'), { recursive: true, force: true }); return;

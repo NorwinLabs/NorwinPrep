@@ -13,10 +13,26 @@ GROUPS = [   # (category, [module ids])
   ("electronics", ["electronics", "arduino-stackexchange-com-en-all", "raspberrypi-stackexchange-com-en-all", "ham-stackexchange-com-en-all"]),
   ("coding",      ["freecodecamp-en-all", "devdocs-en-python", "devdocs-en-javascript", "devdocs-en-html", "devdocs-en-css", "devdocs-en-bash", "devdocs-en-git"]),
   ("dictionary",  ["wiktionary"]),
-  ("ai",          ["ai-engine", "qwen25-05b", "qwen25-15b", "llama32-3b", "qwen25-7b"]),
+  ("ai",          ["ai-engine", "qwen25-05b", "qwen25-15b", "llama32-3b", "qwen25-7b", "ollama-engine", "ollama-qwen25-05b", "ollama-qwen25-15b", "ollama-llama32-3b", "ollama-qwen25-7b"]),
   ("tools",       ["reader", "notes"]),
   ("apps",        ["app-android", "app-windows", "app-pi64", "app-pi32", "app-linux"]),
 ]
+# Ollama as a second engine: the engine itself plus the same four models pulled from Ollama's own library (added here so the script stays the single source)
+def _ollama(i, name, tag, tagline, desc, mb, ram, size, by_):
+    return {"id": i, "type": "model", "category": "ai", "name": name, "tagline": tagline, "description": desc, "by": by_, "source": "https://ollama.com/library/" + tag.split(":")[0],
+            "icon": "chip", "color": "#2b8fd9", "sizeClass": size, "approxMB": mb, "install": dict({"kind": "ollama-model", "name": tag}, **({"minRamGB": ram} if ram else {})),
+            "platforms": ["windows", "linux", "darwin"], "hosts": ["app"], "open": "/ai/"}
+OLLAMA_MODS = [
+  {"id": "ollama-engine", "type": "tool", "category": "ai", "name": "Ollama", "tagline": "A popular way to run AI models on your own computer",
+   "description": "Ollama runs AI language models with no internet and no account. The app keeps its own private copy and its models in your library folder, and it is installed automatically with your first Ollama model. Models you add here can read your installed library, just like the others.",
+   "by": "OLLAMA", "source": "https://github.com/ollama/ollama", "icon": "chip", "color": "#2b8fd9", "sizeClass": "m", "install": {"kind": "ollama", "repo": "ollama/ollama"}, "platforms": ["windows", "linux", "darwin"], "hosts": ["app"]},
+  _ollama("ollama-qwen25-05b", "Qwen 2.5 0.5B (Ollama)", "qwen2.5:0.5b", "Tiny and quick, for old computers", "Alibaba's smallest Qwen model through Ollama. Runs on almost anything; answers are short and simple. About 0.5 GB of memory.", 400, None, "s", "ALIBABA"),
+  _ollama("ollama-qwen25-15b", "Qwen 2.5 1.5B (Ollama)", "qwen2.5:1.5b", "Good answers on an ordinary laptop", "Alibaba's 1.5 billion parameter model through Ollama. A good balance for most computers. About 2 GB of memory.", 990, 2, "m", "ALIBABA"),
+  _ollama("ollama-llama32-3b", "Llama 3.2 3B (Ollama)", "llama3.2:3b", "Better answers, needs a real computer", "Meta's 3 billion parameter model through Ollama. Clearly stronger; wants a laptop with 8 GB of memory or a Raspberry Pi 5. About 4 GB of memory.", 2000, 4, "m", "META"),
+  _ollama("ollama-qwen25-7b", "Qwen 2.5 7B (Ollama)", "qwen2.5:7b", "The most capable; needs a strong computer", "Alibaba's 7 billion parameter model through Ollama. Best answers; wants 16 GB of memory for comfort, 8 GB at least.", 4700, 8, "l", "ALIBABA"),
+]
+for _m in OLLAMA_MODS: by.setdefault(_m["id"], _m)
+cat["modules"] = [m for m in cat["modules"] if m["id"] not in {x["id"] for x in OLLAMA_MODS}] + [by[x["id"]] for x in OLLAMA_MODS]
 MAPS = ["map-world"] + [m["id"] for m in cat["modules"] if m["install"]["kind"] == "pmtiles-file"]
 KEEP = {i: c for c, ids in GROUPS for i in ids}; KEEP.update({i: "maps" for i in MAPS})
 missing = [i for i in KEEP if i not in by]
@@ -51,7 +67,10 @@ TOPICS = [
     tier("ai-small", "Small", AI_ESS, "Runs on almost anything (about 0.5 GB).", True),
     tier("ai-balanced", "Balanced", ["ai-engine", "qwen25-15b"], "Better answers; needs about 2 GB of memory."),
     tier("ai-better", "Better", ["ai-engine", "llama32-3b"], "Needs a real computer (about 4 GB of memory)."),
-    tier("ai-best", "Best", ["ai-engine", "qwen25-7b"], "The most capable; needs about 8 GB of memory.")]},
+    tier("ai-best", "Best", ["ai-engine", "qwen25-7b"], "The most capable; needs about 8 GB of memory."),
+    tier("ai-ollama-small", "Ollama: Small", ["ollama-engine", "ollama-qwen25-05b"], "The same idea through Ollama (about 0.4 GB)."),
+    tier("ai-ollama-balanced", "Ollama: Balanced", ["ollama-engine", "ollama-qwen25-15b"], "Ollama with a better model; needs about 2 GB of memory."),
+    tier("ai-ollama-better", "Ollama: Better", ["ollama-engine", "ollama-llama32-3b"], "Ollama with a stronger model; needs about 4 GB of memory.")]},
 ]
 # maps: one topic, a tier per NOMAD region
 old_topics = {t["id"]: t for t in cat.get("topics", [])}

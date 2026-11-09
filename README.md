@@ -53,6 +53,13 @@ model installs the engine for you. Chat opens at `/ai/` inside the app; the mode
 devices that join can chat too (they cannot switch models or reach anything else). It needs no internet once installed, but a small model on a CPU is slow and can be wrong.
 The engine ships ready-made CPU builds only for some computers; where there is none the store says so.
 
+**Ollama** (desktop; under AI in the store) is a second engine you can choose instead of llama.cpp. The app downloads Ollama itself from its GitHub releases (checked against GitHub's
+SHA-256) into your library folder, runs `ollama serve` on loopback only, and keeps its models in `<library>/ai/ollama-models`, so your own `~/.ollama` is never touched and nothing is
+installed system-wide. Models (Qwen 2.5 0.5B/1.5B/7B, Llama 3.2 3B) are pulled from Ollama's own library by Ollama, with progress in the Downloads panel. Both kinds of model appear
+in the same picker on the chat page ("Ollama: ..." for these). On Linux the Ollama download is a `.tar.zst`, so the `zstd` tool must be installed (the store says so if it is not).
+**Use my library** works the same with Ollama: the best matching pages from your installed Kiwix packs are given to the model and linked as sources. Only chat is exposed; Ollama's own
+API (pull, delete, list) is never reachable from the page or from devices on the Wi-Fi.
+
 ## Install on any device, share over Wi-Fi
 
 The desktop app (Windows, Linux x64/arm64/armv7l incl. Raspberry Pi) is its own installer: the Module Store installs content, maps and the
