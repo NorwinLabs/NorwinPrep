@@ -55,7 +55,7 @@ EXTRA = [
 EXTRA.append({"id": "speech-en", "type": "tool", "category": "ai", "name": "Voice typing (English)", "tagline": "Dictate into the AI chat, offline",
   "description": "A small English speech recogniser that runs inside the app, so you can talk instead of type in the AI chat with no internet. It needs a microphone and works on this device only. Press the microphone button in the chat.",
   "by": "ALPHA CEPHEI", "source": "https://alphacephei.com/vosk/", "icon": "chip", "color": "#2b8fd9", "sizeClass": "s", "approxMB": 40,
-  "install": {"kind": "speech-model", "url": "https://ccoreilly.github.io/vosk-browser/models/vosk-model-small-en-us-0.15.tar.gz", "file": "vosk-model-small-en-us-0.15.tar.gz"},
+  "install": {"kind": "speech-model", "url": "https://ccoreilly.github.io/vosk-browser/models/vosk-model-small-en-us-0.15.tar.gz", "file": "vosk-model-small-en-us-0.15.tar.gz", "sha256": "f0b24bb92a48ca575b6a96500d6b543f0f079c573dfe85bbe16001fc0404e1d8"},
   "platforms": ["windows", "linux", "darwin"], "hosts": ["app"], "open": "/ai/"})
 for _m in EXTRA: by[_m["id"]] = _m
 cat["modules"] = [m for m in cat["modules"] if m["id"] not in {x["id"] for x in EXTRA}] + [by[x["id"]] for x in EXTRA]

@@ -138,7 +138,8 @@
       voice.model = m; setState('allow the microphone if asked…');
       return navigator.mediaDevices.getUserMedia({ video: false, audio: { echoCancellation: true, noiseSuppression: true, channelCount: 1 } });
     }).then(function (stream) {
-      voice.stream = stream; voice.ctx = new (window.AudioContext || window.webkitAudioContext)(); var ctx = voice.ctx;
+      voice.stream = stream; var AC = window.AudioContext || window.webkitAudioContext; try { voice.ctx = new AC({ sampleRate: 16000 }); } catch (e) { voice.ctx = new AC(); }   // the model listens at 16 kHz: ask for that so nothing has to be resampled
+      var ctx = voice.ctx;
       var rec = voice.rec = new voice.model.KaldiRecognizer(ctx.sampleRate);
       rec.on('result', function (m) { var t = m && m.result && m.result.text; if (t) { said += (said ? ' ' : '') + t; q.value = base + said; q.dispatchEvent(new Event('input')); } });
       rec.on('partialresult', function (m) { var t = m && m.result && m.result.partial; q.value = base + said + (t ? (said ? ' ' : '') + t : ''); });

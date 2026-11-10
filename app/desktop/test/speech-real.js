@@ -31,6 +31,14 @@ let fails = 0; const ok = (c, m) => { if (!c) { fails++; console.error('FAIL ' +
   let text = ''; const t2 = Date.now(); while (Date.now() - t2 < 40000) { text = await pg.inputValue('#q'); if (/water/i.test(text) && /minute/i.test(text)) break; await new Promise((r) => setTimeout(r, 500)); }
   await pg.click('#mic'); await new Promise((r) => setTimeout(r, 1500)); const final = await pg.inputValue('#q');
   console.log('SAID: "' + say + '"\nHEARD while listening: ' + JSON.stringify(text) + '\nHEARD after stopping: ' + JSON.stringify(final) + '\npage errors: ' + JSON.stringify(errs));
+  // diagnostic: the same audio straight into the recogniser (no microphone path): is the synthetic voice itself recognisable?
+  const pcm = fs.readFileSync(wav).slice(44).toString('base64');
+  const direct = await pg.evaluate(async (b64) => {
+    const bin = atob(b64), n = bin.length >> 1, f = new Float32Array(n); for (let i = 0; i < n; i++) { let v = bin.charCodeAt(2 * i) | (bin.charCodeAt(2 * i + 1) << 8); if (v > 32767) v -= 65536; f[i] = v / 32768; }
+    const model = await window.Vosk.createModel('/speech/model.tar.gz'), rec = new model.KaldiRecognizer(16000), said = []; rec.on('result', (m) => { if (m.result.text) said.push(m.result.text); });
+    for (let i = 0; i < n; i += 4000) rec.acceptWaveformFloat(f.slice(i, i + 4000), 16000); rec.retrieveFinalResult(); await new Promise((r) => setTimeout(r, 4000)); model.terminate(); return said.join(' ');
+  }, pcm);
+  console.log('HEARD straight from the file (no microphone): ' + JSON.stringify(direct));
   const hits = ['boil', 'water', 'one', 'minute'].filter((w) => new RegExp(w, 'i').test(final)).length;
   ok(hits >= 2, 'the spoken words were recognised (' + hits + ' of 4 key words in the transcript)');
   await browser.close(); await app.stop(); console.log(fails ? fails + ' FAILED' : 'ALL PASSED'); process.exit(fails ? 1 : 0);
