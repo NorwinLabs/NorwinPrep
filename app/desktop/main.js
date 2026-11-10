@@ -73,6 +73,17 @@ function makeUpdater() {
   });
 }
 
+// Voice typing needs the microphone. Only this app's own page (loopback) may ask; on macOS the system asks the person first.
+function allowMicrophone() {
+  try {
+    const { session, systemPreferences } = require('electron');
+    session.defaultSession.setPermissionRequestHandler((wc, permission, cb, details) => {
+      let ok = false; try { const u = new URL((details && details.requestingUrl) || wc.getURL()); ok = permission === 'media' && (u.hostname === '127.0.0.1' || u.hostname === 'localhost') && (!details || !details.mediaTypes || details.mediaTypes.every((t) => t === 'audio')); } catch (e) { ok = false; }
+      if (!ok) return cb(false);
+      if (process.platform === 'darwin' && systemPreferences.askForMediaAccess) systemPreferences.askForMediaAccess('microphone').then(cb, () => cb(false)); else cb(true);
+    });
+  } catch (e) { /* not fatal: no voice typing */ }
+}
 async function startServer() {
   const filesDir = path.join(app.getPath('userData'), 'files');
   fs.mkdirSync(filesDir, { recursive: true });
@@ -83,6 +94,7 @@ async function startServer() {
   reader = new Reader({ binDir: path.join(dataDir, 'reader'), zimDir: path.join(dataDir, 'zim') });
   const env = process.env;
   kolibri = new Kolibri({ dataDir });
+  allowMicrophone();
   ai = new Hub({ dataDir, context: (q, eco) => (reader && reader.ready() ? libraryContext(q, { port: reader.port, root: '/wiki', maxChars: eco ? 1200 : 3000, maxPages: eco ? 2 : 3 }) : null), eco: () => { try { return require('electron').powerMonitor.isOnBatteryPower(); } catch (e) { return false; } } });
   const modules = new Manager({
     pythonCheck: (requires) => kolibri.findPython(requires), onKolibriChange: () => kolibri.stop(), onAiChange: () => ai.stop(), ollama: ai.ollama,
@@ -106,7 +118,7 @@ async function startServer() {
   reader.restart().catch(() => {});             // start the reader if a content pack is already installed
   share.resume().catch(() => {});               // and resume sharing over Wi-Fi if it was on when the app last ran
   server = create({
-    siteDir, filesDir, modules, kolibri, ai, mapsDir: path.join(dataDir, 'maps'), appsDir: path.join(dataDir, 'apps'), reader, share, autostart,
+    siteDir, filesDir, modules, kolibri, ai, speechDir: path.join(dataDir, 'speech'), mapsDir: path.join(dataDir, 'maps'), appsDir: path.join(dataDir, 'apps'), reader, share, autostart,
     getName: () => name, setName: (n) => { name = n; saveName(n); },
     version: app.getVersion(), platform: process.platform === 'win32' ? 'windows' : process.platform,
     arch: ARCH, packaging: detectPackaging(), update: makeUpdater()

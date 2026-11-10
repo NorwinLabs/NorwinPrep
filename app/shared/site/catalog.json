@@ -2758,6 +2758,34 @@
         "app"
       ],
       "open": "/tools/signals/"
+    },
+    {
+      "id": "speech-en",
+      "type": "tool",
+      "category": "ai",
+      "name": "Voice typing (English)",
+      "tagline": "Dictate into the AI chat, offline",
+      "description": "A small English speech recogniser that runs inside the app, so you can talk instead of type in the AI chat with no internet. It needs a microphone and works on this device only. Press the microphone button in the chat.",
+      "by": "ALPHA CEPHEI",
+      "source": "https://alphacephei.com/vosk/",
+      "icon": "chip",
+      "color": "#2b8fd9",
+      "sizeClass": "s",
+      "approxMB": 40,
+      "install": {
+        "kind": "speech-model",
+        "url": "https://ccoreilly.github.io/vosk-browser/models/vosk-model-small-en-us-0.15.tar.gz",
+        "file": "vosk-model-small-en-us-0.15.tar.gz"
+      },
+      "platforms": [
+        "windows",
+        "linux",
+        "darwin"
+      ],
+      "hosts": [
+        "app"
+      ],
+      "open": "/ai/"
     }
   ],
   "tiers": [
@@ -3090,6 +3118,15 @@
           "modules": [
             "ollama-engine",
             "ollama-qwen25-15b"
+          ]
+        },
+        {
+          "id": "ai-voice",
+          "name": "Voice typing",
+          "recommended": false,
+          "description": "Talk to the AI instead of typing (English, about 40 MB).",
+          "modules": [
+            "speech-en"
           ]
         },
         {

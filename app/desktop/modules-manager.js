@@ -56,6 +56,8 @@ function loadCatalog(file, platform) {
       if (!/^[A-Za-z0-9._-]+\/[A-Za-z0-9._-]+$/.test(i.repo || '')) throw new Error('bad llama-cpp spec for ' + m.id);
     } else if (i.kind === 'gguf') {
       if (!/^[A-Za-z0-9._-]+\/[A-Za-z0-9._-]+$/.test(i.repo || '') || !/^[A-Za-z0-9][A-Za-z0-9._-]{0,120}\.gguf$/.test(i.file || '') || (i.minRamGB !== undefined && !(i.minRamGB > 0 && i.minRamGB < 512))) throw new Error('bad gguf spec for ' + m.id);
+    } else if (i.kind === 'speech-model') {      // an offline speech-to-text model (a .tar.gz for the in-page recogniser); only the vosk-browser demo's model host is trusted
+      if (!/^https:\/\/ccoreilly\.github\.io\/vosk-browser\/models\/[A-Za-z0-9._-]+\.tar\.gz$/.test(i.url || '') || !/^[A-Za-z0-9][A-Za-z0-9._-]*\.tar\.gz$/.test(i.file || '') || (i.sha256 !== undefined && !/^[0-9a-f]{64}$/.test(i.sha256))) throw new Error('bad speech-model spec for ' + m.id);
     } else if (i.kind === 'ollama') {
       if (!/^[A-Za-z0-9._-]+\/[A-Za-z0-9._-]+$/.test(i.repo || '')) throw new Error('bad ollama spec for ' + m.id);
     } else if (i.kind === 'ollama-model') {
@@ -119,7 +121,7 @@ class Manager {
     cfg = Object.fromEntries(Object.entries(cfg || {}).filter(([, v]) => v !== undefined));   // an unset option (undefined) must keep its default, not replace it: Object.assign would copy the undefined and every download address would become "undefined/..."
     this.cfg = Object.assign({ timeout: 30000, kiwix: 'https://download.kiwix.org', githubApi: 'https://api.github.com', githubDl: 'https://github.com',
       protomaps: 'https://build.protomaps.com', protomapsMeta: null, slug: 'NorwinLabs/NorwinPrepDisk', pmtilesRepo: 'protomaps/go-pmtiles', platform: process.platform,
-      arch: process.arch, pypi: 'https://pypi.org', nomadMaps: 'https://github.com', hf: 'https://huggingface.co', onAiChange: async () => true, ollama: null, ramBytes: os.totalmem(), pythonCheck: async () => true, onKolibriChange: async () => true, bundledDir: path.join(__dirname, 'site'), onLibraryChange: async () => true, run: spawn }, cfg);
+      arch: process.arch, pypi: 'https://pypi.org', nomadMaps: 'https://github.com', speechBase: 'https://ccoreilly.github.io', hf: 'https://huggingface.co', onAiChange: async () => true, ollama: null, ramBytes: os.totalmem(), pythonCheck: async () => true, onKolibriChange: async () => true, bundledDir: path.join(__dirname, 'site'), onLibraryChange: async () => true, run: spawn }, cfg);
     this.mods = loadCatalog(this.cfg.catalog, this.cfg.platform === 'win32' ? 'windows' : this.cfg.platform);
     this.byid = Object.fromEntries(this.mods.map((m) => [m.id, m]));
     this.jobs = {}; this.queue = []; this.working = false; this.cache = new Map();
@@ -207,6 +209,9 @@ class Manager {
       const f = path.join(this.cfg.dataDir, 'ai', 'models', i.file);
       try { const st = fs.statSync(f); return { version: ((/-(Q\d[A-Za-z0-9_]*)\.gguf$/i.exec(i.file) || [])[1] || 'GGUF').toUpperCase(), files: [i.file], bytes: st.size, updated: st.mtimeMs / 1000 }; } catch (e) { return null; }
     }
+    if (i.kind === 'speech-model') {
+      try { const f = path.join(this.cfg.dataDir, 'speech', i.file), st = fs.statSync(f); return { version: (/-(\d+\.\d+)\.tar\.gz$/.exec(i.file) || [])[1] || '1', files: [i.file], bytes: st.size, updated: st.mtimeMs / 1000 }; } catch (e) { return null; }
+    }
     if (i.kind === 'ollama-model') {
       try {
         const f = ollamaManifestPath(path.join(this.cfg.dataDir, 'ai', 'ollama-models'), i.name), st = fs.statSync(f), man = JSON.parse(fs.readFileSync(f, 'utf8'));
@@ -274,7 +279,7 @@ class Manager {
     if (i.kind === 'python-wheel') { const r = this.peek(['pypi', i.package]); return r ? r.size : null; }
     if (i.kind === 'llama-cpp') { const r = this.peek(['llama', i.repo]); return r ? r.size : null; }
     if (i.kind === 'ollama') { const r = this.peek(['ollama', i.repo]); return r ? r.size : null; }
-    if (i.kind === 'ollama-model') return m.approxMB ? m.approxMB * 1048576 : null;
+    if (i.kind === 'ollama-model' || i.kind === 'speech-model') return m.approxMB ? m.approxMB * 1048576 : null;
     if (i.kind === 'pmtiles-file') { const s = this.peek(['size', i.url]); return s || null; }
     if (i.kind === 'gguf') { const t = this.peek(['hf', i.repo]); return t && t[i.file] ? t[i.file].size : null; }
     return null;
@@ -404,6 +409,8 @@ class Manager {
       } else if (i.kind === 'llama-cpp') {
         const r = await this.llamaRelease(m, true);
         Object.assign(res, { file: r.name, version: r.tag, bytes: r.size, note: 'A small program that runs AI models on your processor. It is installed automatically with your first model.' });
+      } else if (i.kind === 'speech-model') {
+        Object.assign(res, { file: i.file, version: (/-(\d+\.\d+)\.tar\.gz$/.exec(i.file) || [])[1] || '1', bytes: m.approxMB * 1048576, note: 'A small English speech recogniser that runs in the app, so voice typing works with no internet. Press the microphone in the AI chat. It needs a microphone and works on this device only.' });
       } else if (i.kind === 'ollama') {
         const r = await this.ollamaRelease(m, true);
         Object.assign(res, { file: r.name, version: r.tag, bytes: r.size, note: 'Ollama, a popular program for running AI models on your own computer. The app keeps its own copy and its models in your library folder; nothing is installed system-wide.' + (/zst$/.test(r.name) ? ' Unpacking needs the zstd tool (package "zstd" on Linux).' : '') });
@@ -547,7 +554,7 @@ class Manager {
           else {
             if (m.type === 'content') await this.ensureReader(id);
             if (m.type === 'model') await this.ensureEngine(id, m.install.kind === 'ollama-model' ? 'ollama' : 'llama-cpp');
-            await ({ zim: this.installZim, maps: this.installMaps, app: this.installApp, 'kiwix-tools': this.installReader, 'static-site': this.installSite, 'python-wheel': this.installWheel, 'llama-cpp': this.installLlama, gguf: this.installGguf, ollama: this.installOllama, 'ollama-model': this.installOllamaModel, 'pmtiles-file': this.installPmFile, bundled: this.installBundled })[m.install.kind].call(this, m);
+            await ({ zim: this.installZim, maps: this.installMaps, app: this.installApp, 'kiwix-tools': this.installReader, 'static-site': this.installSite, 'python-wheel': this.installWheel, 'llama-cpp': this.installLlama, gguf: this.installGguf, ollama: this.installOllama, 'ollama-model': this.installOllamaModel, 'speech-model': this.installSpeech, 'pmtiles-file': this.installPmFile, bundled: this.installBundled })[m.install.kind].call(this, m);
           }
           this.set(id, { state: 'done', percent: 100, message: action === 'remove' ? 'Removed' : 'Installed' });
         } catch (e) {
@@ -763,6 +770,16 @@ class Manager {
       fs.renameSync(root, dest);       // same folder tree, links and all (the models are kept apart, in ai/ollama-models)
     } finally { fs.rmSync(tmp, { recursive: true, force: true }); }
   }
+  async installSpeech(m) {            // one .tar.gz, checked (gzip header, and the SHA-256 when the catalog has one), kept in <library>/speech
+    const i = m.install, dir = this.d('speech'), part = path.join(dir, '.' + i.file + '.part'); let have = 0; try { have = fs.statSync(part).size; } catch (e) { /* none */ }
+    const url = i.url.replace('https://ccoreilly.github.io', this.cfg.speechBase);
+    this.needSpace(Math.max(0, m.approxMB * 1048576 * 1.1 - have));
+    await this.download(m.id, url, part, i.sha256 || null, m.name + ': ');
+    const fd = fs.openSync(part, 'r'), head = Buffer.alloc(2); fs.readSync(fd, head, 0, 2, 0); fs.closeSync(fd);
+    if (head[0] !== 0x1f || head[1] !== 0x8b) { fs.unlinkSync(part); throw new ApiError(502, 'The download is not a speech model (it was discarded).'); }
+    fs.renameSync(part, path.join(dir, i.file));
+    for (const f of fs.readdirSync(dir)) if (/\.tar\.gz$/.test(f) && f !== i.file) fs.unlinkSync(path.join(dir, f));      // one model at a time
+  }
   async installOllamaModel(m) {        // a model from Ollama's own library, pulled by the engine
     const i = m.install; if (!this.cfg.ollama) throw new ApiError(500, 'Ollama is not available in this build');
     this.needSpace(m.approxMB * 1048576 * 1.05);
@@ -825,6 +842,7 @@ class Manager {
     const k = m.install.kind;
     if (k === 'kiwix-tools') { fs.rmSync(path.join(this.cfg.dataDir, 'reader'), { recursive: true, force: true }); await this.restartLibrary(); return; }
     if (k === 'gguf') { await this.cfg.onAiChange('stop'); fs.unlinkSync(path.join(this.d('ai'), 'models', m.install.file)); return; }
+    if (k === 'speech-model') { fs.unlinkSync(path.join(this.d('speech'), m.install.file)); return; }
     if (k === 'ollama-model') { if (this.cfg.ollama) await this.cfg.ollama.removeModel(m.install.name); else fs.rmSync(ollamaManifestPath(path.join(this.d('ai'), 'ollama-models'), m.install.name), { force: true }); return; }
     if (k === 'ollama') { await this.cfg.onAiChange('stop'); fs.rmSync(path.join(this.d('ai'), 'ollama'), { recursive: true, force: true }); return; }
     if (k === 'llama-cpp') { await this.cfg.onAiChange('stop'); fs.rmSync(path.join(this.d('ai'), 'engine'), { recursive: true, force: true }); return; }

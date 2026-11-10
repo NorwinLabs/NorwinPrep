@@ -29,6 +29,7 @@ const OLLAMA_FILES = { 'bin/ollama': fs.readFileSync(path.join(__dirname, 'fake-
 const OLLAMA_TGZ = tarball('ollama.tgz', OLLAMA_FILES);
 let OLLAMA_ZST = null; if (HAS_ZSTD) { const d = fs.mkdtempSync(path.join(work, 'oz-')); for (const [n, body] of Object.entries(OLLAMA_FILES)) { fs.mkdirSync(path.dirname(path.join(d, n)), { recursive: true }); fs.writeFileSync(path.join(d, n), body, { mode: 0o755 }); } const out = path.join(work, 'ollama.tar.zst'); execFileSync('tar', ['--zstd', '-cf', out, '-C', d, '.']); OLLAMA_ZST = fs.readFileSync(out); }
 const OLLAMA_LINUX = HAS_ZSTD ? 'ollama-linux-amd64.tar.zst' : 'ollama-linux-amd64.tgz';   // what a Linux x64 machine should be given by the fake release
+const SPEECH_TGZ = tarball('speech.tar.gz', { 'model/am/final.mdl': 'x'.repeat(5000), 'model/conf/model.conf': '--min-active=200' });
 const F = { ollamaSha: 'ok', llamaSha: 'ok', ggufSha: 'ok', kolibriSha: 'ok', cyber: 'good', cyberDigest: true, shaOk: true, shaMissing: false, newZim: '2025-03', tag: 'v0.6.9', apkSumOk: true, readerListing: true };
 const server = http.createServer((q, r) => {
   const out = (code, body, h) => { r.writeHead(code, Object.assign({ 'Content-Length': Buffer.byteLength(body) }, h || {})); r.end(q.method === 'HEAD' ? undefined : body); };
@@ -70,6 +71,7 @@ const server = http.createServer((q, r) => {
       mk('ollama-windows-amd64-mlx.zip', X, 924245834), mk('ollama-windows-amd64-rocm.zip', X, 257076401), mk('ollama-windows-amd64.zip', X, 1601954968), mk('ollama-windows-arm64.zip', X, 215932926), mk('Ollama.dmg', X, 230541627), mk('OllamaSetup.exe', X, 1675999728), mk('sha256sum.txt', X, 1472)] }));
   }
   m = p.match(/^\/ollama\/ollama\/releases\/download\/v9\.9\.9\/(.+)$/); if (m) { if (m[1] === OLLAMA_LINUX) return out(200, HAS_ZSTD ? OLLAMA_ZST : OLLAMA_TGZ); if (m[1] === 'Ollama-darwin.zip') return out(200, OLLAMA_TGZ); }
+  if (p === '/vosk-browser/models/vosk-model-small-en-us-0.15.tar.gz') return F.speech === 'html' ? out(200, '<html>not found</html>') : out(200, SPEECH_TGZ);
   if (p === '/api/models/Qwen/Qwen2.5-0.5B-Instruct-GGUF/tree/main') return out(200, JSON.stringify([{ type: 'file', path: 'README.md', size: 10 }, { type: 'file', path: 'qwen2.5-0.5b-instruct-q4_k_m.gguf', size: GGUF.length, lfs: { oid: F.ggufSha === 'nolfs' ? undefined : sha(GGUF), size: GGUF.length } }]));
   if (p === '/Qwen/Qwen2.5-0.5B-Instruct-GGUF/resolve/main/qwen2.5-0.5b-instruct-q4_k_m.gguf') {
     const data = F.ggufSha === 'bad' ? Buffer.from('GGUF' + 'y'.repeat(200000)) : GGUF, rng = q.headers.range;
@@ -93,4 +95,4 @@ const server = http.createServer((q, r) => {
 });
 
 
-module.exports = { OLLAMA_LINUX, HAS_ZSTD, LLAMA_TGZ, LLAMA_ZIP, GGUF, ZIM, WATER, APK, EXE, PEXE, F, server, PM_TAR, KW_TAR, sha, work };
+module.exports = { SPEECH_TGZ, OLLAMA_LINUX, HAS_ZSTD, LLAMA_TGZ, LLAMA_ZIP, GGUF, ZIM, WATER, APK, EXE, PEXE, F, server, PM_TAR, KW_TAR, sha, work };

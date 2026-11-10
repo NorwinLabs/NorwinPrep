@@ -15,7 +15,7 @@ GROUPS = [   # (category, [module ids])
   ("dictionary",  ["wiktionary"]),
   ("reference",   ["wikipedia-top-mini", "wikipedia-top-nopic", "wikipedia-all-mini"]),
   ("tools",       ["notes", "checklists", "emergency-card", "signals"]),
-  ("ai",          ["ai-engine", "qwen25-05b", "qwen25-15b", "llama32-3b", "qwen25-7b", "ollama-engine", "ollama-qwen25-05b", "ollama-qwen25-15b", "ollama-llama32-3b", "ollama-qwen25-7b", "ollama-gemma3-4b"]),
+  ("ai",          ["ai-engine", "qwen25-05b", "qwen25-15b", "llama32-3b", "qwen25-7b", "ollama-engine", "ollama-qwen25-05b", "ollama-qwen25-15b", "ollama-llama32-3b", "ollama-qwen25-7b", "ollama-gemma3-4b", "speech-en"]),
   ("tools",       ["reader", "notes"]),
   ("apps",        ["app-android", "app-windows", "app-pi64", "app-pi32", "app-linux"]),
 ]
@@ -51,6 +51,12 @@ EXTRA = [
   _tool("emergency-card", "Emergency card", "A printable page with your medical info and plan", "Fill in your blood type, allergies, contacts and meeting places, then print a page and a wallet card. Includes your saved map places and the Wi-Fi share details.", "cross", "#ff5a6e", "card"),
   _tool("signals", "Signals and radio", "Morse, spelling alphabet, distress signals, frequencies", "Morse with sound and light, the NATO spelling alphabet, ground-to-air signals, emergency radio frequencies and how to make a radio call.", "globe", "#f0b429", "signals"),
 ]
+# voice typing: a small offline English speech model for the in-page recogniser (vosk-browser, Apache-2.0; model from Alpha Cephei's Vosk models)
+EXTRA.append({"id": "speech-en", "type": "tool", "category": "ai", "name": "Voice typing (English)", "tagline": "Dictate into the AI chat, offline",
+  "description": "A small English speech recogniser that runs inside the app, so you can talk instead of type in the AI chat with no internet. It needs a microphone and works on this device only. Press the microphone button in the chat.",
+  "by": "ALPHA CEPHEI", "source": "https://alphacephei.com/vosk/", "icon": "chip", "color": "#2b8fd9", "sizeClass": "s", "approxMB": 40,
+  "install": {"kind": "speech-model", "url": "https://ccoreilly.github.io/vosk-browser/models/vosk-model-small-en-us-0.15.tar.gz", "file": "vosk-model-small-en-us-0.15.tar.gz"},
+  "platforms": ["windows", "linux", "darwin"], "hosts": ["app"], "open": "/ai/"})
 for _m in EXTRA: by[_m["id"]] = _m
 cat["modules"] = [m for m in cat["modules"] if m["id"] not in {x["id"] for x in EXTRA}] + [by[x["id"]] for x in EXTRA]
 MAPS = ["map-world"] + [m["id"] for m in cat["modules"] if m["install"]["kind"] == "pmtiles-file"]
@@ -96,6 +102,7 @@ TOPICS = [
     tier("ai-best", "Best", ["ai-engine", "qwen25-7b"], "The most capable; needs about 8 GB of memory."),
     tier("ai-ollama-small", "Ollama: Small", ["ollama-engine", "ollama-qwen25-05b"], "The same idea through Ollama (about 0.4 GB)."),
     tier("ai-ollama-balanced", "Ollama: Balanced", ["ollama-engine", "ollama-qwen25-15b"], "Ollama with a better model; needs about 2 GB of memory."),
+    tier("ai-voice", "Voice typing", ["speech-en"], "Talk to the AI instead of typing (English, about 40 MB)."),
     tier("ai-ollama-vision", "Ollama: Sees pictures", ["ollama-engine", "ollama-gemma3-4b"], "Attach a photo in the chat and ask about it; needs about 6 GB of memory."),
     tier("ai-ollama-better", "Ollama: Better", ["ollama-engine", "ollama-llama32-3b"], "Ollama with a stronger model; needs about 4 GB of memory.")]},
 ]

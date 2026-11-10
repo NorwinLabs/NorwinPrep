@@ -13,6 +13,7 @@ const ALLOW = [
   /^apps\/[A-Za-z0-9][A-Za-z0-9._-]*$/,
   /^sites\/[a-z0-9-]+\/\.installed$/,
   /^sites\/[a-z0-9-]+\/(?:[A-Za-z0-9._ -]+\/){0,6}[A-Za-z0-9._ -]+$/,
+  /^speech\/[A-Za-z0-9][A-Za-z0-9._-]*\.tar\.gz$/,
   /^ai\/models\/[A-Za-z0-9][A-Za-z0-9._-]*\.gguf$/,
   /^ai\/ollama-models\/blobs\/sha256-[0-9a-f]{64}$/,
   /^ai\/ollama-models\/manifests\/registry\.ollama\.ai\/(?:[a-z0-9][a-z0-9._-]*\/){1,2}[A-Za-z0-9][A-Za-z0-9._-]*$/,
@@ -30,7 +31,7 @@ function listLibrary(dataDir) {       // [{ rel, size }] of everything that can 
       if (e.isDirectory()) walk(p, r); else if (e.isFile() && allowed(r)) { try { out.push({ rel: r, size: fs.statSync(p).size }); } catch (x) { /* vanished */ } }
     }
   };
-  for (const top of ['zim', 'maps', 'apps', 'sites', 'ai/models', 'ai/ollama-models']) walk(path.join(dataDir, ...top.split('/')), top);
+  for (const top of ['zim', 'maps', 'apps', 'sites', 'speech', 'ai/models', 'ai/ollama-models']) walk(path.join(dataDir, ...top.split('/')), top);
   return out;
 }
 

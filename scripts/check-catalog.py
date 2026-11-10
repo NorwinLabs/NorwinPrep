@@ -111,6 +111,8 @@ for m in mods:
                 report(dict(id="ai-engine/" + label), bool(hit), "%s %s %s" % (rel["tag_name"], hit[0]["name"] if hit else "NO MATCHING BUILD (the app will say so)", hit[0]["size"] if hit else ""))
             print("     all llama.cpp assets:", [x["name"] for x in rel["assets"]])
         except Exception as e: report(m, False, str(e))
+    elif k == "speech-model":
+        r = probe(i["url"]); report(m, r is not None and not isinstance(r, str), "%s %s (catalog says %d MB)" % (i["file"], r, m["approxMB"]))
     elif k == "ollama":
         try:
             rel = json.loads(get("%s/repos/%s/releases/latest" % (GH, i["repo"]))[2]); bad_re = re.compile(r"rocm|jetpack|cuda|vulkan|mlx|sycl|setup|\.exe$|\.dmg$|sha256|\.sig$", re.I)

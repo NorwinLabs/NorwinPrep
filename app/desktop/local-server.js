@@ -128,6 +128,14 @@ function create(opts) {
       if (req.method !== 'GET' && req.method !== 'POST') return send(405, 'text/plain', 'Method not allowed');
       return opts.ai.handle(req, res, route, true);
     }
+    // Voice typing: the installed speech model, for the in-page recogniser (this device's own app only; the Wi-Fi share has no microphone access anyway)
+    const sp0 = req.url.split('?')[0];
+    if (opts.speechDir && (sp0 === '/speech/status' || sp0 === '/speech/model.tar.gz') && (req.method === 'GET' || head)) {
+      let f = null; try { f = fs.readdirSync(opts.speechDir).filter((n) => /^[A-Za-z0-9][A-Za-z0-9._-]*\.tar\.gz$/.test(n)).sort()[0] || null; } catch (e) { /* none */ }
+      if (sp0 === '/speech/status') return json(200, { installed: !!f });
+      if (!f) return send(404, 'text/plain', 'No speech model is installed');
+      return serveRange(req, res, path.join(opts.speechDir, f), 'application/gzip', head);
+    }
     const writes = req.method === 'PUT' || req.method === 'POST' || req.method === 'DELETE';
     if (writes) {
       const o = req.headers.origin;

@@ -72,6 +72,7 @@ jobs:
           node test/ai.test.js
           node test/ollama.test.js
           node test/extras.test.js
+          node test/speech.test.js
       - name: Smoke test (source)
         run: xvfb-run -a ./node_modules/electron/dist/electron . --no-sandbox --selftest
       - name: Build AppImage + deb for x64, arm64, armv7l
